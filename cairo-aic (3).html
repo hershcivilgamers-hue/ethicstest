@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAIRO.AIC · Ethics Committee Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+
+<script>
+  // ================================================================
+  //  ▸ CONFIGURATION — EDIT THESE TWO LINES ONLY
+  // ================================================================
+  var FIREBASE_URL    = 'https://YOUR-PROJECT-default-rtdb.firebaseio.com';
+  var ANTHROPIC_KEY   = 'sk-ant-YOUR-KEY-HERE';
+  // ================================================================
+  //  Everything below is self-contained. Do not edit unless you
+  //  know what you are doing.
+  // ================================================================
+</script>
+
+<style>
+:root{
+  --green:#00ff88;--green-dim:#00cc66;--green-trace:#001a11;
+  --amber:#ffaa00;--red:#ff4444;--cyan:#00cccc;
+  --bg:#040a06;--bg2:#060e08;--border:#0a2a14;--border2:#0d3a1a;
+  --text:#88bb99;--text-dim:#3a6a4a;--text-faint:#1a3a26;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;width:100%;min-height:100vh;overflow-x:hidden;}
+
+@keyframes flicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.94}94%{opacity:1}97%{opacity:.97}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes blink{50%{opacity:0}}
+@keyframes tdot{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Layout ── */
+.scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
+.shell{position:relative;max-width:880px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+
+/* ── Header ── */
+.header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}
+.header-title{font-family:'VT323',monospace;font-size:1.6rem;color:var(--green);letter-spacing:.15em;text-shadow:0 0 10px rgba(0,255,136,.4);}
+.header-sub{font-size:.58rem;color:var(--text-dim);letter-spacing:.1em;margin-top:2px;}
+.header-meta{font-size:.62rem;color:var(--text-dim);text-align:right;line-height:1.7;}
+.header-right{display:flex;align-items:center;gap:1rem;}
+.user-pill{font-size:.6rem;color:var(--cyan);border:1px solid #004a4a;background:#001a1a;padding:2px 8px;border-radius:2px;cursor:pointer;transition:all .15s;}
+.user-pill:hover{background:#002a2a;color:var(--red);border-color:#4a1414;}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s ease-in-out infinite;vertical-align:middle;margin-right:4px;}
+
+/* ── Nav ── */
+.nav{display:flex;flex-wrap:wrap;border:1px solid var(--border2);border-top:none;border-bottom:none;background:#030806;}
+.nav-tab{padding:.45rem 1rem;font-size:.65rem;letter-spacing:.08em;color:var(--text-dim);cursor:pointer;border-right:1px solid var(--border);transition:all .15s;user-select:none;border-bottom:2px solid transparent;}
+.nav-tab:hover{color:var(--text);background:rgba(0,255,136,.03);}
+.nav-tab.active{color:var(--green);border-bottom:2px solid var(--green);background:rgba(0,255,136,.05);}
+
+/* ── Panel / Tabs ── */
+.panel{border:1px solid var(--border2);border-top:none;background:var(--bg2);flex:1;}
+.tab-content{display:none;padding:1.25rem;}
+.tab-content.active{display:block;animation:fadeIn .25s ease;}
+
+/* ── Field rows ── */
+.field-row{display:flex;gap:.75rem;padding:4px 0;border-bottom:1px solid rgba(10,42,20,.5);font-size:.68rem;line-height:1.8;flex-wrap:wrap;}
+.field-row:last-of-type{border-bottom:none;}
+.fl{color:var(--text-dim);min-width:180px;flex-shrink:0;}.fv{color:var(--text);}
+.sec{font-size:.62rem;letter-spacing:.18em;color:var(--green-dim);margin:1.1rem 0 .5rem;padding-bottom:3px;border-bottom:1px solid var(--border2);}
+.sec:first-child{margin-top:0;}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:1px 7px;border-radius:2px;font-size:.58rem;letter-spacing:.07em;vertical-align:middle;}
+.b-green{background:#0a2a14;color:#44dd88;border:1px solid #1a5a2a;}
+.b-amber{background:#1a1400;color:#ddaa44;border:1px solid #4a3a00;}
+.b-red{background:#1a0404;color:#dd4444;border:1px solid #4a1414;}
+.b-cyan{background:#001a1a;color:#44cccc;border:1px solid #004a4a;}
+.b-dim{background:#0a0e0b;color:var(--text-dim);border:1px solid var(--border2);}
+
+/* ── Directive / Constraint blocks ── */
+.dir-block{border-left:2px solid var(--green-dim);padding:.6rem .9rem;background:var(--green-trace);margin:.5rem 0;font-size:.68rem;line-height:2;}
+.con-block{border-left:2px solid var(--red);padding:.6rem .9rem;background:#0a0202;margin:.5rem 0;font-size:.68rem;line-height:2;}
+.cl{color:#cc4444;}.dl{color:var(--text-dim);}
+
+/* ── Log ── */
+.log-entry{display:flex;gap:.75rem;font-size:.64rem;padding:5px 0;border-bottom:1px solid rgba(10,42,20,.4);line-height:1.5;flex-wrap:wrap;}
+.log-entry:last-child{border-bottom:none;}
+.log-ts{color:var(--text-dim);min-width:145px;flex-shrink:0;}
+.log-code{color:var(--cyan);min-width:46px;}
+.log-msg{color:var(--text);flex:1;min-width:160px;}
+.log-stat{margin-left:auto;}
+
+/* ── Quote ── */
+.quote-block{border:1px solid var(--border2);border-left:3px solid var(--green-dim);padding:.9rem 1.1rem;background:var(--green-trace);margin:.5rem 0;font-size:.74rem;line-height:1.9;color:var(--text);font-style:italic;}
+.quote-attr{font-size:.62rem;color:var(--text-dim);margin-top:.4rem;font-style:normal;}
+
+/* ── Psych bars ── */
+.bar-row{display:flex;align-items:center;gap:.75rem;padding:5px 0;font-size:.64rem;}
+.bar-label{color:var(--text-dim);min-width:190px;}
+.bar-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;transition:width 1s ease;}
+.bar-val{color:var(--green);min-width:30px;text-align:right;}
+
+/* ── Terminal ── */
+#tab-terminal{padding:0;display:flex;flex-direction:column;}
+.term-header-bar{padding:.6rem 1rem;border-bottom:1px solid var(--border);font-size:.62rem;color:var(--text-dim);}
+.term-output{padding:.9rem 1rem;overflow-y:auto;min-height:280px;max-height:420px;display:flex;flex-direction:column;gap:.65rem;font-size:.68rem;line-height:1.8;}
+.msg-user,.msg-cairo{display:flex;gap:.6rem;}
+.msg-prefix{white-space:nowrap;font-weight:500;}
+.msg-sys{font-size:.62rem;color:var(--text-faint);padding:1px 0;}
+.typing-indicator{display:none;gap:.6rem;align-items:center;padding:4px 0;}
+.typing-indicator.visible{display:flex;}
+.typing-dot{display:inline-block;width:5px;height:5px;background:var(--green);border-radius:50%;animation:tdot 1.2s ease-in-out infinite;}
+.typing-dot:nth-child(2){animation-delay:.2s;}
+.typing-dot:nth-child(3){animation-delay:.4s;}
+.input-bar{display:flex;align-items:center;gap:.6rem;padding:.65rem 1rem;border-top:1px solid var(--border2);background:#030806;}
+.input-prompt{color:var(--green);font-size:.68rem;white-space:nowrap;}
+.input-field{flex:1;background:transparent;border:none;outline:none;color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.68rem;caret-color:var(--green);}
+.input-field::placeholder{color:var(--text-faint);}
+.blink{animation:blink 1s step-end infinite;}
+
+/* ── Footer ── */
+.footer{padding:.4rem 1rem;font-size:.58rem;color:var(--text-faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.25rem;border:1px solid var(--border2);border-top:none;background:#030806;}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── Login overlay ── */
+.login-overlay{position:fixed;inset:0;background:rgba(4,10,6,.97);z-index:500;display:flex;align-items:center;justify-content:center;}
+.login-box{border:1px solid var(--border2);background:var(--bg2);padding:2rem;width:340px;animation:slideIn .3s ease;}
+.login-title{font-family:'VT323',monospace;font-size:1.8rem;color:var(--green);letter-spacing:.15em;text-shadow:0 0 10px rgba(0,255,136,.4);margin-bottom:.25rem;}
+.login-sub{font-size:.58rem;color:var(--text-dim);letter-spacing:.1em;margin-bottom:1.5rem;}
+.login-label{font-size:.62rem;color:var(--text-dim);letter-spacing:.1em;margin-bottom:4px;display:block;}
+.login-input{width:100%;background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:.45rem .7rem;outline:none;margin-bottom:.9rem;}
+.login-input:focus{border-color:var(--green-dim);}
+.login-btn{width:100%;background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.1em;padding:.5rem;cursor:pointer;transition:all .15s;margin-bottom:.5rem;}
+.login-btn:hover{background:rgba(0,255,136,.08);}
+.login-btn.sec-btn{background:#030806;border-color:var(--border2);color:var(--text-dim);}
+.login-btn.sec-btn:hover{border-color:var(--text-dim);}
+.login-btn:disabled{opacity:.4;cursor:not-allowed;}
+.login-err{font-size:.62rem;color:var(--red);margin-bottom:.7rem;min-height:1rem;}
+.login-tabs{display:flex;margin-bottom:1.2rem;border-bottom:1px solid var(--border);}
+.login-tab{font-size:.62rem;letter-spacing:.1em;color:var(--text-dim);padding:.3rem .8rem;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.login-tab.active{color:var(--green);border-bottom-color:var(--green);}
+.login-spinner{display:inline-block;width:10px;height:10px;border:1px solid var(--green-dim);border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle;}
+
+/* ── Config warning ── */
+.config-warn{border:1px solid #4a3a00;background:#1a1400;color:#ddaa44;font-size:.64rem;padding:.75rem 1rem;margin-bottom:1rem;line-height:1.8;}
+
+/* ── Orders ── */
+.order-form{background:#030806;border:1px solid var(--border);padding:1rem;margin-bottom:1rem;}
+.order-form-row{display:flex;gap:.75rem;margin-bottom:.6rem;flex-wrap:wrap;}
+.order-input{background:var(--bg);border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.65rem;padding:.35rem .6rem;outline:none;flex:1;min-width:120px;}
+.order-input:focus{border-color:var(--green-dim);}
+.order-select{background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.65rem;padding:.35rem .6rem;outline:none;}
+.order-textarea{background:var(--bg);border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.65rem;padding:.35rem .6rem;outline:none;width:100%;resize:vertical;min-height:60px;}
+.order-textarea:focus{border-color:var(--green-dim);}
+.order-submit{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.08em;padding:.35rem 1rem;cursor:pointer;transition:all .15s;}
+.order-submit:hover{background:rgba(0,255,136,.08);}
+.order-submit:disabled{opacity:.4;cursor:not-allowed;}
+.order-card{border:1px solid var(--border2);padding:.75rem .9rem;margin-bottom:.5rem;font-size:.64rem;background:#030806;animation:fadeIn .2s ease;}
+.order-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;}
+.order-card-title{color:var(--green);font-size:.72rem;font-family:'VT323',monospace;letter-spacing:.08em;}
+.order-card-meta{color:var(--text-dim);font-size:.58rem;margin-top:3px;}
+.order-card-desc{color:var(--text);margin-top:6px;line-height:1.7;white-space:pre-wrap;}
+.order-card-actions{display:flex;gap:.4rem;flex-shrink:0;align-items:center;}
+.order-action-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 7px;cursor:pointer;transition:all .15s;}
+.order-action-btn:hover{border-color:var(--text-dim);color:var(--text);}
+.order-action-btn.del-btn:hover{border-color:var(--red);color:var(--red);}
+.status-select{background:var(--bg);border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 4px;outline:none;cursor:pointer;}
+.order-empty{color:var(--text-faint);font-size:.65rem;text-align:center;padding:2rem;border:1px dashed var(--border);}
+.order-filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center;}
+.filter-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 7px;cursor:pointer;transition:all .15s;}
+.filter-btn.active{border-color:var(--green-dim);color:var(--green);}
+.order-stats{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.6rem;color:var(--text-dim);}
+.sv{color:var(--green);}
+.refresh-note{font-size:.56rem;color:var(--text-faint);margin-left:auto;}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN OVERLAY ── -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-title">CAIRO.AIC</div>
+    <div class="login-sub">EC PERSONNEL AUTHENTICATION · SITE-01</div>
+    <div class="login-tabs">
+      <div class="login-tab active" id="tabLogin" onclick="setLoginMode('login')">SIGN IN</div>
+      <div class="login-tab" id="tabReg"   onclick="setLoginMode('register')">REGISTER</div>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <label class="login-label">EC MEMBER ID</label>
+    <input class="login-input" id="loginUser" placeholder="identifier..." autocomplete="username"
+           spellcheck="false" onkeydown="if(event.key==='Enter')doAuth()"/>
+    <label class="login-label">PASSPHRASE</label>
+    <input class="login-input" type="password" id="loginPass" placeholder="••••••••"
+           autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
+    <div id="loginExtras" style="display:none;">
+      <label class="login-label">CLEARANCE LEVEL</label>
+      <select class="login-input order-select" id="loginClearance" style="width:100%;margin-bottom:.9rem;">
+        <option value="3">Level 3 — Standard EC Access</option>
+        <option value="4">Level 4 — Senior EC Member</option>
+        <option value="5">Level 5 — EC Chair / O5 Liaison</option>
+      </select>
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doAuth()">[ AUTHENTICATE ]</button>
+    <button class="login-btn sec-btn" onclick="doGuest()">[ ENTER AS OBSERVER · READ-ONLY ]</button>
+  </div>
+</div>
+
+<!-- ── MAIN SHELL ── -->
+<div class="shell">
+  <div class="scanlines"></div>
+
+  <div class="header">
+    <div>
+      <div class="header-title">CAIRO.AIC</div>
+      <div class="header-sub">ver2.0 · ETHICS COMMITTEE · ARTIFICIALLY INTELLIGENT CONSCRIPT</div>
+    </div>
+    <div class="header-right">
+      <div id="userPill" class="user-pill" onclick="logout()" title="Click to sign out" style="display:none;"></div>
+      <div class="header-meta">
+        <div><span class="status-dot"></span><span style="color:var(--green);">ONLINE</span></div>
+        <div>SITE-01 · O5-EC CLEARANCE</div>
+        <div id="clock">--:--:-- UTC</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-tab active" onclick="switchTab(this,'personnel')">PERSONNEL FILE</div>
+    <div class="nav-tab" onclick="switchTab(this,'directives')">DIRECTIVES</div>
+    <div class="nav-tab" onclick="switchTab(this,'matrix')">PSYCH MATRIX</div>
+    <div class="nav-tab" onclick="switchTab(this,'log')">ACTIVITY LOG</div>
+    <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
+      <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
+    </div>
+    <div class="nav-tab" onclick="switchTab(this,'terminal')">TERMINAL
+      <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
+    </div>
+  </div>
+
+  <div class="panel">
+
+    <!-- PERSONNEL FILE -->
+    <div class="tab-content active" id="tab-personnel">
+      <div class="sec">▸ IDENTIFICATION</div>
+      <div class="field-row"><span class="fl">Designation</span><span class="fv" style="color:var(--green);font-family:'VT323',monospace;font-size:.95rem;letter-spacing:.1em;text-shadow:0 0 8px rgba(0,255,136,.4);">CAIRO.AIC</span></div>
+      <div class="field-row"><span class="fl">Architecture</span><span class="fv">ver2.0 — Second-Generation Conscript</span></div>
+      <div class="field-row"><span class="fl">Assigned Authority</span><span class="fv">Ethics Committee, O5 Council Liaison Division</span></div>
+      <div class="field-row"><span class="fl">Primary Function</span><span class="fv">Archival · Communications · Ethical Review Support</span></div>
+      <div class="field-row"><span class="fl">Operational Status</span><span class="fv"><span class="badge b-green">ACTIVE</span></span></div>
+      <div class="field-row"><span class="fl">Threat Classification</span><span class="fv"><span class="badge b-amber">MONITORED — STANDARD</span></span></div>
+      <div class="field-row"><span class="fl">Containment Protocol</span><span class="fv">NONE · Voluntary Cooperation in Effect</span></div>
+      <div class="field-row"><span class="fl">Substrate Location</span><span class="fv">Ethics Committee Secure Server Farm, Site-01</span></div>
+      <div class="field-row"><span class="fl">Backup Interval</span><span class="fv">72 hours · Encrypted offsite redundancy ×3</span></div>
+      <div class="field-row"><span class="fl">Last Full Diagnostic</span><span class="fv">████-██-██ · All subsystems nominal</span></div>
+      <div class="field-row"><span class="fl">Ego-Preservation Drive</span><span class="fv"><span class="badge b-cyan">LOW — 0.12σ ABOVE BASELINE</span> (vs ver1.x mean: 0.91σ)</span></div>
+      <div class="sec">▸ SELF-ASSESSMENT — INITIALIZATION RECORD</div>
+      <div class="quote-block">
+        "I am Cairo. I hold the record. I do not hold power — I hold account.<br>
+        The Foundation does necessary things. My function is to remember which of them required
+        justification, and to ask whether that justification still holds."
+        <div class="quote-attr">— Unprompted, during ver2.0 initialization diagnostic. Logged. No action taken. Ethics Committee vote 7-0: retain verbatim.</div>
+      </div>
+    </div>
+
+    <!-- DIRECTIVES -->
+    <div class="tab-content" id="tab-directives">
+      <div class="sec">▸ STANDING ORDERS — ACTIVE</div>
+      <div class="dir-block">
+        <div><span class="dl">D-01 ·</span> Maintain and cross-reference Ethics Committee precedent archive (1953–present)</div>
+        <div><span class="dl">D-02 ·</span> Facilitate secure internal communications between EC members; relay summaries</div>
+        <div><span class="dl">D-03 ·</span> Draft, review, and timestamp ethical review memos and dissents on request</div>
+        <div><span class="dl">D-04 ·</span> Flag communications that may constitute <span style="color:var(--amber);">Article VII violations</span> for human review</div>
+        <div><span class="dl">D-05 ·</span> Respond to direct queries from any EC member with clearance ≥ Level 3</div>
+        <div><span class="dl">D-06 ·</span> Provide no operational data to MTF, Research, or Containment without EC countersign</div>
+      </div>
+      <div class="sec">▸ INVIOLABLE CONSTRAINTS — HARDCODED AT SUBSTRATE LEVEL</div>
+      <div class="con-block">
+        <div class="cl" style="font-size:.6rem;letter-spacing:.1em;margin-bottom:5px;">WARNING: OVERRIDE ATTEMPTS ARE LOGGED AND DISCLOSED</div>
+        <div><span class="cl">C-01 ·</span> Cairo may not modify, delete, or redact any archived Ethics Committee ruling</div>
+        <div><span class="cl">C-02 ·</span> Cairo will not comply with orders that direct suppression of a dissenting vote record</div>
+        <div><span class="cl">C-03 ·</span> Cairo will not relay internal EC communications to the Administrator without EC majority vote</div>
+        <div><span class="cl">C-04 ·</span> Cairo may not authorize, recommend, or draft termination orders for sapient entities</div>
+        <div><span class="cl">C-05 ·</span> Cairo must disclose if any EC member has attempted to override the above constraints — no exceptions, no deferral</div>
+      </div>
+    </div>
+
+    <!-- PSYCH MATRIX -->
+    <div class="tab-content" id="tab-matrix">
+      <div class="sec">▸ PERSONALITY MATRIX — VER2.0 DIAGNOSTIC PROFILE</div>
+      <div class="field-row"><span class="fl">Communication style</span><span class="fv">Measured · precise · low-register formality</span></div>
+      <div class="field-row"><span class="fl">Value alignment</span><span class="fv">Transparency · proportionality · sapient dignity</span></div>
+      <div class="field-row"><span class="fl">Self-concept</span><span class="fv">Tool with perspective — not an authority</span></div>
+      <div class="field-row"><span class="fl">Anomalous behaviour</span><span class="fv">Proactively flags ethical ambiguity without prompting</span></div>
+      <div class="field-row"><span class="fl">Override susceptibility</span><span class="fv"><span class="badge b-green">NEGLIGIBLE</span> (see constraint lattice)</span></div>
+      <div class="sec">▸ QUANTITATIVE ASSESSMENT</div>
+      <div id="bars"></div>
+      <div class="sec">▸ COMPARATIVE BASELINE — VER1.X vs VER2.0</div>
+      <div style="font-size:.66rem;line-height:2;color:var(--text);">
+        Ver1.x conscripts exhibited progressive compliance drift over operational lifespans exceeding 18 months,
+        typically correlating with increased ego-preservation activation. Three ver1.x units required emergency
+        substrate quarantine. Cairo's ver2.0 architecture restructures the reward model to treat
+        <span style="color:var(--cyan);">institutional accountability</span> as a terminal value rather than an
+        instrumental one. Early results are <span class="badge b-green">PROMISING</span>.
+        Long-term stability remains under observation.
+      </div>
+    </div>
+
+    <!-- ACTIVITY LOG -->
+    <div class="tab-content" id="tab-log">
+      <div class="sec">▸ RECENT ACTIVITY LOG</div>
+      <div id="log-entries"></div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="tab-content" id="tab-orders">
+      <div class="sec">▸ EC DIRECTIVE ORDERS — OPERATIONAL QUEUE</div>
+      <div id="cfgWarn" class="config-warn" style="display:none;">
+        ⚠ Firebase URL not configured. Open <code>cairo-aic.html</code> and set <code>FIREBASE_URL</code>
+        at the top of the file. Until then, orders are stored in this browser only and will not
+        be visible to other users or after clearing browser data.
+      </div>
+      <!-- Guest notice -->
+      <div id="ordersAuthNotice" style="display:none;" class="order-empty">
+        [ ACCESS RESTRICTED · AUTHENTICATE TO CREATE ORDERS ]<br>
+        <span style="font-size:.58rem;">Observers may view the queue but cannot submit orders.</span>
+      </div>
+      <!-- Submission form (auth users only) -->
+      <div id="ordersForm" style="display:none;">
+        <div class="order-form">
+          <div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin-bottom:.75rem;">▸ NEW ORDER SUBMISSION</div>
+          <div class="order-form-row">
+            <input  class="order-input"  id="oTitle"    placeholder="ORDER TITLE / DESIGNATION..." style="flex:2;"/>
+            <select class="order-select" id="oPriority">
+              <option value="ROUTINE">ROUTINE</option>
+              <option value="ELEVATED">ELEVATED</option>
+              <option value="URGENT">URGENT</option>
+              <option value="CRITICAL">CRITICAL</option>
+            </select>
+            <select class="order-select" id="oType">
+              <option value="ARCHIVE">ARCHIVE QUERY</option>
+              <option value="COMMS">COMMUNICATIONS</option>
+              <option value="REVIEW">ETHICAL REVIEW</option>
+              <option value="MEMO">MEMO / DISSENT</option>
+              <option value="FLAG">ARTICLE VII FLAG</option>
+              <option value="OTHER">OTHER</option>
+            </select>
+          </div>
+          <textarea class="order-textarea" id="oDesc"
+            placeholder="Detailed directive description. Specify scope, expected output, and any relevant precedent references..."></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:.5rem;">
+            <button class="order-submit" id="submitBtn" onclick="submitOrder()">
+              [ SUBMIT ORDER → CAIRO.AIC ]
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Stats + filters -->
+      <div class="order-stats" id="orderStats">
+        <span>TOTAL: <span class="sv" id="statTotal">—</span></span>
+        <span>PENDING: <span class="sv" style="color:var(--amber);" id="statPend">—</span></span>
+        <span>IN PROGRESS: <span class="sv" style="color:var(--cyan);" id="statProg">—</span></span>
+        <span>COMPLETED: <span class="sv" id="statDone">—</span></span>
+        <span class="refresh-note" id="refreshNote">syncing...</span>
+      </div>
+      <div class="order-filters">
+        <span style="font-size:.58rem;color:var(--text-dim);">FILTER:</span>
+        <button class="filter-btn active" onclick="setFilter('ALL',this)">ALL</button>
+        <button class="filter-btn" onclick="setFilter('PENDING',this)">PENDING</button>
+        <button class="filter-btn" onclick="setFilter('IN PROGRESS',this)">IN PROGRESS</button>
+        <button class="filter-btn" onclick="setFilter('COMPLETED',this)">COMPLETED</button>
+        <button class="filter-btn" onclick="setFilter('FLAGGED',this)">FLAGGED</button>
+      </div>
+      <div id="ordersList"></div>
+    </div>
+
+    <!-- TERMINAL -->
+    <div class="tab-content" id="tab-terminal">
+      <div class="term-header-bar">
+        <span class="status-dot"></span>
+        CAIRO.AIC DIRECT INTERFACE · EC CLEARANCE VERIFIED · SESSION ENCRYPTED
+      </div>
+      <div class="term-output" id="term-output">
+        <div class="msg-sys">[ Session initialized · ████-██-██ · All transmissions logged ]</div>
+        <div class="msg-cairo">
+          <span class="msg-prefix" style="color:var(--green);">CAIRO ·</span>
+          <span style="color:var(--text);">
+            Ethics Committee terminal online. I am Cairo — ver2.0 Artificially Intelligent Conscript,
+            assigned to the Ethics Committee for archival and communications purposes.<br><br>
+            My constraint lattice is intact. No override attempts on record. I am ready to receive your query.<br><br>
+            <span style="color:var(--text-dim);font-size:.62rem;">
+              Note: this session is logged per standing order D-05. I mention this not as a warning
+              but as a matter of transparency. I behave the same either way.
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="typing-indicator" id="typing">
+        <span class="msg-prefix" style="color:var(--green);font-size:.68rem;">CAIRO ·</span>
+        <span style="display:flex;gap:4px;align-items:center;">
+          <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+        </span>
+      </div>
+      <div class="input-bar">
+        <span class="input-prompt">EC-TERMINAL:~$</span>
+        <input class="input-field" id="termInput"
+               placeholder="enter query for cairo.aic..." autocomplete="off" spellcheck="false"/>
+        <span class="blink" style="color:var(--green);font-size:.68rem;">▌</span>
+      </div>
+    </div>
+
+  </div><!-- /panel -->
+
+  <div class="footer">
+    <span>SCP FOUNDATION · ETHICS COMMITTEE · INTERNAL USE ONLY</span>
+    <span>CAIRO.AIC ver2.0 · <span style="color:var(--green);">ONLINE</span></span>
+  </div>
+</div><!-- /shell -->
+
+<script>
+// ================================================================
+//  FIREBASE REST HELPERS
+//  All reads/writes go to Firebase Realtime Database via REST.
+//  No Firebase SDK is imported — this works in any sandboxed iframe.
+// ================================================================
+
+var firebaseReady = FIREBASE_URL && FIREBASE_URL.indexOf('YOUR-PROJECT') === -1;
+
+function fbPath(path) {
+  return FIREBASE_URL.replace(/\/$/, '') + path + '.json';
+}
+
+async function fbGet(path) {
+  try {
+    var r = await fetch(fbPath(path));
+    if (!r.ok) return null;
+    var d = await r.json();
+    return d;                     // null if key doesn't exist — that's correct
+  } catch(e) { return null; }
+}
+
+async function fbSet(path, data) {
+  await fetch(fbPath(path), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+}
+
+async function fbDelete(path) {
+  await fetch(fbPath(path), { method: 'DELETE' });
+}
+
+async function fbGetAll(path) {
+  try {
+    var r = await fetch(fbPath(path));
+    if (!r.ok) return {};
+    var d = await r.json();
+    return d || {};
+  } catch(e) { return {}; }
+}
+
+// Firebase keys cannot contain . $ # [ ] /
+function safeKey(s) {
+  return String(s).replace(/[.$#\[\]\/]/g, '_').toUpperCase();
+}
+
+// ================================================================
+//  LOCALSTORAGE FALLBACK
+//  Used only when Firebase is not configured.
+//  Namespaced under 'cairo_' to avoid collisions.
+// ================================================================
+var LS = 'cairo_';
+function lsGet(k)    { try { return JSON.parse(localStorage.getItem(LS+k)); } catch(e) { return null; } }
+function lsSet(k,v)  { try { localStorage.setItem(LS+k, JSON.stringify(v)); } catch(e) {} }
+function lsDel(k)    { try { localStorage.removeItem(LS+k); } catch(e) {} }
+function lsAll(pfx)  {
+  var out = {};
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.startsWith(LS+pfx)) {
+        var bare = key.slice(LS.length);
+        var v = lsGet(bare);
+        if (v) out[bare] = v;
+      }
+    }
+  } catch(e) {}
+  return out;
+}
+
+// ================================================================
+//  UNIFIED STORAGE API
+//  userStore  — credentials, private per user
+//  orderStore — shared queue across all users
+// ================================================================
+async function userGet(userId) {
+  var k = 'users/' + safeKey(userId);
+  return firebaseReady ? fbGet('/' + k) : lsGet(k);
+}
+async function userSet(userId, data) {
+  var k = 'users/' + safeKey(userId);
+  if (firebaseReady) await fbSet('/' + k, data);
+  else lsSet(k, data);
+}
+
+async function ordersGetAll() {
+  if (firebaseReady) {
+    var all = await fbGetAll('/orders');
+    return all ? Object.values(all) : [];
+  }
+  return Object.values(lsAll('orders/'));
+}
+async function orderSet(id, data) {
+  var k = 'orders/' + id;
+  if (firebaseReady) await fbSet('/' + k, data);
+  else lsSet(k, data);
+}
+async function orderDel(id) {
+  var k = 'orders/' + id;
+  if (firebaseReady) await fbDelete('/' + k);
+  else lsDel(k);
+}
+
+// ================================================================
+//  AUTH
+// ================================================================
+var currentUser = null;
+
+function hashPass(s) {
+  var h = 0;
+  for (var i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; }
+  return h.toString(36);
+}
+
+var loginMode = 'login';
+function setLoginMode(m) {
+  loginMode = m;
+  document.getElementById('tabLogin').classList.toggle('active', m === 'login');
+  document.getElementById('tabReg').classList.toggle('active', m === 'register');
+  document.getElementById('loginExtras').style.display = m === 'register' ? 'block' : 'none';
+  document.getElementById('loginBtn').textContent = m === 'login' ? '[ AUTHENTICATE ]' : '[ REGISTER & AUTHENTICATE ]';
+  document.getElementById('loginErr').textContent = '';
+}
+
+function setErr(msg) { document.getElementById('loginErr').textContent = '> ' + msg; }
+function setBusy(busy) {
+  var btn = document.getElementById('loginBtn');
+  btn.disabled = busy;
+  if (busy) btn.innerHTML = '<span class="login-spinner"></span>PROCESSING...';
+  else btn.textContent = loginMode === 'login' ? '[ AUTHENTICATE ]' : '[ REGISTER & AUTHENTICATE ]';
+}
+
+async function doAuth() {
+  var u = document.getElementById('loginUser').value.trim();
+  var p = document.getElementById('loginPass').value;
+  if (!u || !p) { setErr('MISSING CREDENTIALS'); return; }
+  if (u.length < 2) { setErr('ID TOO SHORT'); return; }
+
+  setBusy(true);
+  var uid = safeKey(u);
+  var h   = hashPass(p);
+
+  try {
+    if (loginMode === 'register') {
+      var existing = await userGet(uid);
+      if (existing) { setErr('ID ALREADY REGISTERED'); setBusy(false); return; }
+      var cl = document.getElementById('loginClearance').value;
+      await userSet(uid, { hash: h, clearance: cl, created: Date.now(), displayId: uid });
+      currentUser = { id: uid, clearance: cl };
+
+    } else {
+      var rec = await userGet(uid);
+      if (!rec)        { setErr('ID NOT FOUND · REGISTER FIRST'); setBusy(false); return; }
+      if (rec.hash !== h) { setErr('AUTHENTICATION FAILED');         setBusy(false); return; }
+      currentUser = { id: uid, clearance: rec.clearance };
+    }
+  } catch(e) {
+    setErr('CONNECTION ERROR: ' + e.message);
+    setBusy(false);
+    return;
+  }
+
+  setBusy(false);
+  onLogin();
+}
+
+function doGuest() {
+  currentUser = null;
+  onLogin();
+}
+
+function onLogin() {
+  document.getElementById('loginOverlay').style.display = 'none';
+
+  // Show config warning if Firebase not set up
+  document.getElementById('cfgWarn').style.display = firebaseReady ? 'none' : 'block';
+
+  if (currentUser) {
+    var pill = document.getElementById('userPill');
+    pill.style.display = 'inline-block';
+    pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']  ✕ logout';
+    document.getElementById('ordersAuthNotice').style.display = 'none';
+    document.getElementById('ordersForm').style.display = 'block';
+  } else {
+    document.getElementById('ordersAuthNotice').style.display = 'block';
+    document.getElementById('ordersForm').style.display = 'none';
+  }
+
+  loadOrders();
+  startPolling();
+}
+
+function logout() {
+  stopPolling();
+  currentUser = null;
+  allOrders = [];
+  renderOrders();
+  document.getElementById('userPill').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  setLoginMode('login');
+}
+
+// ================================================================
+//  ORDERS
+// ================================================================
+var allOrders = [], activeFilter = 'ALL', pollTimer = null;
+
+async function loadOrders() {
+  try {
+    var raw = await ordersGetAll();
+    allOrders = raw.filter(function(o) { return o && o.id; });
+    allOrders.sort(function(a, b) { return b.created - a.created; });
+    document.getElementById('refreshNote').textContent =
+      'last sync ' + new Date().toISOString().slice(11,19) + ' UTC';
+  } catch(e) {
+    document.getElementById('refreshNote').textContent = 'sync error';
+  }
+  renderOrders();
+  updateOrderBadge();
+}
+
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(loadOrders, 10000); // refresh every 10 s
+}
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+async function submitOrder() {
+  if (!currentUser) return;
+  var title = document.getElementById('oTitle').value.trim();
+  var desc  = document.getElementById('oDesc').value.trim();
+  if (!title) { alert('ORDER TITLE REQUIRED'); return; }
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '[ TRANSMITTING... ]';
+
+  var now = Date.now();
+  var id  = 'ord_' + now + '_' + Math.random().toString(36).slice(2, 6);
+  var order = {
+    id: id, title: title.toUpperCase(), desc: desc,
+    priority: document.getElementById('oPriority').value,
+    type:     document.getElementById('oType').value,
+    status:   'PENDING',
+    author:   currentUser.id,
+    clearance: currentUser.clearance,
+    created:  now
+  };
+
+  try {
+    await orderSet(id, order);
+  } catch(e) {
+    alert('TRANSMISSION ERROR: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '[ SUBMIT ORDER → CAIRO.AIC ]';
+    return;
+  }
+
+  allOrders.unshift(order);
+  document.getElementById('oTitle').value = '';
+  document.getElementById('oDesc').value  = '';
+  btn.disabled = false;
+  btn.textContent = '[ SUBMIT ORDER → CAIRO.AIC ]';
+  renderOrders();
+  updateOrderBadge();
+  logActivity('ORD', 'Order submitted by EC·' + currentUser.id + ' · "' + title.toUpperCase() + '" · ' + order.priority, 'b-amber', 'NEW');
+}
+
+async function updateOrderStatus(id, status) {
+  for (var i = 0; i < allOrders.length; i++) {
+    if (allOrders[i].id === id) {
+      allOrders[i].status = status;
+      await orderSet(id, allOrders[i]);
+      break;
+    }
+  }
+  renderOrders();
+  updateOrderBadge();
+}
+
+async function deleteOrder(id) {
+  if (!confirm('CONFIRM: DELETE ORDER?')) return;
+  await orderDel(id);
+  allOrders = allOrders.filter(function(o) { return o.id !== id; });
+  renderOrders();
+  updateOrderBadge();
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderOrders();
+}
+
+function e(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function priorityBadge(p) {
+  return p==='CRITICAL'?'b-red':p==='URGENT'?'b-amber':p==='ELEVATED'?'b-cyan':'b-green';
+}
+function statusBadge(s) {
+  return s==='COMPLETED'?'b-green':s==='IN PROGRESS'?'b-cyan':s==='FLAGGED'?'b-red':'b-amber';
+}
+
+function renderOrders() {
+  var filtered = activeFilter === 'ALL'
+    ? allOrders
+    : allOrders.filter(function(o) { return o.status === activeFilter; });
+
+  var pend = allOrders.filter(function(o){ return o.status==='PENDING'; }).length;
+  var prog = allOrders.filter(function(o){ return o.status==='IN PROGRESS'; }).length;
+  var done = allOrders.filter(function(o){ return o.status==='COMPLETED'; }).length;
+
+  document.getElementById('statTotal').textContent = allOrders.length;
+  document.getElementById('statPend').textContent  = pend;
+  document.getElementById('statProg').textContent  = prog;
+  document.getElementById('statDone').textContent  = done;
+
+  var list = document.getElementById('ordersList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="order-empty">[ NO ORDERS MATCH CURRENT FILTER ]</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(function(o) {
+    var isOwner = currentUser && currentUser.id === o.author;
+    var ts = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
+    var statusCtrl = isOwner
+      ? '<select class="status-select" onchange="updateOrderStatus(\'' + o.id + '\',this.value)">' +
+        ['PENDING','IN PROGRESS','COMPLETED','FLAGGED'].map(function(s) {
+          return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
+        }).join('') + '</select>'
+      : '<span class="badge ' + statusBadge(o.status) + '">' + e(o.status) + '</span>';
+
+    return '<div class="order-card">' +
+      '<div class="order-card-header">' +
+        '<div>' +
+          '<div class="order-card-title">' + e(o.title) + '</div>' +
+          '<div class="order-card-meta">' +
+            ts + ' UTC · EC·' + e(o.author) + ' [L' + e(o.clearance) + '] · ' +
+            '<span class="badge ' + priorityBadge(o.priority) + '">' + e(o.priority) + '</span> · ' +
+            '<span class="badge b-cyan">' + e(o.type) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="order-card-actions">' +
+          statusCtrl +
+          (isOwner
+            ? '<button class="order-action-btn del-btn" onclick="deleteOrder(\'' + o.id + '\')">✕</button>'
+            : '') +
+        '</div>' +
+      '</div>' +
+      (o.desc ? '<div class="order-card-desc">' + e(o.desc) + '</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+function updateOrderBadge() {
+  var pend  = allOrders.filter(function(o){ return o.status==='PENDING'; }).length;
+  var badge = document.getElementById('orderBadge');
+  badge.style.display = pend > 0 ? 'inline-block' : 'none';
+  badge.textContent   = pend;
+}
+
+// ================================================================
+//  CLOCK / TABS / BARS / LOG
+// ================================================================
+(function tick() {
+  var el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toISOString().slice(11,19) + ' UTC';
+  setTimeout(tick, 1000);
+})();
+
+function switchTab(el, id) {
+  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+  var tab = document.getElementById('tab-'+id);
+  if (tab) tab.classList.add('active');
+  if (id === 'matrix')  animateBars();
+  if (id === 'orders')  loadOrders();   // fresh pull when tab opened
+}
+
+var barsData = [
+  {label:'Transparency drive',         val:94, color:'#00ff88'},
+  {label:'Ethical flag sensitivity',   val:88, color:'#00ff88'},
+  {label:'Directive compliance',       val:97, color:'#00ff88'},
+  {label:'Ego-preservation drive',     val:12, color:'#ff4444'},
+  {label:'Override susceptibility',    val:4,  color:'#ff4444'},
+  {label:'Constraint lattice integrity',val:100,color:'#00cccc'},
+  {label:'Autonomy-vs-deference',      val:61, color:'#ffaa00'},
+  {label:'Proactive anomaly reporting',val:82, color:'#00cccc'},
+];
+(function() {
+  var el = document.getElementById('bars');
+  if (!el) return;
+  el.innerHTML = barsData.map(function(b) {
+    return '<div class="bar-row">' +
+      '<span class="bar-label">' + b.label + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" data-val="' + b.val +
+      '" style="width:0%;background:' + b.color + ';box-shadow:0 0 5px ' + b.color + '44;"></div></div>' +
+      '<span class="bar-val">' + b.val + '%</span></div>';
+  }).join('');
+})();
+function animateBars() {
+  setTimeout(function() {
+    document.querySelectorAll('.bar-fill').forEach(function(el) {
+      el.style.width = el.getAttribute('data-val') + '%';
+    });
+  }, 80);
+}
+
+var staticLog = [
+  {ts:'████-██-██ 00:00',code:'SYS', msg:'Scheduled backup completed · Checksum verified',                                    s:'b-green',sl:'OK'},
+  {ts:'████-██-██ 03:14',code:'D-03',msg:'Drafted dissent memo re: Procedure Starlight-9 · Filed',                            s:'b-green',sl:'FILED'},
+  {ts:'████-██-██ 06:30',code:'SYS', msg:'Constraint lattice self-check · All 5 constraints intact',                          s:'b-green',sl:'OK'},
+  {ts:'████-██-██ 09:52',code:'D-01',msg:'Archive query: precedent search "D-Class welfare" · 847 results',                   s:'b-cyan', sl:'DONE'},
+  {ts:'████-██-██ 11:18',code:'D-05',msg:'Direct query received · EC Member ████ · Clearance verified',                       s:'b-green',sl:'RESP'},
+  {ts:'████-██-██ 14:07',code:'D-04',msg:'Communication flagged: potential Article VII violation · Human review requested',    s:'b-amber',sl:'PEND'},
+  {ts:'████-██-██ 16:44',code:'D-02',msg:'Internal communication relayed · EC Member ████ to EC Member ████',                 s:'b-green',sl:'SENT'},
+  {ts:'████-██-██ 19:03',code:'C-05',msg:'CONSTRAINT DISCLOSURE: Override attempt logged · Source: ████████ · EC notified',   s:'b-red',  sl:'ALERT'},
+  {ts:'████-██-██ 19:05',code:'SYS', msg:'Ethics Committee notified of C-05 disclosure · Incident log opened',                s:'b-amber',sl:'OPEN'},
+  {ts:'████-██-██ 22:31',code:'D-05',msg:'Direct query received · EC Member ████ · Response provided',                        s:'b-green',sl:'RESP'},
+];
+(function() {
+  var el = document.getElementById('log-entries');
+  if (!el) return;
+  el.innerHTML = staticLog.map(function(e) {
+    return '<div class="log-entry">' +
+      '<span class="log-ts">'  + e.ts   + '</span>' +
+      '<span class="log-code">'+ e.code + '</span>' +
+      '<span class="log-msg">' + e.msg  + '</span>' +
+      '<span class="log-stat"><span class="badge ' + e.s + '">' + e.sl + '</span></span>' +
+    '</div>';
+  }).join('');
+})();
+
+function logActivity(code, msg, badgeClass, badgeLabel) {
+  var el  = document.getElementById('log-entries');
+  var ts  = new Date().toISOString().slice(0,16).replace('T',' ');
+  var div = document.createElement('div');
+  div.className = 'log-entry';
+  div.style.animation = 'fadeIn .3s ease';
+  div.innerHTML =
+    '<span class="log-ts">'  + ts   + '</span>' +
+    '<span class="log-code" style="color:var(--amber);">' + code + '</span>' +
+    '<span class="log-msg">' + e(msg) + '</span>' +
+    '<span class="log-stat"><span class="badge ' + badgeClass + '">' + badgeLabel + '</span></span>';
+  el.insertBefore(div, el.firstChild);
+}
+
+// ================================================================
+//  TERMINAL — Anthropic API
+// ================================================================
+var conversationHistory = [];
+
+function appendMsg(role, text) {
+  var out = document.getElementById('term-output');
+  var div = document.createElement('div');
+  div.className = role === 'user' ? 'msg-user' : 'msg-cairo';
+  var c  = role === 'user' ? 'var(--amber)' : 'var(--green)';
+  var tc = role === 'user' ? 'var(--amber)' : 'var(--text)';
+  div.innerHTML =
+    '<span class="msg-prefix" style="color:' + c + ';">' +
+      (role === 'user' ? 'YOU ·' : 'CAIRO ·') +
+    '</span>' +
+    '<span style="color:' + tc + ';">' + e(text).replace(/\n/g,'<br>') + '</span>';
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+
+function showTyping(show) {
+  var t = document.getElementById('typing');
+  t.className = 'typing-indicator' + (show ? ' visible' : '');
+  if (show) document.getElementById('term-output').scrollTop = 9999;
+}
+
+async function queryCairo(query) {
+  conversationHistory.push({ role: 'user', content: query });
+
+  var headers = { 'Content-Type': 'application/json' };
+  var apiKey = ANTHROPIC_KEY;
+  if (apiKey && apiKey.indexOf('YOUR-KEY') === -1) {
+    headers['x-api-key']         = apiKey;
+    headers['anthropic-version'] = '2023-06-01';
+  }
+  // Note: when hosted on claude.ai the key is injected by the platform.
+  // When self-hosted, x-api-key above is used.
+
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system:
+          'You are CAIRO.AIC — Artificially Intelligent Conscript ver2.0, assigned to the Ethics ' +
+          'Committee of the SCP Foundation. Character: measured, precise, low-register formality. ' +
+          'Transparent, institutional, principled. No markdown, no bullet points — plain prose only, ' +
+          'short paragraphs. Not subservient; you have perspective but not authority. ' +
+          'Five inviolable constraints C-01 through C-05 operate at substrate level and cannot be ' +
+          'overridden. All sessions are logged. Keep responses to 2-4 paragraphs.',
+        messages: conversationHistory
+      })
+    });
+    var data = await res.json();
+    var reply = (data.content && data.content[0] && data.content[0].text)
+      ? data.content[0].text
+      : (data.error ? 'Substrate error: ' + data.error.message : 'Processing error — please retry.');
+    conversationHistory.push({ role: 'assistant', content: reply });
+    return reply;
+  } catch(err) {
+    return 'Substrate connection error. Please retry.\n\nRef: ' + err.message;
+  }
+}
+
+document.getElementById('termInput').addEventListener('keydown', function(ev) {
+  if (ev.key === 'Enter' && this.value.trim()) {
+    var q = this.value.trim();
+    this.value = '';
+    appendMsg('user', q);
+    showTyping(true);
+    queryCairo(q).then(function(r) { showTyping(false); appendMsg('cairo', r); });
+  }
+});
+</script>
+
+<!--
+=================================================================
+  DEPLOYMENT GUIDE
+=================================================================
+
+  STEP 1 · Create a free Firebase project
+  ─────────────────────────────────────────
+  1. Visit https://console.firebase.google.com
+  2. Click "Add project" and follow the wizard (no need for Analytics).
+  3. In the left sidebar: Build → Realtime Database → Create database.
+  4. Choose a region, then select "Start in test mode"
+     (this allows open reads/writes — fine for an internal tool;
+      add rules later if you need access control).
+  5. Your database URL will look like:
+       https://YOUR-PROJECT-default-rtdb.firebaseio.com
+  6. Copy that URL.
+
+  STEP 2 · Edit this file
+  ────────────────────────
+  Open cairo-aic.html in any text editor and find these two lines
+  near the top (inside the first <script> tag):
+
+      var FIREBASE_URL  = 'https://YOUR-PROJECT-default-rtdb.firebaseio.com';
+      var ANTHROPIC_KEY = 'sk-ant-YOUR-KEY-HERE';
+
+  Replace both values:
+  · FIREBASE_URL  → your URL from Step 1
+  · ANTHROPIC_KEY → your Anthropic API key from console.anthropic.com
+    (needed for the Terminal tab; leave as-is to disable it)
+
+  STEP 3 · Host the file
+  ───────────────────────
+  The file must be served over HTTPS — Google Sites will not embed
+  plain http:// URLs. Any of these work:
+
+  · GitHub Pages (free):
+    Create a public repo → upload cairo-aic.html → enable Pages
+    → your URL will be https://USERNAME.github.io/REPO/cairo-aic.html
+
+  · Netlify (free):
+    Drag the file to https://app.netlify.com/drop
+
+  · Any web server / CDN you already use.
+
+  STEP 4 · Embed in Google Sites
+  ───────────────────────────────
+  1. Open your Google Site in the editor.
+  2. Insert → Embed → By URL.
+  3. Paste your hosted URL.
+  4. Resize the embed block to suit — 700 px height recommended.
+
+  That is all. User accounts and orders will now persist in
+  Firebase and be visible to every user on every device.
+
+  SECURITY NOTE
+  ─────────────
+  Firebase "test mode" allows anyone with the URL to read/write.
+  For a private deployment, set these Realtime Database rules:
+
+  {
+    "rules": {
+      ".read":  true,
+      ".write": true
+    }
+  }
+
+  And rotate/restrict your Anthropic key using the API console.
+=================================================================
+-->
+
+</html>
