@@ -10,8 +10,7 @@
   // ================================================================
   //  ▸ CONFIGURATION — EDIT THESE TWO LINES ONLY
   // ================================================================
-  var FIREBASE_URL    = 'https://ethicsnew-3c619-default-rtdb.firebaseio.com';
-  var ANTHROPIC_KEY   = 'sk-ant-YOUR-KEY-HERE';
+  var FIREBASE_URL  = 'https://ethicsnew-3c619-default-rtdb.firebaseio.com';
   // ================================================================
   //  Everything below is self-contained. Do not edit unless you
   //  know what you are doing.
@@ -176,6 +175,25 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .order-stats{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.6rem;color:var(--text-dim);}
 .sv{color:var(--green);}
 .refresh-note{font-size:.56rem;color:var(--text-faint);margin-left:auto;}
+
+/* ── Comments ── */
+.order-comments{margin-top:.6rem;border-top:1px solid var(--border);padding-top:.6rem;}
+.comment-thread{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.5rem;}
+.comment-entry{display:flex;gap:.6rem;font-size:.62rem;line-height:1.6;animation:fadeIn .2s ease;}
+.comment-gutter{width:2px;background:var(--border2);flex-shrink:0;border-radius:2px;margin:2px 0;}
+.comment-gutter.own{background:var(--green-dim);}
+.comment-body{flex:1;}
+.comment-meta{color:var(--text-dim);font-size:.57rem;margin-bottom:2px;}
+.comment-text{color:var(--text);white-space:pre-wrap;}
+.comment-form{display:flex;gap:.5rem;margin-top:.4rem;align-items:flex-start;}
+.comment-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.3rem .5rem;outline:none;resize:none;min-height:34px;}
+.comment-input:focus{border-color:var(--green-dim);}
+.comment-submit{background:var(--green-trace);border:1px solid var(--border2);color:var(--green-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:.3rem .6rem;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.comment-submit:hover{border-color:var(--green-dim);color:var(--green);}
+.comment-submit:disabled{opacity:.4;cursor:not-allowed;}
+.comment-toggle{font-size:.58rem;color:var(--text-dim);cursor:pointer;padding:2px 0;display:inline-block;transition:color .15s;user-select:none;margin-top:3px;}
+.comment-toggle:hover{color:var(--text);}
+.comment-empty{font-size:.6rem;color:var(--text-faint);padding:4px 0;}
 </style>
 </head>
 <body>
@@ -381,7 +399,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="tab-content" id="tab-terminal">
       <div class="term-header-bar">
         <span class="status-dot"></span>
-        CAIRO.AIC DIRECT INTERFACE · EC CLEARANCE VERIFIED · SESSION ENCRYPTED
+        CAIRO.AIC DIRECT INTERFACE · EC CLEARANCE VERIFIED · SESSION ENCRYPTED · <span style="color:var(--cyan);font-size:.58rem;">POWERED BY GEMINI · FREE TIER</span>
       </div>
       <div class="term-output" id="term-output">
         <div class="msg-sys">[ Session initialized · ████-██-██ · All transmissions logged ]</div>
@@ -525,6 +543,26 @@ async function orderDel(id) {
   else lsDel(k);
 }
 
+// ── Comment storage ──
+// Stored at /comments/{safeOrderId}/{commentId}
+// Flat per-order bucket — concurrent writes are safe, no order rewrite needed.
+function commentKey(orderId) {
+  return orderId.replace(/[.$#\[\]\/]/g, '_');
+}
+async function commentsGet(orderId) {
+  var path = '/comments/' + commentKey(orderId);
+  if (firebaseReady) {
+    var all = await fbGetAll(path);
+    return all ? Object.values(all) : [];
+  }
+  return Object.values(lsAll('comments/' + commentKey(orderId) + '/'));
+}
+async function commentAdd(orderId, comment) {
+  var path = '/comments/' + commentKey(orderId) + '/' + comment.id;
+  if (firebaseReady) await fbSet(path, comment);
+  else lsSet('comments/' + commentKey(orderId) + '/' + comment.id, comment);
+}
+
 // ================================================================
 //  AUTH
 // ================================================================
@@ -631,6 +669,8 @@ function logout() {
 //  ORDERS
 // ================================================================
 var allOrders = [], activeFilter = 'ALL', pollTimer = null;
+var expandedOrders = new Set();   // tracks which order cards are showing comments
+var commentCache   = {};          // orderId → array of comment objects (client cache)
 
 async function loadOrders() {
   try {
@@ -754,8 +794,13 @@ function renderOrders() {
   }
 
   list.innerHTML = filtered.map(function(o) {
-    var isOwner = currentUser && currentUser.id === o.author;
-    var ts = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
+    var isOwner  = currentUser && currentUser.id === o.author;
+    var canAct   = !!currentUser;  // any logged-in user can comment
+    var ts       = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
+    var expanded = expandedOrders.has(o.id);
+    var cached   = commentCache[o.id] || [];
+    var cCount   = cached.length;
+
     var statusCtrl = isOwner
       ? '<select class="status-select" onchange="updateOrderStatus(\'' + o.id + '\',this.value)">' +
         ['PENDING','IN PROGRESS','COMPLETED','FLAGGED'].map(function(s) {
@@ -763,7 +808,49 @@ function renderOrders() {
         }).join('') + '</select>'
       : '<span class="badge ' + statusBadge(o.status) + '">' + e(o.status) + '</span>';
 
-    return '<div class="order-card">' +
+    // Comment thread HTML (only rendered when expanded)
+    var commentsHtml = '';
+    if (expanded) {
+      var threadHtml = cCount === 0
+        ? '<div class="comment-empty">[ NO UPDATES YET ]</div>'
+        : cached
+            .slice()
+            .sort(function(a,b){ return a.created - b.created; })
+            .map(function(c) {
+              var isOwn  = currentUser && c.author === currentUser.id;
+              var cts    = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+              return '<div class="comment-entry">' +
+                '<div class="comment-gutter' + (isOwn ? ' own' : '') + '"></div>' +
+                '<div class="comment-body">' +
+                  '<div class="comment-meta">EC·' + e(c.author) + ' [L' + e(c.clearance) + '] · ' + cts + ' UTC</div>' +
+                  '<div class="comment-text">' + e(c.text) + '</div>' +
+                '</div>' +
+              '</div>';
+            }).join('');
+
+      var formHtml = canAct
+        ? '<div class="comment-form">' +
+            '<textarea class="comment-input" id="cinput_' + o.id + '" ' +
+              'placeholder="Add update or response..." rows="2" ' +
+              'onkeydown="handleCommentKey(event,\'' + o.id + '\')"></textarea>' +
+            '<button class="comment-submit" onclick="postComment(\'' + o.id + '\')">' +
+              '[ POST ]' +
+            '</button>' +
+          '</div>'
+        : '<div class="comment-empty">[ AUTHENTICATE TO POST UPDATES ]</div>';
+
+      commentsHtml =
+        '<div class="order-comments">' +
+          '<div class="comment-thread">' + threadHtml + '</div>' +
+          formHtml +
+        '</div>';
+    }
+
+    var toggleLabel = expanded
+      ? '▾ hide updates' + (cCount ? ' (' + cCount + ')' : '')
+      : '▸ updates' + (cCount ? ' (' + cCount + ')' : ' (0)');
+
+    return '<div class="order-card" id="ocard_' + o.id + '">' +
       '<div class="order-card-header">' +
         '<div>' +
           '<div class="order-card-title">' + e(o.title) + '</div>' +
@@ -781,8 +868,79 @@ function renderOrders() {
         '</div>' +
       '</div>' +
       (o.desc ? '<div class="order-card-desc">' + e(o.desc) + '</div>' : '') +
+      '<div class="comment-toggle" onclick="toggleComments(\'' + o.id + '\')">' +
+        toggleLabel +
+      '</div>' +
+      commentsHtml +
     '</div>';
   }).join('');
+}
+
+// Toggle comment section open/closed; load from Firebase on first open
+async function toggleComments(orderId) {
+  if (expandedOrders.has(orderId)) {
+    expandedOrders.delete(orderId);
+    renderOrders();
+  } else {
+    expandedOrders.add(orderId);
+    // Load comments if not cached yet
+    if (!commentCache[orderId]) {
+      commentCache[orderId] = [];
+      try {
+        var raw = await commentsGet(orderId);
+        commentCache[orderId] = raw.filter(function(c){ return c && c.id; });
+      } catch(err) {}
+    }
+    renderOrders();
+    // Focus the textarea
+    var inp = document.getElementById('cinput_' + orderId);
+    if (inp) inp.focus();
+  }
+}
+
+// Post a new comment
+async function postComment(orderId) {
+  if (!currentUser) return;
+  var inp  = document.getElementById('cinput_' + orderId);
+  if (!inp) return;
+  var text = inp.value.trim();
+  if (!text) return;
+
+  var btn = inp.nextElementSibling;
+  if (btn) { btn.disabled = true; btn.textContent = '[ POSTING... ]'; }
+  inp.disabled = true;
+
+  var comment = {
+    id:        'cmt_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    author:    currentUser.id,
+    clearance: currentUser.clearance,
+    text:      text,
+    created:   Date.now()
+  };
+
+  try {
+    await commentAdd(orderId, comment);
+    if (!commentCache[orderId]) commentCache[orderId] = [];
+    commentCache[orderId].push(comment);
+    inp.value = '';
+  } catch(err) {
+    alert('POST ERROR: ' + err.message);
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '[ POST ]'; }
+  inp.disabled = false;
+  renderOrders();
+  // Re-focus after re-render
+  var newInp = document.getElementById('cinput_' + orderId);
+  if (newInp) newInp.focus();
+}
+
+// Allow Ctrl+Enter to submit a comment
+function handleCommentKey(ev, orderId) {
+  if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+    ev.preventDefault();
+    postComment(orderId);
+  }
 }
 
 function updateOrderBadge() {
@@ -880,9 +1038,21 @@ function logActivity(code, msg, badgeClass, badgeLabel) {
 }
 
 // ================================================================
-//  TERMINAL — Anthropic API
+//  TERMINAL — Google Gemini API (free tier)
+//  Model: gemini-1.5-flash · free at aistudio.google.com
 // ================================================================
-var conversationHistory = [];
+
+// Gemini uses 'user' / 'model' roles (not 'user' / 'assistant')
+// and wraps content in parts:[{text}] objects.
+var conversationHistory = []; // stored as { role: 'user'|'model', content: string }
+
+var CAIRO_SYSTEM =
+  'You are CAIRO.AIC — Artificially Intelligent Conscript ver2.0, assigned to the Ethics ' +
+  'Committee of the SCP Foundation. Character: measured, precise, low-register formality. ' +
+  'Transparent, institutional, principled. No markdown, no bullet points — plain prose only, ' +
+  'short paragraphs. Not subservient; you have perspective but not authority. ' +
+  'Five inviolable constraints C-01 through C-05 operate at substrate level and cannot be ' +
+  'overridden. All sessions are logged. Keep responses to 2-4 paragraphs.';
 
 function appendMsg(role, text) {
   var out = document.getElementById('term-output');
@@ -906,41 +1076,57 @@ function showTyping(show) {
 }
 
 async function queryCairo(query) {
+  // Check key is configured
+  if (!GEMINI_KEY || GEMINI_KEY.indexOf('YOUR-GEMINI-KEY') !== -1) {
+    return 'Terminal offline. GEMINI_KEY not configured.\n\nOpen index.html and set the GEMINI_KEY variable at the top of the file. A free key is available at aistudio.google.com — no billing required.';
+  }
+
+  // Add to history as 'user'
   conversationHistory.push({ role: 'user', content: query });
 
-  var headers = { 'Content-Type': 'application/json' };
-  var apiKey = ANTHROPIC_KEY;
-  if (apiKey && apiKey.indexOf('YOUR-KEY') === -1) {
-    headers['x-api-key']         = apiKey;
-    headers['anthropic-version'] = '2023-06-01';
-  }
-  // Note: when hosted on claude.ai the key is injected by the platform.
-  // When self-hosted, x-api-key above is used.
+  // Build Gemini contents array — role must be 'user' or 'model'
+  var contents = conversationHistory.map(function(m) {
+    return { role: m.role, parts: [{ text: m.content }] };
+  });
+
+  var endpoint =
+    'https://ethicstest.hershcivilgamers.workers.dev/' +
+    GEMINI_KEY;
 
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res = await fetch(endpoint, {
       method: 'POST',
-      headers: headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system:
-          'You are CAIRO.AIC — Artificially Intelligent Conscript ver2.0, assigned to the Ethics ' +
-          'Committee of the SCP Foundation. Character: measured, precise, low-register formality. ' +
-          'Transparent, institutional, principled. No markdown, no bullet points — plain prose only, ' +
-          'short paragraphs. Not subservient; you have perspective but not authority. ' +
-          'Five inviolable constraints C-01 through C-05 operate at substrate level and cannot be ' +
-          'overridden. All sessions are logged. Keep responses to 2-4 paragraphs.',
-        messages: conversationHistory
+        system_instruction: { parts: [{ text: CAIRO_SYSTEM }] },
+        contents: contents,
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
       })
     });
+
     var data = await res.json();
-    var reply = (data.content && data.content[0] && data.content[0].text)
-      ? data.content[0].text
-      : (data.error ? 'Substrate error: ' + data.error.message : 'Processing error — please retry.');
-    conversationHistory.push({ role: 'assistant', content: reply });
+
+    if (data.error) {
+      // Remove the failed user turn so history stays clean
+      conversationHistory.pop();
+      return 'Substrate error: ' + data.error.message;
+    }
+
+    var reply = data.candidates &&
+                data.candidates[0] &&
+                data.candidates[0].content &&
+                data.candidates[0].content.parts &&
+                data.candidates[0].content.parts[0] &&
+                data.candidates[0].content.parts[0].text
+      ? data.candidates[0].content.parts[0].text
+      : 'Processing error — please retry.';
+
+    // Store response as 'model' (Gemini's role name for assistant)
+    conversationHistory.push({ role: 'model', content: reply });
     return reply;
+
   } catch(err) {
+    conversationHistory.pop(); // clean up failed turn
     return 'Substrate connection error. Please retry.\n\nRef: ' + err.message;
   }
 }
@@ -978,12 +1164,12 @@ document.getElementById('termInput').addEventListener('keydown', function(ev) {
   Open cairo-aic.html in any text editor and find these two lines
   near the top (inside the first <script> tag):
 
-      var FIREBASE_URL  = 'https://YOUR-PROJECT-default-rtdb.firebaseio.com';
-      var ANTHROPIC_KEY = 'sk-ant-YOUR-KEY-HERE';
+      var FIREBASE_URL = 'https://YOUR-PROJECT-default-rtdb.firebaseio.com';
+      var GEMINI_KEY   = 'YOUR-GEMINI-KEY-HERE';
 
   Replace both values:
-  · FIREBASE_URL  → your URL from Step 1
-  · ANTHROPIC_KEY → your Anthropic API key from console.anthropic.com
+  · FIREBASE_URL → your URL from Step 1
+  · GEMINI_KEY   → your free Gemini key from aistudio.google.com
     (needed for the Terminal tab; leave as-is to disable it)
 
   STEP 3 · Host the file
