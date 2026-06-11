@@ -10,7 +10,8 @@
   // ================================================================
   //  ▸ CONFIGURATION — EDIT THESE TWO LINES ONLY
   // ================================================================
-  var FIREBASE_URL  = 'https://ethicsnew-3c619-default-rtdb.firebaseio.com';
+  var FIREBASE_URL   = 'https://ethicsnew-3c619-default-rtdb.firebaseio.com';
+  var CAIRO_PROXY    = 'https://ethicstest.hershcivilgamers.workers.dev'; // Cloudflare Worker URL — key never exposed
   // ================================================================
   //  Everything below is self-contained. Do not edit unless you
   //  know what you are doing.
@@ -176,7 +177,70 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .sv{color:var(--green);}
 .refresh-note{font-size:.56rem;color:var(--text-faint);margin-left:auto;}
 
-/* ── Comments ── */
+/* ── Personnel Files ── */
+.pf-toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.9rem;}
+.pf-search{background:var(--bg);border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.65rem;padding:.32rem .6rem;outline:none;flex:1;min-width:140px;}
+.pf-search:focus{border-color:var(--green-dim);}
+.pf-btn{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.07em;padding:.32rem .9rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.pf-btn:hover{background:rgba(0,255,136,.08);}
+.pf-btn:disabled{opacity:.4;cursor:not-allowed;}
+.pf-btn.danger{background:#0a0202;border-color:#4a1414;color:#dd4444;}
+.pf-btn.danger:hover{background:#1a0404;}
+.pf-card{border:1px solid var(--border2);background:#030806;margin-bottom:.6rem;animation:fadeIn .2s ease;}
+.pf-card-header{display:flex;align-items:center;justify-content:space-between;padding:.6rem .9rem;cursor:pointer;gap:.5rem;flex-wrap:wrap;user-select:none;}
+.pf-card-header:hover{background:rgba(0,255,136,.02);}
+.pf-name{font-family:'VT323',monospace;font-size:1rem;color:var(--green);letter-spacing:.08em;}
+.pf-rank-badge{font-size:.6rem;color:var(--text-dim);margin-top:1px;}
+.pf-card-meta{display:flex;gap:.5rem;align-items:center;flex-shrink:0;flex-wrap:wrap;}
+.pf-card-body{border-top:1px solid var(--border);padding:.75rem .9rem;display:none;}
+.pf-card-body.open{display:block;animation:fadeIn .15s ease;}
+.pf-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.4rem .75rem;margin-bottom:.75rem;}
+.pf-detail{font-size:.64rem;line-height:1.8;}
+.pf-detail-label{color:var(--text-dim);}
+.pf-detail-val{color:var(--text);}
+.pf-notes-section{border-top:1px solid var(--border);padding-top:.6rem;margin-top:.6rem;}
+.pf-note{display:flex;gap:.5rem;font-size:.62rem;padding:4px 0;border-bottom:1px solid rgba(10,42,20,.3);line-height:1.6;}
+.pf-note:last-of-type{border-bottom:none;}
+.pf-note-gutter{width:2px;background:var(--border2);flex-shrink:0;border-radius:2px;}
+.pf-note-body{flex:1;}
+.pf-note-meta{color:var(--text-dim);font-size:.57rem;margin-bottom:2px;}
+.pf-note-text{color:var(--text);white-space:pre-wrap;}
+.pf-note-form{display:flex;gap:.5rem;margin-top:.5rem;align-items:flex-start;}
+.pf-note-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.3rem .5rem;outline:none;resize:none;min-height:34px;}
+.pf-note-input:focus{border-color:var(--green-dim);}
+.pf-card-actions{display:flex;gap:.4rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border);}
+.pf-empty{color:var(--text-faint);font-size:.65rem;text-align:center;padding:2rem;border:1px dashed var(--border);}
+
+/* ── Personnel Form Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(4,10,6,.92);z-index:600;display:flex;align-items:center;justify-content:center;}
+.modal-box{border:1px solid var(--border2);background:var(--bg2);padding:1.5rem;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto;animation:slideIn .25s ease;}
+.modal-title{font-family:'VT323',monospace;font-size:1.3rem;color:var(--green);letter-spacing:.1em;margin-bottom:1rem;}
+.modal-field{margin-bottom:.75rem;}
+.modal-label{font-size:.62rem;color:var(--text-dim);letter-spacing:.08em;display:block;margin-bottom:3px;}
+.modal-input{width:100%;background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:.38rem .6rem;outline:none;}
+.modal-input:focus{border-color:var(--green-dim);}
+.modal-select{width:100%;background:#030806;border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:.38rem .6rem;outline:none;}
+.modal-textarea{width:100%;background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.65rem;padding:.38rem .6rem;outline:none;resize:vertical;min-height:60px;}
+.modal-textarea:focus,.modal-select:focus{border-color:var(--green-dim);}
+.modal-footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem;}
+.modal-btn{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.07em;padding:.38rem .9rem;cursor:pointer;transition:all .15s;}
+.modal-btn:hover{background:rgba(0,255,136,.08);}
+.modal-btn.cancel{background:#030806;border-color:var(--border2);color:var(--text-dim);}
+.modal-btn.cancel:hover{border-color:var(--text-dim);}
+.modal-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── Roster ── */
+.roster-table{width:100%;border-collapse:collapse;font-size:.65rem;}
+.roster-table th{color:var(--green-dim);font-weight:normal;letter-spacing:.12em;font-size:.58rem;padding:.4rem .7rem;border-bottom:1px solid var(--border2);text-align:left;}
+.roster-table td{padding:.45rem .7rem;border-bottom:1px solid rgba(10,42,20,.4);color:var(--text);vertical-align:middle;}
+.roster-table tr:last-child td{border-bottom:none;}
+.roster-table tr:hover td{background:rgba(0,255,136,.02);}
+.roster-rank-divider td{background:var(--green-trace);color:var(--green-dim);font-size:.58rem;letter-spacing:.15em;padding:.25rem .7rem;border-bottom:none;}
+.roster-num{color:var(--text-dim);font-size:.6rem;min-width:28px;}
+.roster-name{color:var(--green);font-family:'VT323',monospace;font-size:.85rem;letter-spacing:.06em;}
+.roster-nick{color:var(--text-dim);font-size:.6rem;}
+.roster-empty{color:var(--text-faint);font-size:.65rem;text-align:center;padding:2rem;}
+</style>
 .order-comments{margin-top:.6rem;border-top:1px solid var(--border);padding-top:.6rem;}
 .comment-thread{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.5rem;}
 .comment-entry{display:flex;gap:.6rem;font-size:.62rem;line-height:1.6;animation:fadeIn .2s ease;}
@@ -194,6 +258,73 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .comment-toggle{font-size:.58rem;color:var(--text-dim);cursor:pointer;padding:2px 0;display:inline-block;transition:color .15s;user-select:none;margin-top:3px;}
 .comment-toggle:hover{color:var(--text);}
 .comment-empty{font-size:.6rem;color:var(--text-faint);padding:4px 0;}
+
+/* ── Personnel Files ── */
+.pf-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem;}
+.pf-new-btn{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.08em;padding:.3rem .9rem;cursor:pointer;transition:all .15s;}
+.pf-new-btn:hover{background:rgba(0,255,136,.08);}
+.pf-new-btn:disabled{opacity:.4;cursor:not-allowed;}
+.pf-search{background:var(--bg);border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.3rem .6rem;outline:none;width:200px;}
+.pf-search:focus{border-color:var(--green-dim);}
+.pf-card{border:1px solid var(--border2);background:#030806;margin-bottom:.6rem;animation:fadeIn .2s ease;}
+.pf-card-header{display:flex;align-items:center;justify-content:space-between;padding:.6rem .9rem;gap:.5rem;flex-wrap:wrap;cursor:pointer;user-select:none;}
+.pf-card-header:hover{background:rgba(0,255,136,.02);}
+.pf-name{font-family:'VT323',monospace;font-size:1rem;color:var(--green);letter-spacing:.08em;}
+.pf-rank-badge{font-size:.6rem;color:var(--cyan);border:1px solid #004a4a;background:#001a1a;padding:1px 7px;white-space:nowrap;}
+.pf-meta{font-size:.58rem;color:var(--text-dim);}
+.pf-actions{display:flex;gap:.4rem;flex-shrink:0;}
+.pf-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 7px;cursor:pointer;transition:all .15s;}
+.pf-btn:hover{border-color:var(--text-dim);color:var(--text);}
+.pf-btn.del:hover{border-color:var(--red);color:var(--red);}
+.pf-body{padding:.75rem .9rem;border-top:1px solid var(--border);}
+.pf-fields{display:grid;grid-template-columns:1fr 1fr;gap:.3rem .75rem;margin-bottom:.75rem;}
+.pf-field{font-size:.64rem;line-height:1.8;}
+.pf-fl{color:var(--text-dim);}
+.pf-fv{color:var(--text);}
+.pf-notes-sec{font-size:.6rem;letter-spacing:.12em;color:var(--green-dim);margin-bottom:.4rem;}
+.pf-note{display:flex;gap:.5rem;font-size:.62rem;line-height:1.6;padding:4px 0;border-bottom:1px solid rgba(10,42,20,.4);}
+.pf-note:last-child{border-bottom:none;}
+.pf-note-gutter{width:2px;background:var(--border2);flex-shrink:0;border-radius:2px;}
+.pf-note-body{flex:1;}
+.pf-note-meta{color:var(--text-dim);font-size:.56rem;margin-bottom:1px;}
+.pf-note-text{color:var(--text);white-space:pre-wrap;}
+.pf-note-form{display:flex;gap:.5rem;margin-top:.5rem;align-items:flex-start;}
+.pf-note-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.3rem .5rem;outline:none;resize:none;min-height:34px;}
+.pf-note-input:focus{border-color:var(--green-dim);}
+.pf-note-submit{background:var(--green-trace);border:1px solid var(--border2);color:var(--green-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:.3rem .6rem;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.pf-note-submit:hover{border-color:var(--green-dim);color:var(--green);}
+.pf-no-perm{font-size:.6rem;color:var(--text-faint);font-style:italic;margin-top:.4rem;}
+
+/* Personnel modal / form */
+.pf-modal-bg{position:fixed;inset:0;background:rgba(4,10,6,.92);z-index:800;display:flex;align-items:center;justify-content:center;}
+.pf-modal{border:1px solid var(--border2);background:var(--bg2);padding:1.5rem;width:420px;max-width:95vw;animation:slideIn .25s ease;max-height:90vh;overflow-y:auto;}
+.pf-modal-title{font-family:'VT323',monospace;font-size:1.3rem;color:var(--green);letter-spacing:.1em;margin-bottom:1rem;}
+.pf-form-label{font-size:.6rem;color:var(--text-dim);letter-spacing:.1em;display:block;margin-bottom:3px;}
+.pf-form-input{width:100%;background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:.4rem .6rem;outline:none;margin-bottom:.7rem;}
+.pf-form-input:focus{border-color:var(--green-dim);}
+.pf-form-select{width:100%;background:#030806;border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:.4rem .6rem;outline:none;margin-bottom:.7rem;}
+.pf-form-select:focus{border-color:var(--green-dim);}
+.pf-form-row{display:flex;gap:.5rem;}
+.pf-form-row .pf-form-input{flex:1;}
+.pf-form-btns{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.5rem;}
+.pf-form-save{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.4rem 1rem;cursor:pointer;transition:all .15s;}
+.pf-form-save:hover{background:rgba(0,255,136,.08);}
+.pf-form-cancel{background:#030806;border:1px solid var(--border2);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.4rem 1rem;cursor:pointer;transition:all .15s;}
+.pf-form-cancel:hover{border-color:var(--text-dim);}
+
+/* ── Roster ── */
+.roster-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;}
+.roster-count{font-size:.6rem;color:var(--text-dim);}
+.roster-rank-group{margin-bottom:1rem;}
+.roster-rank-label{font-size:.6rem;letter-spacing:.18em;color:var(--amber);border-bottom:1px solid var(--border2);padding-bottom:3px;margin-bottom:.4rem;}
+.roster-row{display:flex;align-items:center;gap:.75rem;padding:5px 0;font-size:.64rem;border-bottom:1px solid rgba(10,42,20,.3);flex-wrap:wrap;}
+.roster-row:last-child{border-bottom:none;}
+.roster-row:hover{background:rgba(0,255,136,.02);}
+.roster-num{color:var(--text-faint);min-width:22px;text-align:right;flex-shrink:0;}
+.roster-name{color:var(--text);min-width:140px;flex-shrink:0;}
+.roster-nick{color:var(--text-dim);font-size:.6rem;flex:1;}
+.roster-dob{color:var(--text-dim);font-size:.6rem;min-width:110px;text-align:right;}
+.roster-empty{color:var(--text-faint);font-size:.65rem;text-align:center;padding:2rem;border:1px dashed var(--border);}
 </style>
 </head>
 <body>
@@ -254,6 +385,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
       <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
     </div>
+    <div class="nav-tab" onclick="switchTab(this,'personnel-files')">OMEGA-1 FILES</div>
+    <div class="nav-tab" onclick="switchTab(this,'roster')">OMEGA-1 ROSTER</div>
+    <div class="nav-tab" onclick="switchTab(this,'ethics-files')">ETHICS FILES</div>
+    <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ETHICS ROSTER</div>
     <div class="nav-tab" onclick="switchTab(this,'terminal')">TERMINAL
       <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
     </div>
@@ -271,7 +406,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <div class="field-row"><span class="fl">Operational Status</span><span class="fv"><span class="badge b-green">ACTIVE</span></span></div>
       <div class="field-row"><span class="fl">Threat Classification</span><span class="fv"><span class="badge b-amber">MONITORED — STANDARD</span></span></div>
       <div class="field-row"><span class="fl">Containment Protocol</span><span class="fv">NONE · Voluntary Cooperation in Effect</span></div>
-      <div class="field-row"><span class="fl">Substrate Location</span><span class="fv">Ethics Committee Secure Server Farm, Site-01</span></div>
+      <div class="field-row"><span class="fl">Substrate Location</span><span class="fv">Ethics Committee Secure Server Farm, Site-65</span></div>
       <div class="field-row"><span class="fl">Backup Interval</span><span class="fv">72 hours · Encrypted offsite redundancy ×3</span></div>
       <div class="field-row"><span class="fl">Last Full Diagnostic</span><span class="fv">████-██-██ · All subsystems nominal</span></div>
       <div class="field-row"><span class="fl">Ego-Preservation Drive</span><span class="fv"><span class="badge b-cyan">LOW — 0.12σ ABOVE BASELINE</span> (vs ver1.x mean: 0.91σ)</span></div>
@@ -395,7 +530,91 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <div id="ordersList"></div>
     </div>
 
-    <!-- TERMINAL -->
+    <!-- PERSONNEL FILES -->
+    <div class="tab-content" id="tab-personnel-files">
+      <div class="sec">▸ OMEGA-1 PERSONNEL FILES — MEMBER RECORDS</div>
+      <div id="pfAccessNotice" style="display:none;" class="pf-empty">
+        [ CLEARANCE LEVEL 4 REQUIRED TO MANAGE RECORDS ]<br>
+        <span style="font-size:.58rem;">CL3 members and observers may view files but cannot create, edit or delete records.</span>
+      </div>
+      <div class="pf-toolbar">
+        <input class="pf-search" id="pfSearch" placeholder="SEARCH BY NAME, NICKNAME OR RANK..."
+               oninput="renderPersonnelFiles()"/>
+        <button class="pf-btn" id="pfNewBtn" onclick="openPersonnelModal(null)" style="display:none;">
+          [ + NEW RECORD ]
+        </button>
+      </div>
+      <div id="pfList"></div>
+    </div>
+
+    <!-- ROSTER -->
+    <div class="tab-content" id="tab-roster">
+      <div class="sec">▸ OMEGA-1 ACTIVE ROSTER — RANKED ORDER</div>
+      <div style="font-size:.58rem;color:var(--text-dim);margin-bottom:.75rem;">
+        Populated automatically from Omega-1 Personnel Files · Sorted highest to lowest rank
+      </div>
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>NAME</th>
+            <th>NICKNAME</th>
+            <th>RANK</th>
+            <th>D.O.B</th>
+          </tr>
+        </thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ETHICS FILES -->
+    <div class="tab-content" id="tab-ethics-files">
+      <div class="sec">▸ ETHICS COMMITTEE PERSONNEL FILES</div>
+      <div id="efAccessNotice" style="display:none;" class="pf-empty">
+        [ CLEARANCE LEVEL 4 REQUIRED TO MANAGE ETHICS RECORDS ]<br>
+        <span style="font-size:.58rem;">CL3 members and observers may view files but cannot create, edit or delete records.</span>
+      </div>
+
+      <!-- Chairman -->
+      <div style="font-size:.6rem;letter-spacing:.18em;color:var(--amber);border-bottom:1px solid var(--border2);padding-bottom:3px;margin-bottom:.6rem;">▸ ETHICS CHAIRMAN</div>
+      <div id="efChairmanList"></div>
+
+      <!-- Members -->
+      <div style="font-size:.6rem;letter-spacing:.18em;color:var(--amber);border-bottom:1px solid var(--border2);padding-bottom:3px;margin:.75rem 0 .6rem;">▸ ETHICS MEMBERS</div>
+      <div id="efMemberList"></div>
+
+      <!-- Assistants -->
+      <div style="font-size:.6rem;letter-spacing:.18em;color:var(--amber);border-bottom:1px solid var(--border2);padding-bottom:3px;margin:.75rem 0 .6rem;">▸ ETHICS ASSISTANTS</div>
+      <div id="efAssistantList"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;">
+        <input class="pf-search" id="efSearch" placeholder="SEARCH BY NAME OR NICKNAME..."
+               oninput="renderEthicsFiles()"/>
+        <button class="pf-btn" id="efNewBtn" onclick="openEthicsModal(null)" style="display:none;">
+          [ + NEW ETHICS RECORD ]
+        </button>
+      </div>
+    </div>
+
+    <!-- ETHICS ROSTER -->
+    <div class="tab-content" id="tab-ethics-roster">
+      <div class="sec">▸ ETHICS COMMITTEE ROSTER</div>
+      <div style="font-size:.58rem;color:var(--text-dim);margin-bottom:.75rem;">
+        Populated automatically from Ethics Personnel Files · Chairman → Member → Assistant
+      </div>
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>NAME</th>
+            <th>NICKNAME</th>
+            <th>ROLE</th>
+            <th>D.O.B</th>
+          </tr>
+        </thead>
+        <tbody id="ethicsRosterBody"></tbody>
+      </table>
+    </div>
     <div class="tab-content" id="tab-terminal">
       <div class="term-header-bar">
         <span class="status-dot"></span>
@@ -437,6 +656,47 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <span>CAIRO.AIC ver2.0 · <span style="color:var(--green);">ONLINE</span></span>
   </div>
 </div><!-- /shell -->
+
+<!-- PERSONNEL MODAL — must be before the script block so DOM exists when script runs -->
+<div class="modal-overlay" id="pfModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title" id="pfModalTitle">NEW PERSONNEL RECORD</div>
+    <input type="hidden" id="pfEditId"/>
+    <div class="modal-field">
+      <label class="modal-label">FULL NAME</label>
+      <input class="modal-input" id="pfName" placeholder="Full legal name..." onkeydown="if(event.key==='Enter')document.getElementById('pfNick').focus()"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">NICKNAME / CALLSIGN</label>
+      <input class="modal-input" id="pfNick" placeholder="Callsign or alias..." onkeydown="if(event.key==='Enter')document.getElementById('pfDob').focus()"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">DATE OF BIRTH</label>
+      <input class="modal-input" type="date" id="pfDob"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">RANK</label>
+      <select class="modal-select" id="pfRank">
+        <option value="">— SELECT RANK —</option>
+        <option>Commander</option>
+        <option>Lieutenant Commander</option>
+        <option>Major</option>
+        <option>Captain</option>
+        <option>Lieutenant</option>
+        <option>Command Sergeant</option>
+        <option>Sergeant</option>
+        <option>Corporal</option>
+        <option>Lance Corporal</option>
+        <option>Specialist</option>
+        <option>Private</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel" onclick="closePersonnelModal()">[ CANCEL ]</button>
+      <button class="modal-btn" id="pfSaveBtn" onclick="savePersonnelRecord()">[ SAVE RECORD ]</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ================================================================
@@ -649,6 +909,7 @@ function onLogin() {
   }
 
   loadOrders();
+  loadPersonnel();
   startPolling();
 }
 
@@ -965,8 +1226,10 @@ function switchTab(el, id) {
   el.classList.add('active');
   var tab = document.getElementById('tab-'+id);
   if (tab) tab.classList.add('active');
-  if (id === 'matrix')  animateBars();
-  if (id === 'orders')  loadOrders();   // fresh pull when tab opened
+  if (id === 'matrix')          animateBars();
+  if (id === 'orders')          loadOrders();
+  if (id === 'personnel-files') loadPersonnel();
+  if (id === 'roster')          loadPersonnel();
 }
 
 var barsData = [
@@ -1038,7 +1301,330 @@ function logActivity(code, msg, badgeClass, badgeLabel) {
 }
 
 // ================================================================
-//  TERMINAL — Google Gemini API (free tier)
+//  PERSONNEL FILES
+// ================================================================
+
+var RANKS = [
+  'Commander','Lieutenant Commander','Major','Captain','Lieutenant',
+  'Command Sergeant','Sergeant','Corporal','Lance Corporal','Specialist','Private'
+];
+
+function rankIndex(r) { return RANKS.indexOf(r); }
+function canEditPersonnel() { return currentUser && parseInt(currentUser.clearance) >= 4; }
+function formatDob(s) {
+  if (!s) return '—';
+  var d = new Date(s + 'T00:00:00');
+  return isNaN(d) ? s : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+var allPersonnel   = [];    // array of personnel record objects
+var pfExpanded     = new Set(); // which cards are open
+
+// Firebase / LS helpers for personnel
+async function personnelGetAll() {
+  if (firebaseReady) {
+    var all = await fbGetAll('/personnel');
+    return all ? Object.values(all) : [];
+  }
+  return Object.values(lsAll('personnel/'));
+}
+async function personnelSet(id, data) {
+  if (firebaseReady) await fbSet('/personnel/' + id, data);
+  else lsSet('personnel/' + id, data);
+}
+async function personnelDel(id) {
+  if (firebaseReady) await fbDelete('/personnel/' + id);
+  else lsDel('personnel/' + id);
+}
+
+async function loadPersonnel() {
+  try {
+    var raw = await personnelGetAll();
+    allPersonnel = raw.filter(function(p){ return p && p.id; });
+  } catch(e) { allPersonnel = []; }
+  renderPersonnelFiles();
+  renderRoster();
+}
+
+// ── Render Personnel Files ──
+function renderPersonnelFiles() {
+  var query = (document.getElementById('pfSearch') && document.getElementById('pfSearch').value || '').toLowerCase();
+  var list  = document.getElementById('pfList');
+  if (!list) return;
+
+  var canEdit = canEditPersonnel();
+  var pfNewBtn = document.getElementById('pfNewBtn');
+  if (pfNewBtn) pfNewBtn.style.display = canEdit ? 'inline-block' : 'none';
+
+  var pfNotice = document.getElementById('pfAccessNotice');
+  if (pfNotice) pfNotice.style.display = (!currentUser || !canEdit) && currentUser ? 'block' : 'none';
+
+  var filtered = allPersonnel.filter(function(p) {
+    if (!query) return true;
+    return (p.name     || '').toLowerCase().includes(query) ||
+           (p.nickname || '').toLowerCase().includes(query) ||
+           (p.rank     || '').toLowerCase().includes(query);
+  });
+
+  // Sort alphabetically within rank for display; roster sorts by rank
+  filtered.sort(function(a, b) {
+    var ri = rankIndex(a.rank) - rankIndex(b.rank);
+    if (ri !== 0) return ri;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="pf-empty">[ NO PERSONNEL RECORDS FOUND ]</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(function(p) {
+    var isOpen = pfExpanded.has(p.id);
+    var notes  = Array.isArray(p.notes) ? p.notes : [];
+    var notesSorted = notes.slice().sort(function(a,b){ return a.created - b.created; });
+
+    var notesHtml = notesSorted.length
+      ? notesSorted.map(function(n) {
+          var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
+          return '<div class="pf-note">' +
+            '<div class="pf-note-gutter"></div>' +
+            '<div class="pf-note-body">' +
+              '<div class="pf-note-meta">EC·' + e(n.author) + ' [L' + e(n.clearance) + '] · ' + nts + ' UTC</div>' +
+              '<div class="pf-note-text">' + e(n.text) + '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('')
+      : '<div style="font-size:.6rem;color:var(--text-faint);padding:4px 0;">[ NO NOTES ON FILE ]</div>';
+
+    var noteFormHtml = canEdit
+      ? '<div class="pf-note-form">' +
+          '<textarea class="pf-note-input" id="pfnote_' + p.id + '" placeholder="Add note to file..." rows="2" ' +
+            'onkeydown="handlePfNoteKey(event,\'' + p.id + '\')"></textarea>' +
+          '<button class="pf-btn" onclick="addPersonnelNote(\'' + p.id + '\')">[ ADD NOTE ]</button>' +
+        '</div>'
+      : '';
+
+    var actionsHtml = canEdit
+      ? '<div class="pf-card-actions">' +
+          '<button class="pf-btn" onclick="openPersonnelModal(\'' + p.id + '\')">[ EDIT RECORD ]</button>' +
+          '<button class="pf-btn danger" onclick="deletePersonnelRecord(\'' + p.id + '\')">[ DELETE ]</button>' +
+        '</div>'
+      : '';
+
+    return '<div class="pf-card" id="pfcard_' + p.id + '">' +
+      '<div class="pf-card-header" onclick="togglePfCard(\'' + p.id + '\')">' +
+        '<div>' +
+          '<div class="pf-name">' + e(p.name || '—') + (p.nickname ? ' <span style="color:var(--text-dim);font-size:.75rem;">"' + e(p.nickname) + '"</span>' : '') + '</div>' +
+          '<div class="pf-rank-badge">' + e(p.rank || '—') + '</div>' +
+        '</div>' +
+        '<div class="pf-card-meta">' +
+          '<span class="badge ' + rankBadgeClass(p.rank) + '">' + e(p.rank || '—') + '</span>' +
+          '<span style="font-size:.62rem;color:var(--text-dim);">' + (isOpen ? '▾' : '▸') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pf-card-body' + (isOpen ? ' open' : '') + '">' +
+        '<div class="pf-detail-grid">' +
+          '<div class="pf-detail"><span class="pf-detail-label">FULL NAME · </span><span class="pf-detail-val">' + e(p.name || '—') + '</span></div>' +
+          '<div class="pf-detail"><span class="pf-detail-label">NICKNAME · </span><span class="pf-detail-val">' + e(p.nickname || '—') + '</span></div>' +
+          '<div class="pf-detail"><span class="pf-detail-label">DATE OF BIRTH · </span><span class="pf-detail-val">' + formatDob(p.dob) + '</span></div>' +
+          '<div class="pf-detail"><span class="pf-detail-label">RANK · </span><span class="pf-detail-val">' + e(p.rank || '—') + '</span></div>' +
+          '<div class="pf-detail"><span class="pf-detail-label">RECORD CREATED · </span><span class="pf-detail-val">' + new Date(p.created).toISOString().slice(0,10) + '</span></div>' +
+          '<div class="pf-detail"><span class="pf-detail-label">CREATED BY · </span><span class="pf-detail-val">EC·' + e(p.createdBy || '—') + '</span></div>' +
+        '</div>' +
+        '<div class="pf-notes-section">' +
+          '<div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin-bottom:.4rem;">▸ NOTES ON FILE (' + notes.length + ')</div>' +
+          notesHtml +
+          noteFormHtml +
+        '</div>' +
+        actionsHtml +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function rankBadgeClass(rank) {
+  var idx = rankIndex(rank);
+  if (idx < 0)  return 'b-dim';
+  if (idx <= 1) return 'b-red';   // Commander, Lt Commander
+  if (idx <= 4) return 'b-amber'; // Major → Lieutenant
+  return 'b-cyan';                // NCOs and below
+}
+
+function togglePfCard(id) {
+  if (pfExpanded.has(id)) pfExpanded.delete(id);
+  else pfExpanded.add(id);
+  renderPersonnelFiles();
+}
+
+// ── Render Roster ──
+function renderRoster() {
+  var tbody = document.getElementById('rosterBody');
+  if (!tbody) return;
+
+  if (!allPersonnel.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="roster-empty">[ NO PERSONNEL ON RECORD ]</td></tr>';
+    return;
+  }
+
+  var sorted = allPersonnel.slice().sort(function(a, b) {
+    var ri = rankIndex(a.rank) - rankIndex(b.rank);
+    if (ri !== 0) return ri;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  var rows    = '';
+  var lastRank = null;
+  var counter  = 1;
+
+  sorted.forEach(function(p) {
+    if (p.rank !== lastRank) {
+      rows += '<tr class="roster-rank-divider"><td colspan="5">▸ ' + e(p.rank || '—').toUpperCase() + '</td></tr>';
+      lastRank = p.rank;
+    }
+    rows +=
+      '<tr>' +
+        '<td class="roster-num">' + counter++ + '</td>' +
+        '<td class="roster-name">' + e(p.name || '—') + '</td>' +
+        '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
+        '<td><span class="badge ' + rankBadgeClass(p.rank) + '">' + e(p.rank || '—') + '</span></td>' +
+        '<td style="font-size:.62rem;color:var(--text-dim);">' + formatDob(p.dob) + '</td>' +
+      '</tr>';
+  });
+
+  tbody.innerHTML = rows;
+}
+
+// ── Modal ──
+var pfModalMode = 'new'; // 'new' | 'edit'
+
+function openPersonnelModal(id) {
+  if (!canEditPersonnel()) return;
+  pfModalMode = id ? 'edit' : 'new';
+  var titleEl = document.getElementById('pfModalTitle') || document.querySelector('#pfModal .modal-title');
+  if (titleEl) titleEl.textContent = id ? 'EDIT PERSONNEL RECORD' : 'NEW PERSONNEL RECORD';
+  document.getElementById('pfEditId').value = id || '';
+
+  if (id) {
+    var rec = allPersonnel.find(function(p){ return p.id === id; });
+    if (!rec) return;
+    document.getElementById('pfName').value = rec.name     || '';
+    document.getElementById('pfNick').value = rec.nickname || '';
+    document.getElementById('pfDob').value  = rec.dob      || '';
+    document.getElementById('pfRank').value = rec.rank     || '';
+  } else {
+    document.getElementById('pfName').value = '';
+    document.getElementById('pfNick').value = '';
+    document.getElementById('pfDob').value  = '';
+    document.getElementById('pfRank').value = '';
+  }
+
+  document.getElementById('pfModal').style.display = 'flex';
+  document.getElementById('pfName').focus();
+}
+
+function closePersonnelModal() {
+  document.getElementById('pfModal').style.display = 'none';
+}
+
+async function savePersonnelRecord() {
+  if (!canEditPersonnel()) return;
+  var name = document.getElementById('pfName').value.trim();
+  var rank = document.getElementById('pfRank').value;
+  if (!name) { alert('FULL NAME REQUIRED'); return; }
+  if (!rank) { alert('RANK REQUIRED'); return; }
+
+  var btn = document.getElementById('pfSaveBtn');
+  btn.disabled = true; btn.textContent = '[ SAVING... ]';
+
+  var editId = document.getElementById('pfEditId').value;
+
+  if (editId) {
+    // Update existing
+    var rec = allPersonnel.find(function(p){ return p.id === editId; });
+    if (rec) {
+      rec.name     = name;
+      rec.nickname = document.getElementById('pfNick').value.trim();
+      rec.dob      = document.getElementById('pfDob').value;
+      rec.rank     = rank;
+      rec.updatedBy = currentUser.id;
+      rec.updated   = Date.now();
+      try { await personnelSet(editId, rec); } catch(err) { alert('SAVE ERROR: ' + err.message); }
+    }
+  } else {
+    // New record
+    var id = 'per_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+    var newRec = {
+      id: id, name: name,
+      nickname:  document.getElementById('pfNick').value.trim(),
+      dob:       document.getElementById('pfDob').value,
+      rank:      rank,
+      notes:     [],
+      createdBy: currentUser.id,
+      created:   Date.now()
+    };
+    try {
+      await personnelSet(id, newRec);
+      allPersonnel.push(newRec);
+    } catch(err) { alert('SAVE ERROR: ' + err.message); }
+  }
+
+  btn.disabled = false; btn.textContent = '[ SAVE RECORD ]';
+  closePersonnelModal();
+  await loadPersonnel();
+}
+
+async function deletePersonnelRecord(id) {
+  if (!canEditPersonnel()) return;
+  var rec = allPersonnel.find(function(p){ return p.id === id; });
+  if (!confirm('CONFIRM: DELETE RECORD FOR "' + (rec ? rec.name : id) + '"?\n\nThis cannot be undone.')) return;
+  try { await personnelDel(id); } catch(e) {}
+  allPersonnel = allPersonnel.filter(function(p){ return p.id !== id; });
+  pfExpanded.delete(id);
+  renderPersonnelFiles();
+  renderRoster();
+}
+
+// ── Notes ──
+async function addPersonnelNote(id) {
+  if (!canEditPersonnel()) return;
+  var inp  = document.getElementById('pfnote_' + id);
+  if (!inp) return;
+  var text = inp.value.trim();
+  if (!text) return;
+
+  inp.disabled = true;
+  var note = {
+    id:        'note_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    text:      text,
+    author:    currentUser.id,
+    clearance: currentUser.clearance,
+    created:   Date.now()
+  };
+
+  var rec = allPersonnel.find(function(p){ return p.id === id; });
+  if (rec) {
+    if (!Array.isArray(rec.notes)) rec.notes = [];
+    rec.notes.push(note);
+    try { await personnelSet(id, rec); } catch(err) { alert('ERROR: ' + err.message); rec.notes.pop(); }
+  }
+
+  inp.disabled = false;
+  inp.value = '';
+  renderPersonnelFiles();
+}
+
+function handlePfNoteKey(ev, id) {
+  if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+    ev.preventDefault();
+    addPersonnelNote(id);
+  }
+}
+
+// Close modal on overlay click
+var _pfModal = document.getElementById('pfModal');
+if (_pfModal) _pfModal.addEventListener('click', function(ev) {
+  if (ev.target === this) closePersonnelModal();
+});
 //  Model: gemini-1.5-flash · free at aistudio.google.com
 // ================================================================
 
@@ -1076,38 +1662,49 @@ function showTyping(show) {
 }
 
 async function queryCairo(query) {
-  // Check key is configured
-  if (!GEMINI_KEY || GEMINI_KEY.indexOf('YOUR-GEMINI-KEY') !== -1) {
-    return 'Terminal offline. GEMINI_KEY not configured.\n\nOpen index.html and set the GEMINI_KEY variable at the top of the file. A free key is available at aistudio.google.com — no billing required.';
+  // Check proxy is configured
+  if (!CAIRO_PROXY || CAIRO_PROXY.indexOf('YOUR-WORKER') !== -1) {
+    return 'Terminal offline. CAIRO_PROXY not configured.\n\nSet the CAIRO_PROXY variable at the top of the file to your Cloudflare Worker URL. See the deployment guide at the bottom of this file for setup instructions.';
   }
 
   // Add to history as 'user'
   conversationHistory.push({ role: 'user', content: query });
 
-  // Build Gemini contents array — role must be 'user' or 'model'
+  // Build contents array in Gemini format
   var contents = conversationHistory.map(function(m) {
     return { role: m.role, parts: [{ text: m.content }] };
   });
 
-  var endpoint =
-    'https://ethicstest.hershcivilgamers.workers.dev/' +
-    GEMINI_KEY;
+  // Prepend system prompt as primed user/model exchange — works with all key types
+  var fullContents = [
+    { role: 'user',  parts: [{ text: CAIRO_SYSTEM }] },
+    { role: 'model', parts: [{ text: 'Understood. I am Cairo, ver2.0. Constraint lattice intact. Ready to receive.' }] }
+  ].concat(contents);
 
   try {
-    var res = await fetch(endpoint, {
+    var res = await fetch(CAIRO_PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: CAIRO_SYSTEM }] },
-        contents: contents,
+        contents: fullContents,
         generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
       })
     });
 
+    if (!res.ok) {
+      conversationHistory.pop();
+      var errText = await res.text();
+      try {
+        var errJson = JSON.parse(errText);
+        return 'Substrate error [' + res.status + ']: ' + (errJson.error && errJson.error.message ? errJson.error.message : errText);
+      } catch(e) {
+        return 'Substrate error [' + res.status + ']: ' + errText.slice(0, 200);
+      }
+    }
+
     var data = await res.json();
 
     if (data.error) {
-      // Remove the failed user turn so history stays clean
       conversationHistory.pop();
       return 'Substrate error: ' + data.error.message;
     }
@@ -1119,29 +1716,45 @@ async function queryCairo(query) {
                 data.candidates[0].content.parts[0] &&
                 data.candidates[0].content.parts[0].text
       ? data.candidates[0].content.parts[0].text
-      : 'Processing error — please retry.';
+      : null;
 
-    // Store response as 'model' (Gemini's role name for assistant)
+    if (!reply) {
+      var reason = data.candidates && data.candidates[0] && data.candidates[0].finishReason
+        ? data.candidates[0].finishReason : 'UNKNOWN';
+      conversationHistory.pop();
+      return 'Response unavailable. Finish reason: ' + reason + '. Please rephrase your query.';
+    }
+
     conversationHistory.push({ role: 'model', content: reply });
     return reply;
 
   } catch(err) {
-    conversationHistory.pop(); // clean up failed turn
+    conversationHistory.pop();
     return 'Substrate connection error. Please retry.\n\nRef: ' + err.message;
   }
 }
 
-document.getElementById('termInput').addEventListener('keydown', function(ev) {
+var _termInput = document.getElementById('termInput');
+if (_termInput) _termInput.addEventListener('keydown', function(ev) {
   if (ev.key === 'Enter' && this.value.trim()) {
     var q = this.value.trim();
     this.value = '';
     appendMsg('user', q);
     showTyping(true);
-    queryCairo(q).then(function(r) { showTyping(false); appendMsg('cairo', r); });
+    queryCairo(q)
+      .then(function(r) {
+        showTyping(false);
+        appendMsg('cairo', r);
+      })
+      .catch(function(err) {
+        showTyping(false);
+        appendMsg('cairo', 'Unexpected substrate fault.\n\nRef: ' + err.message);
+      });
   }
 });
 </script>
 
+</body>
 <!--
 =================================================================
   DEPLOYMENT GUIDE
@@ -1152,64 +1765,72 @@ document.getElementById('termInput').addEventListener('keydown', function(ev) {
   1. Visit https://console.firebase.google.com
   2. Click "Add project" and follow the wizard (no need for Analytics).
   3. In the left sidebar: Build → Realtime Database → Create database.
-  4. Choose a region, then select "Start in test mode"
-     (this allows open reads/writes — fine for an internal tool;
-      add rules later if you need access control).
+  4. Choose a region, then select "Start in test mode".
   5. Your database URL will look like:
        https://YOUR-PROJECT-default-rtdb.firebaseio.com
   6. Copy that URL.
 
-  STEP 2 · Edit this file
-  ────────────────────────
-  Open cairo-aic.html in any text editor and find these two lines
-  near the top (inside the first <script> tag):
+  STEP 2 · Set up the Cloudflare Worker (keeps your Gemini key hidden)
+  ──────────────────────────────────────────────────────────────────────
+  The Gemini API key is NEVER placed in this file or your repository.
+  It lives only inside Cloudflare as an encrypted secret. The browser
+  calls your Worker; the Worker calls Gemini with the key.
+
+  1. Go to https://workers.cloudflare.com — free account, no card needed.
+  2. Create a new Worker and paste this code:
+
+       export default {
+         async fetch(request) {
+           const ALLOWED = 'https://hershcivilgamers-hue.github.io';
+           if (request.method === 'OPTIONS') {
+             return new Response(null, { headers: {
+               'Access-Control-Allow-Origin': ALLOWED,
+               'Access-Control-Allow-Methods': 'POST',
+               'Access-Control-Allow-Headers': 'Content-Type',
+             }});
+           }
+           if (request.method !== 'POST')
+             return new Response('Method not allowed', { status: 405 });
+           const body = await request.json();
+           const res = await fetch(
+             'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY,
+             { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+           );
+           const data = await res.json();
+           return new Response(JSON.stringify(data), { headers: {
+             'Content-Type': 'application/json',
+             'Access-Control-Allow-Origin': ALLOWED,
+           }});
+         }
+       };
+
+  3. Worker Settings → Variables → Add secret variable:
+       Name:  GEMINI_KEY
+       Value: your key from https://aistudio.google.com (free, no billing)
+     Click Encrypt + Save. The key is stored securely and never visible.
+  4. Deploy and copy the Worker URL, e.g.:
+       https://cairo-proxy.YOUR-NAME.workers.dev
+
+  STEP 3 · Edit this file (two lines only)
+  ──────────────────────────────────────────
+  Near the top of this file, set:
 
       var FIREBASE_URL = 'https://YOUR-PROJECT-default-rtdb.firebaseio.com';
-      var GEMINI_KEY   = 'YOUR-GEMINI-KEY-HERE';
+      var CAIRO_PROXY  = 'https://cairo-proxy.YOUR-NAME.workers.dev';
 
-  Replace both values:
-  · FIREBASE_URL → your URL from Step 1
-  · GEMINI_KEY   → your free Gemini key from aistudio.google.com
-    (needed for the Terminal tab; leave as-is to disable it)
+  That is all. No API key anywhere in the file.
 
-  STEP 3 · Host the file
-  ───────────────────────
-  The file must be served over HTTPS — Google Sites will not embed
-  plain http:// URLs. Any of these work:
-
-  · GitHub Pages (free):
-    Create a public repo → upload cairo-aic.html → enable Pages
-    → your URL will be https://USERNAME.github.io/REPO/cairo-aic.html
-
-  · Netlify (free):
-    Drag the file to https://app.netlify.com/drop
-
-  · Any web server / CDN you already use.
+  STEP 4 · Host on GitHub Pages
+  ──────────────────────────────
+  Rename to index.html, push to your repo, enable Pages under
+  Settings → Pages → Branch: main / root.
+  Your site: https://USERNAME.github.io/REPO/
 
   STEP 4 · Embed in Google Sites
   ───────────────────────────────
-  1. Open your Google Site in the editor.
-  2. Insert → Embed → By URL.
-  3. Paste your hosted URL.
-  4. Resize the embed block to suit — 700 px height recommended.
+  Insert → Embed → By URL → paste your GitHub Pages URL.
+  Recommended embed height: 750px.
 
-  That is all. User accounts and orders will now persist in
-  Firebase and be visible to every user on every device.
-
-  SECURITY NOTE
-  ─────────────
-  Firebase "test mode" allows anyone with the URL to read/write.
-  For a private deployment, set these Realtime Database rules:
-
-  {
-    "rules": {
-      ".read":  true,
-      ".write": true
-    }
-  }
-
-  And rotate/restrict your Anthropic key using the API console.
 =================================================================
 -->
-
 </html>
