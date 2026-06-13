@@ -405,16 +405,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="login-title">CAIRO.AIC</div>
     <div class="login-sub">EC PERSONNEL AUTHENTICATION · SITE-65</div>
     <div class="login-tabs">
-      <div class="login-tab active" id="tabLogin" onclick="setLoginMode('login')">SIGN IN</div>
-      <div class="login-tab" id="tabReg"   onclick="setLoginMode('register')">REGISTER</div>
+      <div class="login-tab active" id="tabLogin">SIGN IN</div>
+      <div class="login-tab" id="tabReg">REGISTER</div>
     </div>
     <div class="login-err" id="loginErr"></div>
     <label class="login-label">EC MEMBER ID</label>
     <input class="login-input" id="loginUser" placeholder="identifier..." autocomplete="username"
-           spellcheck="false" onkeydown="if(event.key==='Enter')doAuth()"/>
+           spellcheck="false"/>
     <label class="login-label">PASSPHRASE</label>
     <input class="login-input" type="password" id="loginPass" placeholder="••••••••"
-           autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
+           autocomplete="current-password"/>
     <div id="loginExtras" style="display:none;">
       <label class="login-label">CLEARANCE LEVEL</label>
       <select class="login-input order-select" id="loginClearance" style="width:100%;margin-bottom:.9rem;">
@@ -423,8 +423,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <option value="5">Level 5 — EC Chair / O5 Liaison</option>
       </select>
     </div>
-    <button class="login-btn" id="loginBtn" onclick="doAuth()">[ AUTHENTICATE ]</button>
-    <button class="login-btn sec-btn" onclick="doGuest()">[ ENTER AS OBSERVER · READ-ONLY ]</button>
+    <button class="login-btn" id="loginBtn">[ AUTHENTICATE ]</button>
+    <button class="login-btn sec-btn" id="guestBtn">[ ENTER AS OBSERVER · READ-ONLY ]</button>
   </div>
 </div>
 
@@ -1171,6 +1171,7 @@ function renderOrders() {
     var cCount   = cached.length;
 
     var canEditOrder = isOwner || (currentUser && parseInt(currentUser.clearance) >= 4);
+    var statusCtrl = canEditOrder
       ? '<select class="status-select" onchange="updateOrderStatus(\'' + o.id + '\',this.value)">' +
         ['PENDING','IN PROGRESS','COMPLETED','FLAGGED'].map(function(s) {
           return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
@@ -2298,6 +2299,22 @@ async function queryCairo(query) {
     return 'Substrate connection error. Please retry.\n\nRef: ' + err.message;
   }
 }
+
+// ── Login overlay event wiring (deferred so all functions are defined) ──
+(function() {
+  var tabLogin = document.getElementById('tabLogin');
+  var tabReg   = document.getElementById('tabReg');
+  var loginBtn = document.getElementById('loginBtn');
+  var guestBtn = document.getElementById('guestBtn');
+  var loginUser = document.getElementById('loginUser');
+  var loginPass = document.getElementById('loginPass');
+  if (tabLogin)  tabLogin.addEventListener('click', function() { setLoginMode('login'); });
+  if (tabReg)    tabReg.addEventListener('click',   function() { setLoginMode('register'); });
+  if (loginBtn)  loginBtn.addEventListener('click',  doAuth);
+  if (guestBtn)  guestBtn.addEventListener('click',  doGuest);
+  if (loginUser) loginUser.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') doAuth(); });
+  if (loginPass) loginPass.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') doAuth(); });
+})();
 
 var _termInput = document.getElementById('termInput');
 if (_termInput) _termInput.addEventListener('keydown', function(ev) {
