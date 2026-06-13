@@ -370,9 +370,34 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .pf-status-btn.retire:hover{background:#221a00;}
 .pf-status-btn.discharge{background:#1a0404;border-color:#4a1414;color:#dd4444;}
 .pf-status-btn.discharge:hover{background:#220808;}
+
+.cairo-confirm-bg{position:fixed;inset:0;background:rgba(4,10,6,.94);z-index:2000;display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease;}
+.cairo-confirm-box{border:1px solid var(--border2);background:var(--bg2);padding:1.5rem;width:380px;max-width:92vw;animation:slideIn .2s ease;}
+.cairo-confirm-header{font-size:.55rem;letter-spacing:.2em;color:var(--green-dim);margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:1px solid var(--border2);}
+.cairo-confirm-msg{font-size:.72rem;color:var(--text);line-height:1.8;margin-bottom:.5rem;}
+.cairo-confirm-sub{font-size:.6rem;color:var(--text-dim);line-height:1.7;margin-bottom:1.25rem;}
+.cairo-confirm-btns{display:flex;gap:.5rem;justify-content:flex-end;}
+.cairo-confirm-cancel{background:#030806;border:1px solid var(--border2);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.4rem 1rem;cursor:pointer;transition:all .15s;}
+.cairo-confirm-cancel:hover{border-color:var(--text-dim);color:var(--text);}
+.cairo-confirm-ok{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.07em;padding:.4rem 1rem;cursor:pointer;transition:all .15s;border:1px solid;}
+.cairo-confirm-ok.ok-green{background:var(--green-trace);border-color:var(--green-dim);color:var(--green);}
+.cairo-confirm-ok.ok-amber{background:#1a1400;border-color:#4a3a00;color:#ddaa44;}
+.cairo-confirm-ok.ok-red{background:#1a0404;border-color:#4a1414;color:#dd4444;}
 </style>
 </head>
 <body>
+
+<div class="cairo-confirm-bg" id="cairoConfirm" style="display:none;">
+  <div class="cairo-confirm-box">
+    <div class="cairo-confirm-header">⚠ AUTHORISATION REQUIRED</div>
+    <div class="cairo-confirm-msg" id="cairoConfirmMsg"></div>
+    <div class="cairo-confirm-sub" id="cairoConfirmSub"></div>
+    <div class="cairo-confirm-btns">
+      <button class="cairo-confirm-cancel" id="cairoConfirmCancel">[ CANCEL ]</button>
+      <button class="cairo-confirm-ok"     id="cairoConfirmOk">[ CONFIRM ]</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── LOGIN OVERLAY ── -->
 <div class="login-overlay" id="loginOverlay">
@@ -770,6 +795,18 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 </div>
 
 <script>
+function cairoConfirm(opts) {
+  return new Promise(function(resolve) {
+    var bg=document.getElementById('cairoConfirm'),msgEl=document.getElementById('cairoConfirmMsg'),subEl=document.getElementById('cairoConfirmSub'),okBtn=document.getElementById('cairoConfirmOk'),canBtn=document.getElementById('cairoConfirmCancel');
+    msgEl.textContent=opts.msg||''; subEl.textContent=opts.sub||'';
+    okBtn.textContent=opts.okLabel?'[ '+opts.okLabel+' ]':'[ CONFIRM ]';
+    okBtn.className='cairo-confirm-ok '+(opts.okClass||'ok-green');
+    bg.style.display='flex';
+    function cleanup(r){bg.style.display='none';okBtn.removeEventListener('click',onOk);canBtn.removeEventListener('click',onCancel);bg.removeEventListener('click',onBg);resolve(r);}
+    function onOk(){cleanup(true);} function onCancel(){cleanup(false);} function onBg(ev){if(ev.target===bg)cleanup(false);}
+    okBtn.addEventListener('click',onOk); canBtn.addEventListener('click',onCancel); bg.addEventListener('click',onBg);
+  });
+}
 // ================================================================
 //  FIREBASE REST HELPERS
 //  All reads/writes go to Firebase Realtime Database via REST.
@@ -1080,7 +1117,7 @@ async function updateOrderStatus(id, status) {
 }
 
 async function deleteOrder(id) {
-  if (!confirm('CONFIRM: DELETE ORDER?')) return;
+  var ok=await cairoConfirm({msg:'DELETE THIS ORDER?',sub:'This cannot be undone.',okLabel:'DELETE ORDER',okClass:'ok-red'}); if(!ok)return;
   await orderDel(id);
   allOrders = allOrders.filter(function(o) { return o.id !== id; });
   renderOrders();
@@ -1722,7 +1759,7 @@ async function setPersonnelStatus(id, status) {
   var labels = { Retired: 'RETIRE', Discharged: 'DISCHARGE', Active: 'REACTIVATE' };
   var rec = allPersonnel.find(function(p){ return p.id === id; });
   if (!rec) return;
-  if (!confirm('CONFIRM: ' + labels[status] + ' "' + rec.name + '"?\n\nRecord will be retained for archival purposes.')) return;
+  var ok=await cairoConfirm({msg:labels[status]+' "'+rec.name+'"?',sub:'Record retained for archival. Reversible by CL4+.',okLabel:labels[status],okClass:status==='Retired'?'ok-amber':status==='Discharged'?'ok-red':'ok-green'}); if(!ok)return;
   rec.status    = status;
   rec.updatedBy = currentUser ? currentUser.id : '';
   rec.updated   = Date.now();
@@ -1734,7 +1771,7 @@ async function setPersonnelStatus(id, status) {
 async function deletePersonnelRecord(id) {
   if (!canEditPersonnel()) return;
   var rec = allPersonnel.find(function(p){ return p.id === id; });
-  if (!confirm('CONFIRM: DELETE RECORD FOR "' + (rec ? rec.name : id) + '"?\n\nThis cannot be undone.')) return;
+  var ok=await cairoConfirm({msg:'DELETE RECORD FOR "'+(rec?rec.name:id)+'"?',sub:'Cannot be undone.',okLabel:'DELETE RECORD',okClass:'ok-red'}); if(!ok)return;
   try { await personnelDel(id); } catch(e) {}
   allPersonnel = allPersonnel.filter(function(p){ return p.id !== id; });
   pfExpanded.delete(id);
@@ -2097,7 +2134,7 @@ async function setEthicsStatus(id, status) {
   var labels = { Retired: 'RETIRE', Discharged: 'DISCHARGE', Active: 'REACTIVATE' };
   var rec = allEthicsPersonnel.find(function(p){ return p.id === id; });
   if (!rec) return;
-  if (!confirm('CONFIRM: ' + labels[status] + ' "' + rec.name + '"?\n\nRecord will be retained for archival purposes.')) return;
+  var ok=await cairoConfirm({msg:labels[status]+' "'+rec.name+'"?',sub:'Record retained for archival. Reversible by CL4+.',okLabel:labels[status],okClass:status==='Retired'?'ok-amber':status==='Discharged'?'ok-red':'ok-green'}); if(!ok)return;
   rec.status    = status;
   rec.updatedBy = currentUser ? currentUser.id : '';
   rec.updated   = Date.now();
@@ -2108,7 +2145,7 @@ async function setEthicsStatus(id, status) {
 
 async function deleteEthicsRecord(id) {
   if (!canEditPersonnel()) return;
-  if (!confirm('CONFIRM: PERMANENTLY DELETE THIS ETHICS RECORD?')) return;
+  var ok=await cairoConfirm({msg:'PERMANENTLY DELETE THIS ETHICS RECORD?',sub:'Cannot be undone.',okLabel:'DELETE RECORD',okClass:'ok-red'}); if(!ok)return;
   await ethicsPersonnelDel(id);
   allEthicsPersonnel = allEthicsPersonnel.filter(function(p){ return p.id !== id; });
   efExpanded.delete(id);
