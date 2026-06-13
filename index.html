@@ -51,10 +51,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s ease-in-out infinite;vertical-align:middle;margin-right:4px;}
 
 /* ── Nav ── */
-.nav{display:flex;flex-wrap:wrap;border:1px solid var(--border2);border-top:none;border-bottom:none;background:#030806;}
+.nav{display:flex;flex-direction:row;flex-wrap:wrap;border:1px solid var(--border2);border-top:none;border-bottom:none;background:#030806;}
 .nav-tab{padding:.45rem 1rem;font-size:.65rem;letter-spacing:.08em;color:var(--text-dim);cursor:pointer;border-right:1px solid var(--border);transition:all .15s;user-select:none;border-bottom:2px solid transparent;}
 .nav-tab:hover{color:var(--text);background:rgba(0,255,136,.03);}
 .nav-tab.active{color:var(--green);border-bottom:2px solid var(--green);background:rgba(0,255,136,.05);}
+.nav-group{display:flex;flex-direction:column;border-right:1px solid var(--border2);}
+.nav-group:last-child{border-right:none;}
+.nav-group-label{font-size:.48rem;letter-spacing:.22em;color:var(--text-faint);padding:3px 10px 0;text-align:center;background:#030806;white-space:nowrap;}
+.nav-group-tabs{display:flex;flex:1;}
+.nav-group .nav-tab{border-right:1px solid var(--border);border-bottom:2px solid transparent;}
+.nav-group .nav-tab:last-child{border-right:none;}
+.nav-standalone{display:flex;flex-direction:column;}
 
 /* ── Panel / Tabs ── */
 .panel{border:1px solid var(--border2);border-top:none;background:var(--bg2);flex:1;}
@@ -371,33 +378,96 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .pf-status-btn.discharge{background:#1a0404;border-color:#4a1414;color:#dd4444;}
 .pf-status-btn.discharge:hover{background:#220808;}
 
-.cairo-confirm-bg{position:fixed;inset:0;background:rgba(4,10,6,.94);z-index:2000;display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease;}
-.cairo-confirm-box{border:1px solid var(--border2);background:var(--bg2);padding:1.5rem;width:380px;max-width:92vw;animation:slideIn .2s ease;}
-.cairo-confirm-header{font-size:.55rem;letter-spacing:.2em;color:var(--green-dim);margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:1px solid var(--border2);}
-.cairo-confirm-msg{font-size:.72rem;color:var(--text);line-height:1.8;margin-bottom:.5rem;}
-.cairo-confirm-sub{font-size:.6rem;color:var(--text-dim);line-height:1.7;margin-bottom:1.25rem;}
-.cairo-confirm-btns{display:flex;gap:.5rem;justify-content:flex-end;}
-.cairo-confirm-cancel{background:#030806;border:1px solid var(--border2);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.4rem 1rem;cursor:pointer;transition:all .15s;}
-.cairo-confirm-cancel:hover{border-color:var(--text-dim);color:var(--text);}
-.cairo-confirm-ok{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.07em;padding:.4rem 1rem;cursor:pointer;transition:all .15s;border:1px solid;}
-.cairo-confirm-ok.ok-green{background:var(--green-trace);border-color:var(--green-dim);color:var(--green);}
-.cairo-confirm-ok.ok-amber{background:#1a1400;border-color:#4a3a00;color:#ddaa44;}
-.cairo-confirm-ok.ok-red{background:#1a0404;border-color:#4a1414;color:#dd4444;}
+/* ── Awards ── */
+.award-tier-header{font-size:.56rem;letter-spacing:.18em;margin:.5rem 0 .3rem;padding-bottom:2px;border-bottom:1px dashed var(--border2);}
+.award-tier-header.prestigious{color:#ffcc00;}
+.award-tier-header.distinguished{color:var(--cyan);}
+.award-tier-header.medals{color:var(--text-dim);}
+.award-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:2px;font-size:.58rem;margin:2px;vertical-align:middle;}
+.award-prestigious{background:#1a1400;color:#ffcc00;border:1px solid #4a3a00;}
+.award-distinguished{background:#001a1a;color:#44cccc;border:1px solid #004a4a;}
+.award-medal{background:#0a0e0b;color:var(--text-dim);border:1px solid var(--border2);}
+.award-date{color:var(--text-faint);font-size:.56rem;margin-left:3px;}
+.award-del{background:transparent;border:none;color:var(--text-faint);cursor:pointer;font-size:.62rem;margin-left:2px;padding:0 2px;line-height:1;}
+.award-del:hover{color:var(--red);}
+.awards-grid{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:.5rem;}
+
+/* ── Tags ── */
+.tag-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:.58rem;margin:2px;}
+.tag-recruitment{background:#1a0a2a;color:#cc88ff;border:1px solid #4a2a6a;}
+.tag-engagement{background:#0a1a2a;color:#88ccff;border:1px solid #2a4a6a;}
+.tag-development{background:#0a2a1a;color:#88ffcc;border:1px solid #2a6a4a;}
+.tag-manager{font-weight:bold;}
+.tag-del{background:transparent;border:none;cursor:pointer;font-size:.62rem;padding:0 2px;line-height:1;color:var(--text-faint);}
+.tag-del:hover{color:var(--red);}
+.tags-row{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:.4rem;}
+
+/* ── Squadrons ── */
+.sqd-card{border:1px solid var(--border2);background:#030806;padding:.5rem .75rem;margin-bottom:.4rem;font-size:.64rem;}
+.sqd-name{color:var(--green);font-family:'VT323',monospace;font-size:.9rem;letter-spacing:.08em;}
+.sqd-rank-badge{display:inline-block;padding:1px 6px;font-size:.57rem;border-radius:2px;margin-left:.4rem;}
+.sqd-director{background:#1a0404;color:#ff8888;border:1px solid #5a2020;}
+.sqd-codirector{background:#1a1000;color:#ffcc88;border:1px solid #5a4020;}
+.sqd-supervisor{background:#001a1a;color:#88cccc;border:1px solid #205a5a;}
+.sqd-agent{background:#0a0e0b;color:var(--text-dim);border:1px solid var(--border2);}
+.sqd-member-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-bottom:1px solid var(--border);font-size:.62rem;}
+.sqd-member-row:last-child{border-bottom:none;}
+.sqd-section{font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin:.6rem 0 .3rem;}
+.pf-sec-hdr{display:flex;align-items:center;justify-content:space-between;font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin:.6rem 0 .2rem;padding:.25rem .4rem .25rem 0;border-bottom:1px solid var(--border2);cursor:pointer;user-select:none;}
+.pf-sec-hdr:hover{color:var(--green);}
+.pf-sec-arrow{font-size:.55rem;transition:transform .15s;display:inline-block;}
+.pf-sec-body{overflow:hidden;}
+
+/* ── Shared modal extras ── */
+.modal-group{margin-bottom:.65rem;}
+.modal-group label{font-size:.6rem;color:var(--text-dim);letter-spacing:.1em;display:block;margin-bottom:3px;}
+.modal-group input,.modal-group select,.modal-group textarea{width:100%;background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:.4rem .6rem;outline:none;}
+.modal-group input:focus,.modal-group select:focus,.modal-group textarea:focus{border-color:var(--green-dim);}
+.modal-group textarea{resize:vertical;min-height:54px;}
+.modal-group select{color:var(--text);cursor:pointer;}
+.modal-row{display:flex;gap:.5rem;}
+.modal-row .modal-group{flex:1;}
+.modal-err{font-size:.6rem;color:var(--red);min-height:.9rem;margin-top:.3rem;}
+.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;}
+.modal-save{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.35rem .9rem;cursor:pointer;transition:all .15s;}
+.modal-save:hover{background:rgba(0,255,136,.08);}
+.modal-cancel{background:#030806;border:1px solid var(--border2);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.35rem .9rem;cursor:pointer;}
+.modal-cancel:hover{border-color:var(--text-dim);}
+.modal-overlay-2{position:fixed;inset:0;background:rgba(4,10,6,.95);z-index:900;display:none;align-items:center;justify-content:center;}
+.modal-overlay-2.open{display:flex;}
+.modal-box-2{border:1px solid var(--border2);background:var(--bg2);padding:1.5rem;width:460px;max-width:96vw;animation:slideIn .2s ease;max-height:90vh;overflow-y:auto;}
+.modal-box-2 h3{font-family:'VT323',monospace;font-size:1.2rem;color:var(--green);letter-spacing:.1em;margin-bottom:1rem;}
+.sqd-member-list{max-height:200px;overflow-y:auto;border:1px solid var(--border);margin:.5rem 0;}
+.add-to-sqd-btn{background:var(--green-trace);border:1px solid var(--border2);color:var(--green-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 8px;cursor:pointer;white-space:nowrap;}
+.add-to-sqd-btn:hover{border-color:var(--green-dim);color:var(--green);}
+.pf-section-btn{background:var(--green-trace);border:1px solid var(--border2);color:var(--green-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.06em;padding:3px 9px;cursor:pointer;margin-right:.3rem;transition:all .15s;}
+.pf-section-btn:hover{border-color:var(--green);color:var(--green);}
+/* ── Strikes ── */
+.strike-card{border:1px solid #4a1414;background:#0a0202;padding:.6rem .8rem;margin-bottom:.4rem;font-size:.63rem;border-radius:2px;}
+.strike-card.expired{border-color:var(--border2);background:#030806;opacity:.7;}
+.strike-card.overturned{border-color:#1a5a2a;background:#0a2a14;opacity:.8;}
+.strike-card.appealed{border-color:#4a3a00;background:#1a1400;}
+.strike-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-bottom:.4rem;}
+.strike-meta{font-size:.58rem;color:var(--text-dim);margin-top:2px;}
+.strike-reason{color:var(--text);line-height:1.6;margin:.3rem 0;}
+.strike-appeal-block{border-left:2px solid #4a3a00;padding:.35rem .6rem;background:#0a0800;margin-top:.4rem;font-size:.62rem;}
+.strike-appeal-block.resolved{border-left-color:#1a5a2a;background:#080e08;}
+.strike-btns{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.4rem;}
+.strike-btn{font-family:'Share Tech Mono',monospace;font-size:.57rem;padding:2px 7px;cursor:pointer;border:1px solid;background:transparent;transition:all .15s;}
+.strike-btn.edit{border-color:var(--border2);color:var(--text-dim);}
+.strike-btn.edit:hover{border-color:var(--text-dim);color:var(--text);}
+.strike-btn.appeal{border-color:#4a3a00;color:#ddaa44;}
+.strike-btn.appeal:hover{background:#1a1400;}
+.strike-btn.uphold{border-color:#4a1414;color:#dd4444;}
+.strike-btn.uphold:hover{background:#0a0202;}
+.strike-btn.overturn{border-color:#1a5a2a;color:#44dd88;}
+.strike-btn.overturn:hover{background:#0a2a14;}
+.strike-btn.del{border-color:#4a1414;color:#dd4444;}
+.strike-btn.del:hover{background:#0a0202;}
+.roster-strike{display:inline-block;padding:0 5px;font-size:.54rem;border-radius:2px;background:#1a0404;color:#ff6666;border:1px solid #4a1414;margin-left:4px;vertical-align:middle;animation:pulse 2s ease-in-out infinite;}
 </style>
 </head>
 <body>
-
-<div class="cairo-confirm-bg" id="cairoConfirm" style="display:none;">
-  <div class="cairo-confirm-box">
-    <div class="cairo-confirm-header">⚠ AUTHORISATION REQUIRED</div>
-    <div class="cairo-confirm-msg" id="cairoConfirmMsg"></div>
-    <div class="cairo-confirm-sub" id="cairoConfirmSub"></div>
-    <div class="cairo-confirm-btns">
-      <button class="cairo-confirm-cancel" id="cairoConfirmCancel">[ CANCEL ]</button>
-      <button class="cairo-confirm-ok"     id="cairoConfirmOk">[ CONFIRM ]</button>
-    </div>
-  </div>
-</div>
 
 <!-- ── LOGIN OVERLAY ── -->
 <div class="login-overlay" id="loginOverlay">
@@ -405,16 +475,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="login-title">CAIRO.AIC</div>
     <div class="login-sub">EC PERSONNEL AUTHENTICATION · SITE-65</div>
     <div class="login-tabs">
-      <div class="login-tab active" id="tabLogin">SIGN IN</div>
-      <div class="login-tab" id="tabReg">REGISTER</div>
+      <div class="login-tab active" id="tabLogin" onclick="setLoginMode('login')">SIGN IN</div>
+      <div class="login-tab" id="tabReg"   onclick="setLoginMode('register')">REGISTER</div>
     </div>
     <div class="login-err" id="loginErr"></div>
     <label class="login-label">EC MEMBER ID</label>
     <input class="login-input" id="loginUser" placeholder="identifier..." autocomplete="username"
-           spellcheck="false"/>
+           spellcheck="false" onkeydown="if(event.key==='Enter')doAuth()"/>
     <label class="login-label">PASSPHRASE</label>
     <input class="login-input" type="password" id="loginPass" placeholder="••••••••"
-           autocomplete="current-password"/>
+           autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
     <div id="loginExtras" style="display:none;">
       <label class="login-label">CLEARANCE LEVEL</label>
       <select class="login-input order-select" id="loginClearance" style="width:100%;margin-bottom:.9rem;">
@@ -423,8 +493,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <option value="5">Level 5 — EC Chair / O5 Liaison</option>
       </select>
     </div>
-    <button class="login-btn" id="loginBtn">[ AUTHENTICATE ]</button>
-    <button class="login-btn sec-btn" id="guestBtn">[ ENTER AS OBSERVER · READ-ONLY ]</button>
+    <button class="login-btn" id="loginBtn" onclick="doAuth()">[ AUTHENTICATE ]</button>
+    <button class="login-btn sec-btn" onclick="doGuest()">[ ENTER AS OBSERVER · READ-ONLY ]</button>
   </div>
 </div>
 
@@ -447,21 +517,50 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     </div>
   </div>
 
-  <div class="nav">
-    <div class="nav-tab active" onclick="switchTab(this,'personnel')">PERSONNEL FILE</div>
-    <div class="nav-tab" onclick="switchTab(this,'directives')">DIRECTIVES</div>
-    <div class="nav-tab" onclick="switchTab(this,'matrix')">PSYCH MATRIX</div>
-    <div class="nav-tab" onclick="switchTab(this,'log')">ACTIVITY LOG</div>
-    <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
-      <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
+  <div class="nav" style="align-items:stretch;">
+
+    <!-- CAIRO group -->
+    <div class="nav-group">
+      <div class="nav-group-label">CAIRO</div>
+      <div class="nav-group-tabs">
+        <div class="nav-tab active" onclick="switchTab(this,'personnel')">PERSONNEL FILE</div>
+        <div class="nav-tab" onclick="switchTab(this,'directives')">DIRECTIVES</div>
+        <div class="nav-tab" onclick="switchTab(this,'matrix')">PSYCH MATRIX</div>
+        <div class="nav-tab" onclick="switchTab(this,'log')">ACTIVITY LOG</div>
+      </div>
     </div>
-    <div class="nav-tab" onclick="switchTab(this,'personnel-files')">OMEGA-1 FILES</div>
-    <div class="nav-tab" onclick="switchTab(this,'roster')">OMEGA-1 ROSTER</div>
-    <div class="nav-tab" onclick="switchTab(this,'ethics-files')">ETHICS FILES</div>
-    <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ETHICS ROSTER</div>
-    <div class="nav-tab" onclick="switchTab(this,'terminal')">TERMINAL
-      <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
+
+    <!-- OMEGA-1 group -->
+    <div class="nav-group">
+      <div class="nav-group-label">OMEGA-1</div>
+      <div class="nav-group-tabs">
+        <div class="nav-tab" onclick="switchTab(this,'personnel-files')">FILES</div>
+        <div class="nav-tab" onclick="switchTab(this,'roster')">ROSTER</div>
+      </div>
     </div>
+
+    <!-- ETHICS group -->
+    <div class="nav-group">
+      <div class="nav-group-label">ETHICS</div>
+      <div class="nav-group-tabs">
+        <div class="nav-tab" onclick="switchTab(this,'ethics-files')">FILES</div>
+        <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ROSTER</div>
+      </div>
+    </div>
+
+    <!-- Standalone tabs -->
+    <div class="nav-group">
+      <div class="nav-group-label">&nbsp;</div>
+      <div class="nav-group-tabs">
+        <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
+          <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
+        <div class="nav-tab" onclick="switchTab(this,'terminal')">TERMINAL
+          <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="panel">
@@ -748,6 +847,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <label class="modal-label">RANK</label>
       <select class="modal-select" id="pfRank">
         <option value="">— SELECT RANK —</option>
+
         <option>Commander</option>
         <option>Lieutenant Commander</option>
         <option>Major</option>
@@ -760,6 +860,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <option>Specialist</option>
         <option>Private</option>
       </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">ISD BADGE NUMBER</label>
+      <input class="modal-input" id="pfIsdBadge" placeholder="e.g. ISD-0042..."/>
     </div>
     <div class="modal-footer">
       <button class="modal-btn cancel" onclick="closePersonnelModal()">[ CANCEL ]</button>
@@ -794,19 +898,171 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   </div>
 </div>
 
+<!-- AWARD MODAL -->
+<div class="modal-overlay-2" id="awardModal">
+  <div class="modal-box-2">
+    <h3 id="awardModalTitle">AWARD MEDAL</h3>
+    <input type="hidden" id="awardTargetId"/>
+    <div class="modal-group">
+      <label>AWARD / MEDAL</label>
+      <select id="awardName">
+        <option value="">— SELECT AWARD —</option>
+        <optgroup label="★ PRESTIGIOUS">
+          <option value="Medal of Honour|Prestigious">Medal of Honour</option>
+        </optgroup>
+        <optgroup label="◆ DISTINGUISHED">
+          <option value="Distinguished Service Medal|Distinguished">Distinguished Service Medal</option>
+          <option value="Medal of Excellence|Distinguished">Medal of Excellence</option>
+          <option value="Medal of Merit|Distinguished">Medal of Merit</option>
+          <option value="Medal of Valor|Distinguished">Medal of Valor</option>
+        </optgroup>
+        <optgroup label="● MEDALS">
+          <option value="Medal of Initiative|Medal">Medal of Initiative</option>
+          <option value="Medal of Novice|Medal">Medal of Novice</option>
+          <option value="Medal of Heroism|Medal">Medal of Heroism</option>
+          <option value="Enforcement Medal|Medal">Enforcement Medal</option>
+          <option value="Specialist Medal|Medal">Specialist Medal</option>
+          <option value="Leatherback Medal|Medal">Leatherback Medal</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>DATE AWARDED</label>
+        <input type="date" id="awardDate"/>
+      </div>
+    </div>
+    <div class="modal-group">
+      <label>CITATION / REASON (optional)</label>
+      <textarea id="awardNotes" placeholder="Brief citation for the award..."></textarea>
+    </div>
+    <div class="modal-err" id="awardErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-award-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-award">[ AWARD ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAG MODAL -->
+<div class="modal-overlay-2" id="tagModal">
+  <div class="modal-box-2">
+    <h3>ASSIGN TAG</h3>
+    <input type="hidden" id="tagTargetId"/>
+    <div class="modal-group">
+      <label>TEAM</label>
+      <select id="tagType">
+        <option value="">— SELECT TEAM —</option>
+        <option value="Recruitment">Recruitment</option>
+        <option value="Engagement">Engagement</option>
+        <option value="Development">Development</option>
+      </select>
+    </div>
+    <div class="modal-group">
+      <label>ROLE</label>
+      <select id="tagRole">
+        <option value="">— SELECT ROLE —</option>
+        <option value="Manager">Manager</option>
+        <option value="Assistant Manager">Assistant Manager</option>
+      </select>
+    </div>
+    <div class="modal-err" id="tagErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-tag-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-tag">[ ASSIGN ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- SQUADRON MODAL -->
+<div class="modal-overlay-2" id="squadronModal">
+  <div class="modal-box-2">
+    <h3 id="squadronModalTitle">CREATE SQUADRON</h3>
+    <input type="hidden" id="squadronModalMode"/>
+    <input type="hidden" id="squadronType"/>
+    <input type="hidden" id="squadronTargetPfId"/>
+    <input type="hidden" id="squadronTargetSqdId"/>
+    <div class="modal-group" id="squadronNameGroup">
+      <label>SQUADRON NAME</label>
+      <input type="text" id="squadronName" placeholder="Designation or callsign..."/>
+    </div>
+    <div class="modal-group" id="squadronMemberGroup">
+      <label>ADD MEMBER — PERSONNEL ID</label>
+      <select id="squadronMemberSelect">
+        <option value="">— SELECT OMEGA-1 PERSONNEL —</option>
+      </select>
+    </div>
+    <div class="modal-group" id="squadronRankGroup">
+      <label>SQUADRON RANK</label>
+      <select id="squadronMemberRank">
+        <option value="Director">Director</option>
+        <option value="Co Director">Co Director</option>
+        <option value="Supervisor">Supervisor</option>
+        <option value="Agent">Agent</option>
+      </select>
+    </div>
+    <div id="squadronCurrentMembers"></div>
+    <div class="modal-err" id="squadronErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-squadron-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-squadron">[ SAVE ]</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CUSTOM CONFIRM MODAL — replaces browser confirm() which is blocked in iframes -->
+<div class="modal-overlay-2" id="pfConfirmModal" style="z-index:1100;">
+  <div class="modal-box-2" style="width:340px;text-align:center;">
+    <div id="pfConfirmMsg" style="font-size:.72rem;color:var(--text);line-height:1.7;margin-bottom:1.25rem;font-family:'Share Tech Mono',monospace;"></div>
+    <div style="display:flex;gap:.6rem;justify-content:center;">
+      <button class="modal-cancel" id="pfConfirmNo"  style="min-width:90px;">[ CANCEL ]</button>
+      <button class="modal-save"   id="pfConfirmYes" style="min-width:90px;">[ CONFIRM ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- STRIKE MODAL (CL5 — issue/edit) -->
+<div class="modal-overlay-2" id="strikeModal">
+  <div class="modal-box-2">
+    <h3 id="strikeModalTitle">ISSUE STRIKE</h3>
+    <input type="hidden" id="strikeTargetPfId"/>
+    <input type="hidden" id="strikeTargetStrikeId"/>
+    <div class="modal-group">
+      <label>REASON FOR STRIKE</label>
+      <textarea id="strikeReason" placeholder="State clearly the reason for this strike..."></textarea>
+    </div>
+    <div class="modal-group">
+      <label>EXPIRY DATE <span style="color:var(--text-dim);font-size:.58rem;">(leave blank for permanent)</span></label>
+      <input type="date" id="strikeExpiry"/>
+    </div>
+    <div class="modal-err" id="strikeErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-strike-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-strike">[ CONFIRM STRIKE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPEAL MODAL (any authenticated user) -->
+<div class="modal-overlay-2" id="appealModal">
+  <div class="modal-box-2">
+    <h3>SUBMIT APPEAL</h3>
+    <input type="hidden" id="appealTargetPfId"/>
+    <input type="hidden" id="appealTargetStrikeId"/>
+    <div class="modal-group">
+      <label>GROUNDS FOR APPEAL</label>
+      <textarea id="appealReason" placeholder="State your grounds for appeal clearly and factually..."></textarea>
+    </div>
+    <div class="modal-err" id="appealErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-appeal-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-appeal">[ SUBMIT APPEAL ]</button>
+    </div>
+  </div>
+</div>
+
 <script>
-function cairoConfirm(opts) {
-  return new Promise(function(resolve) {
-    var bg=document.getElementById('cairoConfirm'),msgEl=document.getElementById('cairoConfirmMsg'),subEl=document.getElementById('cairoConfirmSub'),okBtn=document.getElementById('cairoConfirmOk'),canBtn=document.getElementById('cairoConfirmCancel');
-    msgEl.textContent=opts.msg||''; subEl.textContent=opts.sub||'';
-    okBtn.textContent=opts.okLabel?'[ '+opts.okLabel+' ]':'[ CONFIRM ]';
-    okBtn.className='cairo-confirm-ok '+(opts.okClass||'ok-green');
-    bg.style.display='flex';
-    function cleanup(r){bg.style.display='none';okBtn.removeEventListener('click',onOk);canBtn.removeEventListener('click',onCancel);bg.removeEventListener('click',onBg);resolve(r);}
-    function onOk(){cleanup(true);} function onCancel(){cleanup(false);} function onBg(ev){if(ev.target===bg)cleanup(false);}
-    okBtn.addEventListener('click',onOk); canBtn.addEventListener('click',onCancel); bg.addEventListener('click',onBg);
-  });
-}
 // ================================================================
 //  FIREBASE REST HELPERS
 //  All reads/writes go to Firebase Realtime Database via REST.
@@ -1117,7 +1373,7 @@ async function updateOrderStatus(id, status) {
 }
 
 async function deleteOrder(id) {
-  var ok=await cairoConfirm({msg:'DELETE THIS ORDER?',sub:'This cannot be undone.',okLabel:'DELETE ORDER',okClass:'ok-red'}); if(!ok)return;
+  if (!await pfConfirm('CONFIRM: DELETE ORDER?')) return;
   await orderDel(id);
   allOrders = allOrders.filter(function(o) { return o.id !== id; });
   renderOrders();
@@ -1134,6 +1390,29 @@ function setFilter(f, btn) {
 function e(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Custom confirm (replaces browser confirm() which is blocked in sandboxed iframes) ──
+function pfConfirm(message) {
+  return new Promise(function(resolve) {
+    var modal = document.getElementById('pfConfirmModal');
+    var msg   = document.getElementById('pfConfirmMsg');
+    var yes   = document.getElementById('pfConfirmYes');
+    var no    = document.getElementById('pfConfirmNo');
+    if (!modal) { resolve(false); return; }
+    msg.textContent = message;
+    modal.classList.add('open');
+    function cleanup(result) {
+      modal.classList.remove('open');
+      yes.removeEventListener('click', onYes);
+      no.removeEventListener('click', onNo);
+      resolve(result);
+    }
+    function onYes() { cleanup(true);  }
+    function onNo()  { cleanup(false); }
+    yes.addEventListener('click', onYes);
+    no.addEventListener('click',  onNo);
+  });
 }
 function priorityBadge(p) {
   return p==='CRITICAL'?'b-red':p==='URGENT'?'b-amber':p==='ELEVATED'?'b-cyan':'b-green';
@@ -1170,8 +1449,7 @@ function renderOrders() {
     var cached   = commentCache[o.id] || [];
     var cCount   = cached.length;
 
-    var canEditOrder = isOwner || (currentUser && parseInt(currentUser.clearance) >= 4);
-    var statusCtrl = canEditOrder
+    var statusCtrl = isOwner
       ? '<select class="status-select" onchange="updateOrderStatus(\'' + o.id + '\',this.value)">' +
         ['PENDING','IN PROGRESS','COMPLETED','FLAGGED'].map(function(s) {
           return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
@@ -1430,6 +1708,7 @@ function formatDob(s) {
 
 var allPersonnel   = [];    // array of personnel record objects
 var pfExpanded     = new Set(); // which cards are open
+var pfCollapsed    = new Set(); // "pfId:sectionKey" — which sections are folded
 
 // Firebase / LS helpers for personnel
 async function personnelGetAll() {
@@ -1453,6 +1732,7 @@ async function loadPersonnel() {
     var raw = await personnelGetAll();
     allPersonnel = raw.filter(function(p){ return p && p.id; });
   } catch(e) { allPersonnel = []; }
+  await loadSquadrons();
   renderPersonnelFiles();
   renderRoster();
 }
@@ -1490,101 +1770,196 @@ function renderPersonnelFiles() {
   }
 
   list.innerHTML = filtered.map(function(p) {
-    var isOpen = pfExpanded.has(p.id);
-    var notes  = Array.isArray(p.notes) ? p.notes : [];
-    var notesSorted = notes.slice().sort(function(a,b){ return a.created - b.created; });
-
-    var notesHtml = notesSorted.length
-      ? notesSorted.map(function(n) {
-          var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
-          return '<div class="pf-note">' +
-            '<div class="pf-note-gutter"></div>' +
-            '<div class="pf-note-body">' +
-              '<div class="pf-note-meta">EC·' + e(n.author) + ' [L' + e(n.clearance) + '] · ' + nts + ' UTC</div>' +
-              '<div class="pf-note-text">' + e(n.text) + '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('')
-      : '<div style="font-size:.6rem;color:var(--text-faint);padding:4px 0;">[ NO NOTES ON FILE ]</div>';
-
-    var noteFormHtml = canEdit
-      ? '<div class="pf-note-form">' +
-          '<textarea class="pf-note-input" id="pfnote_' + p.id + '" placeholder="Add note to file..." rows="2" ' +
-            'onkeydown="handlePfNoteKey(event,\'' + p.id + '\')"></textarea>' +
-          '<button class="pf-btn" onclick="addPersonnelNote(\'' + p.id + '\')">[ ADD NOTE ]</button>' +
-        '</div>'
-      : '';
-
-    var actionsHtml = canEdit
-      ? '<div class="pf-card-actions">' +
-          '<button class="pf-btn" onclick="openPersonnelModal(\'' + p.id + '\')">[ EDIT RECORD ]</button>' +
-          '<button class="pf-btn danger" onclick="deletePersonnelRecord(\'' + p.id + '\')">[ DELETE ]</button>' +
-        '</div>'
-      : '';
-
-    // ── Rank history (most recent first) ──
-    var history = Array.isArray(p.rankHistory) ? p.rankHistory.slice().sort(function(a,b){ return b.changedAt-a.changedAt; }) : [];
-    var historyHtml = history.length
-      ? history.map(function(h){
-          var hts = new Date(h.changedAt).toISOString().slice(0,16).replace('T',' ');
-          return '<div class="rank-history-entry">' +
-            '<div class="rank-history-gutter"></div>' +
-            '<div class="rank-history-body">' +
-              '<div class="rank-history-meta">EC·' + e(h.changedBy||'—') + ' [L' + e(h.clearance||'—') + '] · ' + hts + ' UTC</div>' +
-              '<div class="rank-history-change">' +
-                '<span class="badge ' + rankBadgeClass(h.from) + '">' + e(h.from||'—') + '</span>' +
-                '<span class="rank-arrow">→</span>' +
-                '<span class="badge ' + rankBadgeClass(h.to) + '">' + e(h.to||'—') + '</span>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('')
-      : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO RANK CHANGES ON RECORD ]</div>';
-
-    // ── Status buttons ──
+    var isOpen  = pfExpanded.has(p.id);
+    var canEdit = canEditPersonnel();
     var pStatus = p.status || 'Active';
-    var statusBtns = canEdit
-      ? '<div class="pf-status-btns">' +
-          (pStatus === 'Active'
-            ? '<button class="pf-status-btn retire"    data-pfid="' + e(p.id) + '" data-pfstatus="Retired">[ RETIRE ]</button>' +
-              '<button class="pf-status-btn discharge" data-pfid="' + e(p.id) + '" data-pfstatus="Discharged">[ DISCHARGE ]</button>'
-            : '<button class="pf-status-btn reactivate" data-pfid="' + e(p.id) + '" data-pfstatus="Active">[ REACTIVATE ]</button>') +
-        '</div>'
+    var notes   = Array.isArray(p.notes)      ? p.notes.slice().sort((a,b)=>a.created-b.created) : [];
+    var awards  = Array.isArray(p.awards)     ? p.awards : [];
+    var tags    = Array.isArray(p.tags)       ? p.tags   : [];
+    var history = Array.isArray(p.rankHistory)? p.rankHistory.slice().sort((a,b)=>b.changedAt-a.changedAt) : [];
+    var pfSqdns = allSquadrons.filter(s => s.members && s.members.some(m => (m.memberId||m.pfId) === p.id));
+
+    // ── header badges ──
+    var rankBadge   = `<span class="badge ${rankBadgeClass(p.rank)}">${e(p.rank||'—')}</span>`;
+    var statusBadge = pStatus !== 'Active'
+      ? `<span class="badge ${pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span>` : '';
+    var tagPills = tags.map(t => {
+      var cls = 'tag-' + t.type.toLowerCase();
+      var del = canEdit ? `<button class="tag-del" data-action="remove-tag" data-id="${e(p.id)}" data-tagtype="${e(t.type)}" title="Remove">×</button>` : '';
+      return `<span class="tag-pill ${cls}"><span class="tag-manager">${e(t.role)}</span> · ${e(t.type)}${del}</span>`;
+    }).join('');
+
+    if (!isOpen) {
+      return `<div class="pf-card" id="pfcard_${e(p.id)}">
+        <div class="pf-card-header" data-action="toggle-pf" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='rgba(0,255,136,.02)'" onmouseout="this.style.background=''">
+          <div>
+            <div class="pf-name">${e(p.name||'—')}${p.nickname?` <span style="color:var(--text-dim);font-size:.75rem;">"${e(p.nickname)}"</span>`:''}</div>
+            <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${tagPills}</div>
+          </div>
+          <span style="font-size:.62rem;color:var(--text-dim);">▸</span>
+        </div>
+      </div>`;
+    }
+
+    // ── awards section ──
+    var TIERS = ['Prestigious','Distinguished','Medal'];
+    var TIER_LABELS = {Prestigious:'★ PRESTIGIOUS',Distinguished:'◆ DISTINGUISHED',Medal:'● MEDALS'};
+    var awardsByTier = {Prestigious:[],Distinguished:[],Medal:[]};
+    awards.forEach(a => { if(awardsByTier[a.tier]) awardsByTier[a.tier].push(a); });
+    var awardsHtml = TIERS.map(tier => {
+      if(!awardsByTier[tier].length) return '';
+      var cls = tier.toLowerCase();
+      var badges = awardsByTier[tier].map(a => {
+        var del = canEdit ? `<button class="award-del" data-action="del-award" data-id="${e(p.id)}" data-awardid="${e(a.id)}" title="Remove">×</button>` : '';
+        return `<span class="award-badge award-${cls}" title="${e(a.notes||'')}">${e(a.name)}<span class="award-date">${a.date||''}</span>${del}</span>`;
+      }).join('');
+      return `<div class="award-tier-header ${cls}">${TIER_LABELS[tier]}</div><div class="awards-grid">${badges}</div>`;
+    }).join('');
+    if(!awardsHtml) awardsHtml = '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO AWARDS ON RECORD ]</div>';
+
+    // ── rank history ──
+    var histHtml = history.length ? history.map(h => {
+      var hts = new Date(h.changedAt).toISOString().slice(0,16).replace('T',' ');
+      return `<div class="rank-history-entry">
+        <div class="rank-history-gutter"></div>
+        <div class="rank-history-body">
+          <div class="rank-history-meta">EC·${e(h.changedBy||'—')} [L${e(h.clearance||'—')}] · ${hts} UTC</div>
+          <div class="rank-history-change"><span class="badge ${rankBadgeClass(h.from)}">${e(h.from||'—')}</span><span class="rank-arrow">→</span><span class="badge ${rankBadgeClass(h.to)}">${e(h.to||'—')}</span></div>
+        </div>
+      </div>`;
+    }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO RANK CHANGES ]</div>';
+
+    // ── notes ──
+    var notesHtml = notes.length ? notes.map(n => {
+      var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
+      return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta">EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+    }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
+    var noteForm = currentUser ? `<div class="pf-note-form"><textarea class="pf-note-input" id="pfnote_${e(p.id)}" placeholder="Add note..." rows="2" onkeydown="handleNoteKey(event,this)"></textarea><button class="pf-btn" data-action="add-pf-note" data-id="${e(p.id)}">[ ADD ]</button></div>` : '';
+
+    // ── tags section ──
+    // ── Strikes ──
+    var strikes = Array.isArray(p.strikes) ? p.strikes : [];
+    var strikesHtml = strikes.length ? strikes.map(function(s) {
+      var ds  = strikeDisplayStatus(s);
+      var exp = s.expiresAt ? new Date(s.expiresAt).toLocaleDateString('en-GB') : 'Permanent';
+      var issuedDate = new Date(s.issuedAt).toISOString().slice(0,10);
+      var appealBlock = '';
+      if (s.appeal) {
+        var aDate = new Date(s.appeal.submittedAt).toISOString().slice(0,10);
+        appealBlock = `<div class="strike-appeal-block${s.appeal.resolution?' resolved':''}">
+          <div style="font-size:.57rem;color:var(--amber);letter-spacing:.08em;margin-bottom:2px;">▸ APPEAL${s.appeal.resolution?' — '+s.appeal.resolution.toUpperCase():' — PENDING REVIEW'}</div>
+          <div style="color:var(--text);line-height:1.6;">${e(s.appeal.reason)}</div>
+          <div style="font-size:.57rem;color:var(--text-dim);margin-top:2px;">Submitted by EC·${e(s.appeal.submittedBy)} · ${aDate}${s.appeal.resolvedBy?' · Resolved by EC·'+e(s.appeal.resolvedBy):''}</div>
+        </div>`;
+      }
+      var btns = '<div class="strike-btns">';
+      if (canIssueStrike()) {
+        btns += `<button class="strike-btn edit"    data-action="edit-strike"   data-id="${e(p.id)}" data-strikeid="${e(s.id)}">EDIT</button>`;
+        if (s.status === 'Appealed' && s.appeal && !s.appeal.resolution) {
+          btns += `<button class="strike-btn overturn" data-action="overturn-strike" data-id="${e(p.id)}" data-strikeid="${e(s.id)}">OVERTURN</button>`;
+          btns += `<button class="strike-btn uphold"   data-action="uphold-strike"   data-id="${e(p.id)}" data-strikeid="${e(s.id)}">UPHOLD</button>`;
+        }
+        btns += `<button class="strike-btn del"    data-action="delete-strike" data-id="${e(p.id)}" data-strikeid="${e(s.id)}">✕ REMOVE</button>`;
+      }
+      if (currentUser && s.status === 'Active') {
+        btns += `<button class="strike-btn appeal" data-action="appeal-strike" data-id="${e(p.id)}" data-strikeid="${e(s.id)}">APPEAL</button>`;
+      }
+      btns += '</div>';
+      return `<div class="strike-card ${ds.cardCls}">
+        <div class="strike-header">
+          <div>
+            <span class="badge ${ds.cls}">${ds.label}</span>
+            <div class="strike-meta">Issued by EC·${e(s.issuedBy)} · ${issuedDate} · Expires: ${e(exp)}</div>
+          </div>
+        </div>
+        <div class="strike-reason">${e(s.reason)}</div>
+        ${appealBlock}${btns}
+      </div>`;
+    }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO STRIKES ON RECORD ]</div>';
+    var strikesHeader = canIssueStrike()
+      ? `<button class="pf-section-btn" data-action="issue-strike" data-id="${e(p.id)}" style="float:right;margin-top:-2px;">[ + ISSUE STRIKE ]</button>`
       : '';
 
-    return '<div class="pf-card" id="pfcard_' + p.id + '">' +
-      '<div class="pf-card-header" onclick="togglePfCard(\'' + p.id + '\')">' +
-        '<div>' +
-          '<div class="pf-name">' + e(p.name || '—') + (p.nickname ? ' <span style="color:var(--text-dim);font-size:.75rem;">"' + e(p.nickname) + '"</span>' : '') + '</div>' +
-          '<div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">' +
-            '<span class="badge ' + rankBadgeClass(p.rank) + '">' + e(p.rank || '—') + '</span>' +
-            (pStatus !== 'Active' ? '<span class="badge ' + (pStatus==='Retired'?'b-retired':'b-discharged') + '">' + e(pStatus) + '</span>' : '') +
-          '</div>' +
-        '</div>' +
-        '<div class="pf-card-meta">' +
-          '<span style="font-size:.62rem;color:var(--text-dim);">' + (isOpen ? '▾' : '▸') + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="pf-card-body' + (isOpen ? ' open' : '') + '">' +
-        '<div class="pf-detail-grid">' +
-          '<div class="pf-detail"><span class="pf-detail-label">FULL NAME · </span><span class="pf-detail-val">' + e(p.name || '—') + '</span></div>' +
-          '<div class="pf-detail"><span class="pf-detail-label">NICKNAME · </span><span class="pf-detail-val">' + e(p.nickname || '—') + '</span></div>' +
-          '<div class="pf-detail"><span class="pf-detail-label">DATE OF BIRTH · </span><span class="pf-detail-val">' + formatDob(p.dob) + '</span></div>' +
-          '<div class="pf-detail"><span class="pf-detail-label">RANK · </span><span class="pf-detail-val">' + e(p.rank || '—') + '</span></div>' +
-          '<div class="pf-detail"><span class="pf-detail-label">STATUS · </span><span class="pf-detail-val"><span class="badge ' + (pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged') + '">' + e(pStatus) + '</span></span></div>' +
-          '<div class="pf-detail"><span class="pf-detail-label">CREATED · </span><span class="pf-detail-val">' + new Date(p.created).toISOString().slice(0,10) + ' · EC·' + e(p.createdBy || '—') + '</span></div>' +
-        '</div>' +
-        '<div class="rank-history-sec">▸ RANK CHANGE LOG (' + history.length + ')</div>' +
-        historyHtml +
-        '<div class="pf-notes-section">' +
-          '<div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin:.6rem 0 .4rem;">▸ NOTES ON FILE (' + notes.length + ')</div>' +
-          notesHtml +
-          noteFormHtml +
-        '</div>' +
-        actionsHtml +
-        statusBtns +
-      '</div>' +
-    '</div>';
+    var tagsSection = `<div class="tags-row">${tagPills||'<span style="font-size:.6rem;color:var(--text-faint);">[ NO TAGS ]</span>'}${canEdit?`<button class="pf-section-btn" data-action="open-tag-modal" data-id="${e(p.id)}">+ TAG</button>`:''}</div>`;
+
+    // ── squadrons section ──
+    var sqdHtml = pfSqdns.length ? pfSqdns.map(s => {
+      var myEntry = s.members.find(m => (m.memberId||m.pfId) === p.id);
+      var myRank  = myEntry ? myEntry.rank : '—';
+      var rankCls = myRank==='Director'?'sqd-director':myRank==='Co Director'?'sqd-codirector':myRank==='Supervisor'?'sqd-supervisor':'sqd-agent';
+      var membersHtml = (s.members||[]).map(m =>
+        `<div class="sqd-member-row"><span>${e(m.name||(m.memberId||m.pfId))}</span><span class="sqd-rank-badge ${m.rank==='Director'?'sqd-director':m.rank==='Co Director'?'sqd-codirector':m.rank==='Supervisor'?'sqd-supervisor':'sqd-agent'}">${e(m.rank)}</span></div>`
+      ).join('');
+      return `<div class="sqd-card"><div class="sqd-name">${e(s.name)} <span class="sqd-rank-badge ${rankCls}">${e(myRank)}</span>
+        <span style="float:right;display:flex;gap:.3rem;">
+          ${canEdit?`<button class="pf-section-btn" data-action="open-sqd-add" data-sqdid="${e(s.id)}" data-pfid="${e(p.id)}">+ MEMBER</button>`:''}
+          ${(currentUser && parseInt(currentUser.clearance)>=5)?`<button class="pf-section-btn" style="border-color:#4a1414;color:#dd4444;" data-action="delete-pf-sqd" data-sqdid="${e(s.id)}">✕ DELETE</button>`:''}
+        </span>
+        </div><div style="margin-top:.4rem;">${membersHtml}</div></div>`;
+    }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NOT IN ANY SQUADRON ]</div>';
+
+    // ── action buttons ──
+    var actionBtns = canEdit ? `
+      <div class="pf-card-actions">
+        <button class="pf-btn"    data-action="edit-pf"    data-id="${e(p.id)}">[ EDIT RECORD ]</button>
+        <button class="pf-btn"    data-action="award-pf"   data-id="${e(p.id)}">[ AWARD MEDAL ]</button>
+        <button class="pf-btn"    data-action="open-tag-modal" data-id="${e(p.id)}" style="display:none;">+ TAG</button>
+        <button class="pf-btn"    data-action="create-sqd" data-id="${e(p.id)}">[ + SQUADRON ]</button>
+        <button class="pf-btn danger" data-action="delete-pf" data-id="${e(p.id)}">[ DELETE ]</button>
+      </div>` : '';
+    var statusBtns = canEdit ? `
+      <div class="pf-status-btns">
+        ${pStatus==='Active'
+          ? `<button class="pf-status-btn retire"    data-action="status-pf" data-id="${e(p.id)}" data-status="Retired">[ RETIRE ]</button>
+             <button class="pf-status-btn discharge" data-action="status-pf" data-id="${e(p.id)}" data-status="Discharged">[ DISCHARGE ]</button>`
+          : `<button class="pf-status-btn reactivate" data-action="status-pf" data-id="${e(p.id)}" data-status="Active">[ REACTIVATE ]</button>`
+        }
+      </div>` : '';
+
+    return `<div class="pf-card" id="pfcard_${e(p.id)}">
+      <div class="pf-card-header" data-action="toggle-pf" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='rgba(0,255,136,.02)'" onmouseout="this.style.background=''">
+        <div>
+          <div class="pf-name">${e(p.name||'—')}${p.nickname?` <span style="color:var(--text-dim);font-size:.75rem;">"${e(p.nickname)}"</span>`:''}</div>
+          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}</div>
+        </div>
+        <span style="font-size:.62rem;color:var(--text-dim);">▾</span>
+      </div>
+      <div class="pf-card-body open">
+        <div class="pf-detail-grid">
+          <div class="pf-detail"><span class="pf-detail-label">FULL NAME · </span><span class="pf-detail-val">${e(p.name||'—')}</span></div>
+          <div class="pf-detail"><span class="pf-detail-label">NICKNAME · </span><span class="pf-detail-val">${e(p.nickname||'—')}</span></div>
+          <div class="pf-detail"><span class="pf-detail-label">DATE OF BIRTH · </span><span class="pf-detail-val">${formatDob(p.dob)}</span></div>
+          <div class="pf-detail"><span class="pf-detail-label">RANK · </span><span class="pf-detail-val">${e(p.rank||'—')}</span></div>
+          <div class="pf-detail"><span class="pf-detail-label">ISD BADGE NO. · </span><span class="pf-detail-val" style="color:var(--amber);">${e(p.isdBadge||'—')}</span></div>
+          <div class="pf-detail"><span class="pf-detail-label">STATUS · </span><span class="pf-detail-val"><span class="badge ${pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span></span></div>
+          <div class="pf-detail"><span class="pf-detail-label">CREATED · </span><span class="pf-detail-val">${new Date(p.created).toISOString().slice(0,10)} · EC·${e(p.createdBy||'—')}</span></div>
+        </div>
+
+        ${(()=>{
+          var sections = [
+            { key:'tags',      label:'MANAGEMENT TAGS',      count:'',                    body: tagsSection },
+            { key:'awards',    label:'AWARDS & DECORATIONS', count: ' ('+awards.length+')', body: awardsHtml },
+            { key:'strikes',   label:'STRIKES',              count: ' ('+strikes.length+')', body: strikesHeader + strikesHtml },
+            { key:'ranks',     label:'RANK CHANGE LOG',      count: ' ('+history.length+')',body: histHtml },
+            { key:'squadrons', label:'SQUADRON ASSIGNMENTS',  count:'',
+              body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'') },
+            { key:'notes',     label:'NOTES ON FILE',        count: ' ('+notes.length+')', body: notesHtml + noteForm },
+          ];
+          return sections.map(sec => {
+            var collapsed = pfCollapsed.has(p.id + ':' + sec.key);
+            return `<div class="pf-sec-hdr" data-action="toggle-section" data-id="${e(p.id)}" data-section="${sec.key}">
+              <span>▸ ${sec.label}${sec.count}</span>
+              <span class="pf-sec-arrow" style="transform:rotate(${collapsed?'-90':'0'}deg)">▾</span>
+            </div>
+            <div class="pf-sec-body" style="display:${collapsed?'none':'block'};padding:0 .1rem .4rem;">
+              ${sec.body}
+            </div>`;
+          }).join('');
+        })()}
+
+        ${actionBtns}${statusBtns}
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -1594,12 +1969,6 @@ function rankBadgeClass(rank) {
   if (idx <= 1) return 'b-red';   // Commander, Lt Commander
   if (idx <= 4) return 'b-amber'; // Major → Lieutenant
   return 'b-cyan';                // NCOs and below
-}
-
-function togglePfCard(id) {
-  if (pfExpanded.has(id)) pfExpanded.delete(id);
-  else pfExpanded.add(id);
-  renderPersonnelFiles();
 }
 
 // ── Render Roster ──
@@ -1632,7 +2001,9 @@ function renderRoster() {
     rows +=
       '<tr>' +
         '<td class="roster-num">' + counter++ + '</td>' +
-        '<td class="roster-name">' + e(p.name || '—') + '</td>' +
+        '<td class="roster-name">' + e(p.name || '—') +
+          ((p.strikes||[]).some(isStrikeActive) ? ' <span class="roster-strike">⚠ ACTIVE STRIKE</span>' : '') +
+        '</td>' +
         '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
         '<td><span class="badge ' + rankBadgeClass(p.rank) + '">' + e(p.rank || '—') + '</span></td>' +
         '<td style="font-size:.62rem;color:var(--text-dim);">' + formatDob(p.dob) + '</td>' +
@@ -1655,15 +2026,17 @@ function openPersonnelModal(id) {
   if (id) {
     var rec = allPersonnel.find(function(p){ return p.id === id; });
     if (!rec) return;
-    document.getElementById('pfName').value = rec.name     || '';
-    document.getElementById('pfNick').value = rec.nickname || '';
-    document.getElementById('pfDob').value  = rec.dob      || '';
-    document.getElementById('pfRank').value = rec.rank     || '';
+    document.getElementById('pfName').value    = rec.name     || '';
+    document.getElementById('pfNick').value    = rec.nickname || '';
+    document.getElementById('pfDob').value     = rec.dob      || '';
+    document.getElementById('pfRank').value    = rec.rank     || '';
+    document.getElementById('pfIsdBadge').value= rec.isdBadge || '';
   } else {
-    document.getElementById('pfName').value = '';
-    document.getElementById('pfNick').value = '';
-    document.getElementById('pfDob').value  = '';
-    document.getElementById('pfRank').value = '';
+    document.getElementById('pfName').value     = '';
+    document.getElementById('pfNick').value     = '';
+    document.getElementById('pfDob').value      = '';
+    document.getElementById('pfRank').value     = '';
+    document.getElementById('pfIsdBadge').value = '';
   }
 
   document.getElementById('pfModal').style.display = 'flex';
@@ -1702,6 +2075,7 @@ async function savePersonnelRecord() {
       rec.nickname  = document.getElementById('pfNick').value.trim();
       rec.dob       = document.getElementById('pfDob').value;
       rec.rank      = rank;
+      rec.isdBadge  = document.getElementById('pfIsdBadge').value.trim();
       rec.updatedBy = currentUser.id;
       rec.updated   = Date.now();
       try { await personnelSet(editId, rec); } catch(err) { alert('SAVE ERROR: ' + err.message); }
@@ -1713,6 +2087,7 @@ async function savePersonnelRecord() {
       nickname:  document.getElementById('pfNick').value.trim(),
       dob:       document.getElementById('pfDob').value,
       rank:      rank,
+      isdBadge:  document.getElementById('pfIsdBadge').value.trim(),
       status:    'Active',
       rankHistory: [],
       notes:     [],
@@ -1741,26 +2116,569 @@ function efRetire(id)      { setEthicsStatus(id, 'Retired');       }
 function efDischarge(id)   { setEthicsStatus(id, 'Discharged');    }
 function efReactivate(id)  { setEthicsStatus(id, 'Active');        }
 
-// ── Delegated handler for status buttons (data-attribute approach) ──
-// Retire/discharge buttons use data-pfid/data-efid + data-pfstatus/data-efstatus
-// instead of onclick arguments, which avoids all JS string-quoting issues.
+// ── Universal delegated event handler ──
+// All card interactions use data-action attributes — no JS string quoting issues ever.
 document.addEventListener('click', function(ev) {
-  var btn = ev.target.closest ? ev.target.closest('[data-pfstatus],[data-efstatus]') : null;
-  if (!btn) return;
-  var pfid     = btn.getAttribute('data-pfid');
-  var efid     = btn.getAttribute('data-efid');
-  var pfstatus = btn.getAttribute('data-pfstatus');
-  var efstatus = btn.getAttribute('data-efstatus');
-  if (pfid && pfstatus) setPersonnelStatus(pfid, pfstatus);
-  if (efid && efstatus) setEthicsStatus(efid, efstatus);
+  var el = ev.target.closest('[data-action]');
+  if (!el) return;
+  var action = el.dataset.action;
+  var id     = el.dataset.id;
+  var status = el.dataset.status;
+
+  switch (action) {
+    // Omega-1 card
+    case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
+    case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
+    case 'edit-pf':          ev.stopPropagation(); openPersonnelModal(id); break;
+    case 'delete-pf':        ev.stopPropagation(); deletePersonnelRecord(id); break;
+    case 'add-pf-note':      ev.stopPropagation(); addPersonnelNote(id); break;
+    case 'status-pf':        ev.stopPropagation(); setPersonnelStatus(id, status); break;
+    case 'award-pf':         ev.stopPropagation(); openAwardModal(id); break;
+    case 'del-award':        ev.stopPropagation(); removeAward(id, el.dataset.awardid); break;
+    case 'open-tag-modal':   ev.stopPropagation(); openTagModal(id); break;
+    case 'remove-tag':       ev.stopPropagation(); removeTag(id, el.dataset.tagtype); break;
+    case 'issue-strike':     ev.stopPropagation(); openStrikeModal(id, null); break;
+    case 'edit-strike':      ev.stopPropagation(); openStrikeModal(id, el.dataset.strikeid); break;
+    case 'delete-strike':    ev.stopPropagation(); deleteStrike(id, el.dataset.strikeid); break;
+    case 'appeal-strike':    ev.stopPropagation(); openAppealModal(id, el.dataset.strikeid); break;
+    case 'uphold-strike':    ev.stopPropagation(); resolveStrikeAppeal(id, el.dataset.strikeid, 'Upheld'); break;
+    case 'overturn-strike':  ev.stopPropagation(); resolveStrikeAppeal(id, el.dataset.strikeid, 'Overturned'); break;
+    case 'close-strike-modal':   closeStrikeModal(); break;
+    case 'save-strike':          saveStrike(); break;
+    case 'close-appeal-modal':   closeAppealModal(); break;
+    case 'save-appeal':          saveAppeal(); break;
+    case 'create-sqd':       ev.stopPropagation(); openSquadronModal('create', id, null, 'pf'); break;
+    case 'open-sqd-add':     ev.stopPropagation(); openSquadronModal('add', el.dataset.pfid, el.dataset.sqdid, 'pf'); break;
+    case 'delete-pf-sqd':   ev.stopPropagation(); deletePfSquadron(el.dataset.sqdid); break;
+    // Ethics card
+    case 'toggle-ef':        ev.stopPropagation(); toggleEfCard(id); break;
+    case 'toggle-ef-section':ev.stopPropagation(); toggleEfSection(id, el.dataset.section); break;
+    case 'edit-ef':          ev.stopPropagation(); openEthicsModal(id); break;
+    case 'delete-ef':        ev.stopPropagation(); deleteEthicsRecord(id); break;
+    case 'add-ef-note':      ev.stopPropagation(); addEthicsNote(id); break;
+    case 'status-ef':        ev.stopPropagation(); setEthicsStatus(id, status); break;
+    case 'create-ef-sqd':    ev.stopPropagation(); openSquadronModal('create', id, null, 'ef'); break;
+    case 'open-ef-sqd-add':  ev.stopPropagation(); openSquadronModal('add', el.dataset.efid, el.dataset.sqdid, 'ef'); break;
+    case 'delete-ef-sqd':    ev.stopPropagation(); deleteEfSquadron(el.dataset.sqdid); break;
+    // Modals
+    case 'close-award-modal':    closeAwardModal(); break;
+    case 'save-award':           saveAward(); break;
+    case 'close-tag-modal':      closeTagModal(); break;
+    case 'save-tag':             saveTag(); break;
+    case 'close-squadron-modal': closeSquadronModal(); break;
+    case 'save-squadron':        saveSquadron(); break;
+  }
 });
+
+// Handle note Ctrl+Enter — uses data attributes, no quoting needed
+function handleNoteKey(ev, textarea) {
+  if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+    ev.preventDefault();
+    var id   = textarea.getAttribute('id'); // pfnote_xxx or efnote_xxx
+    if (id && id.startsWith('pfnote_')) addPersonnelNote(id.slice(7));
+    if (id && id.startsWith('efnote_')) addEthicsNote(id.slice(7));
+  }
+}
+
+// ── Fix togglePfCard / toggleEfCard — these now just re-render ──
+function togglePfCard(id) {
+  if (pfExpanded.has(id)) pfExpanded.delete(id); else pfExpanded.add(id);
+  renderPersonnelFiles();
+}
+function togglePfSection(pfId, section) {
+  var key = pfId + ':' + section;
+  if (pfCollapsed.has(key)) pfCollapsed.delete(key); else pfCollapsed.add(key);
+  renderPersonnelFiles();
+}
+function toggleEfCard(id) {
+  if (efExpanded.has(id)) efExpanded.delete(id); else efExpanded.add(id);
+  renderEthicsFiles();
+}
+function toggleEfSection(efId, section) {
+  var key = efId + ':' + section;
+  if (efCollapsed.has(key)) efCollapsed.delete(key); else efCollapsed.add(key);
+  renderEthicsFiles();
+}
+
+// ================================================================
+//  AWARDS SYSTEM
+// ================================================================
+var AWARD_META = {
+  'Medal of Honour':             { tier: 'Prestigious',   cls: 'award-prestigious' },
+  'Distinguished Service Medal': { tier: 'Distinguished', cls: 'award-distinguished' },
+  'Medal of Excellence':         { tier: 'Distinguished', cls: 'award-distinguished' },
+  'Medal of Merit':              { tier: 'Distinguished', cls: 'award-distinguished' },
+  'Medal of Valor':              { tier: 'Distinguished', cls: 'award-distinguished' },
+  'Medal of Initiative':         { tier: 'Medal',         cls: 'award-medal' },
+  'Medal of Novice':             { tier: 'Medal',         cls: 'award-medal' },
+  'Medal of Heroism':            { tier: 'Medal',         cls: 'award-medal' },
+  'Enforcement Medal':           { tier: 'Medal',         cls: 'award-medal' },
+  'Specialist Medal':            { tier: 'Medal',         cls: 'award-medal' },
+  'Leatherback Medal':           { tier: 'Medal',         cls: 'award-medal' },
+};
+
+function openAwardModal(pfId) {
+  if (!canEditPersonnel()) return;
+  document.getElementById('awardTargetId').value = pfId;
+  document.getElementById('awardName').value = '';
+  document.getElementById('awardDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('awardNotes').value = '';
+  document.getElementById('awardErr').textContent = '';
+  document.getElementById('awardModal').classList.add('open');
+}
+function closeAwardModal() { document.getElementById('awardModal').classList.remove('open'); }
+
+async function saveAward() {
+  var pfId    = document.getElementById('awardTargetId').value;
+  var nameVal = document.getElementById('awardName').value;
+  if (!nameVal) { document.getElementById('awardErr').textContent = '> SELECT AN AWARD'; return; }
+  var parts   = nameVal.split('|');
+  var name    = parts[0], tier = parts[1] || 'Medal';
+  var date    = document.getElementById('awardDate').value;
+  var notes   = document.getElementById('awardNotes').value.trim();
+  if (!date)  { document.getElementById('awardErr').textContent = '> DATE REQUIRED'; return; }
+
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  if (!Array.isArray(rec.awards)) rec.awards = [];
+
+  var award = {
+    id: 'aw_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    name: name, tier: tier, date: date, notes: notes,
+    awardedBy: currentUser ? currentUser.id : '—',
+    created: Date.now()
+  };
+  rec.awards.push(award);
+  rec.updated = Date.now();
+
+  try {
+    await personnelSet(pfId, rec);
+    closeAwardModal();
+    renderPersonnelFiles();
+  } catch(err) {
+    document.getElementById('awardErr').textContent = '> SAVE ERROR: ' + err.message;
+  }
+}
+
+async function removeAward(pfId, awardId) {
+  if (!canEditPersonnel()) return;
+  if (!await pfConfirm('REMOVE THIS AWARD FROM RECORD?')) return;
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  rec.awards = (rec.awards || []).filter(function(a){ return a.id !== awardId; });
+  rec.updated = Date.now();
+  try { await personnelSet(pfId, rec); renderPersonnelFiles(); } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+// ================================================================
+//  TAGS SYSTEM
+// ================================================================
+var TAG_TYPES = ['Recruitment','Engagement','Development'];
+
+function openTagModal(pfId) {
+  if (!canEditPersonnel()) return;
+  document.getElementById('tagTargetId').value = pfId;
+  document.getElementById('tagType').value = '';
+  document.getElementById('tagRole').value = '';
+  document.getElementById('tagErr').textContent = '';
+  document.getElementById('tagModal').classList.add('open');
+}
+function closeTagModal() { document.getElementById('tagModal').classList.remove('open'); }
+
+async function saveTag() {
+  var pfId = document.getElementById('tagTargetId').value;
+  var type = document.getElementById('tagType').value;
+  var role = document.getElementById('tagRole').value;
+  if (!type) { document.getElementById('tagErr').textContent = '> SELECT A TEAM'; return; }
+  if (!role) { document.getElementById('tagErr').textContent = '> SELECT A ROLE'; return; }
+
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  if (!Array.isArray(rec.tags)) rec.tags = [];
+  // Remove any existing tag of the same type first
+  rec.tags = rec.tags.filter(function(t){ return t.type !== type; });
+  rec.tags.push({ type: type, role: role, assignedBy: currentUser ? currentUser.id : '—', assigned: Date.now() });
+  rec.updated = Date.now();
+
+  try {
+    await personnelSet(pfId, rec);
+    closeTagModal();
+    renderPersonnelFiles();
+  } catch(err) {
+    document.getElementById('tagErr').textContent = '> SAVE ERROR: ' + err.message;
+  }
+}
+
+async function removeTag(pfId, tagType) {
+  if (!canEditPersonnel()) return;
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  rec.tags = (rec.tags || []).filter(function(t){ return t.type !== tagType; });
+  rec.updated = Date.now();
+  try { await personnelSet(pfId, rec); renderPersonnelFiles(); } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+// ================================================================
+//  STRIKES SYSTEM
+//  CL5 can issue, edit and delete strikes.
+//  Any authenticated user can submit an appeal.
+//  CL5 can resolve appeals (Uphold / Overturn).
+//  Expired or overturned strikes disappear from the roster
+//  but remain on the personnel file for documentation.
+// ================================================================
+
+function canIssueStrike() {
+  return currentUser && parseInt(currentUser.clearance) >= 5;
+}
+
+function isStrikeActive(s) {
+  if (s.status === 'Overturned') return false;
+  if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
+  return true; // Active or Appealed, not expired
+}
+
+function strikeDisplayStatus(s) {
+  if (s.status === 'Overturned')                              return { label: 'OVERTURNED',   cls: 'b-green',  cardCls: 'overturned' };
+  if (s.expiresAt && new Date(s.expiresAt) < new Date())     return { label: 'EXPIRED',       cls: 'b-dim',    cardCls: 'expired'    };
+  if (s.status === 'Appealed')                                return { label: 'UNDER APPEAL',  cls: 'b-amber',  cardCls: 'appealed'   };
+  return                                                             { label: 'ACTIVE',        cls: 'b-red',    cardCls: ''           };
+}
+
+// ── Modal: Issue / Edit strike ──
+function openStrikeModal(pfId, strikeId) {
+  if (!canIssueStrike()) { alert('CLEARANCE LEVEL 5 REQUIRED TO ISSUE STRIKES'); return; }
+  document.getElementById('strikeTargetPfId').value    = pfId;
+  document.getElementById('strikeTargetStrikeId').value= strikeId || '';
+  document.getElementById('strikeErr').textContent     = '';
+  if (strikeId) {
+    var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+    var s   = rec && (rec.strikes||[]).find(function(x){ return x.id === strikeId; });
+    if (!s) return;
+    document.getElementById('strikeModalTitle').textContent = 'EDIT STRIKE';
+    document.getElementById('strikeReason').value  = s.reason || '';
+    document.getElementById('strikeExpiry').value  = s.expiresAt || '';
+  } else {
+    document.getElementById('strikeModalTitle').textContent = 'ISSUE STRIKE';
+    document.getElementById('strikeReason').value  = '';
+    document.getElementById('strikeExpiry').value  = '';
+  }
+  document.getElementById('strikeModal').classList.add('open');
+}
+function closeStrikeModal() { document.getElementById('strikeModal').classList.remove('open'); }
+
+async function saveStrike() {
+  var pfId     = document.getElementById('strikeTargetPfId').value;
+  var strikeId = document.getElementById('strikeTargetStrikeId').value;
+  var reason   = document.getElementById('strikeReason').value.trim();
+  var expiry   = document.getElementById('strikeExpiry').value;
+  if (!reason) { document.getElementById('strikeErr').textContent = '> REASON REQUIRED'; return; }
+
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  if (!Array.isArray(rec.strikes)) rec.strikes = [];
+
+  if (strikeId) {
+    var s = rec.strikes.find(function(x){ return x.id === strikeId; });
+    if (!s) return;
+    s.reason    = reason;
+    s.expiresAt = expiry || null;
+    s.editedBy  = currentUser.id;
+    s.editedAt  = Date.now();
+  } else {
+    rec.strikes.push({
+      id:         'str_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+      reason:     reason,
+      expiresAt:  expiry || null,
+      status:     'Active',
+      appeal:     null,
+      issuedBy:   currentUser.id,
+      issuedAt:   Date.now()
+    });
+  }
+  rec.updated = Date.now();
+  try {
+    await personnelSet(pfId, rec);
+    closeStrikeModal();
+    renderPersonnelFiles();
+    renderRoster();
+  } catch(e) { document.getElementById('strikeErr').textContent = '> SAVE ERROR: ' + e.message; }
+}
+
+async function deleteStrike(pfId, strikeId) {
+  if (!canIssueStrike()) return;
+  if (!await pfConfirm('CONFIRM: PERMANENTLY REMOVE THIS STRIKE FROM THE RECORD?')) return;
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  rec.strikes = (rec.strikes||[]).filter(function(s){ return s.id !== strikeId; });
+  rec.updated = Date.now();
+  try { await personnelSet(pfId, rec); renderPersonnelFiles(); renderRoster(); } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+// ── Modal: Appeal ──
+function openAppealModal(pfId, strikeId) {
+  if (!currentUser) { alert('AUTHENTICATE TO SUBMIT AN APPEAL'); return; }
+  document.getElementById('appealTargetPfId').value    = pfId;
+  document.getElementById('appealTargetStrikeId').value= strikeId;
+  document.getElementById('appealReason').value        = '';
+  document.getElementById('appealErr').textContent     = '';
+  document.getElementById('appealModal').classList.add('open');
+}
+function closeAppealModal() { document.getElementById('appealModal').classList.remove('open'); }
+
+async function saveAppeal() {
+  var pfId     = document.getElementById('appealTargetPfId').value;
+  var strikeId = document.getElementById('appealTargetStrikeId').value;
+  var reason   = document.getElementById('appealReason').value.trim();
+  if (!reason) { document.getElementById('appealErr').textContent = '> GROUNDS FOR APPEAL REQUIRED'; return; }
+
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  var s = (rec.strikes||[]).find(function(x){ return x.id === strikeId; });
+  if (!s) return;
+
+  s.status = 'Appealed';
+  s.appeal = {
+    reason:      reason,
+    submittedBy: currentUser.id,
+    submittedAt: Date.now(),
+    resolution:  null,
+    resolvedBy:  null,
+    resolvedAt:  null
+  };
+  rec.updated = Date.now();
+  try {
+    await personnelSet(pfId, rec);
+    closeAppealModal();
+    renderPersonnelFiles();
+    renderRoster();
+  } catch(e) { document.getElementById('appealErr').textContent = '> SAVE ERROR: ' + e.message; }
+}
+
+// ── Resolve appeal (CL5 only) ──
+async function resolveStrikeAppeal(pfId, strikeId, resolution) {
+  if (!canIssueStrike()) return;
+  var label = resolution === 'Overturned' ? 'OVERTURN (remove strike)' : 'UPHOLD (keep strike active)';
+  if (!await pfConfirm('CONFIRM: ' + label + '?')) return;
+
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  var s = (rec.strikes||[]).find(function(x){ return x.id === strikeId; });
+  if (!s || !s.appeal) return;
+
+  s.status            = resolution === 'Overturned' ? 'Overturned' : 'Active';
+  s.appeal.resolution = resolution;
+  s.appeal.resolvedBy = currentUser.id;
+  s.appeal.resolvedAt = Date.now();
+  rec.updated = Date.now();
+  try { await personnelSet(pfId, rec); renderPersonnelFiles(); renderRoster(); } catch(e) { alert('ERROR: ' + e.message); }
+}
+// ================================================================
+var allSquadrons = [];
+
+async function loadSquadrons() {
+  try {
+    if (firebaseReady) {
+      var raw = await fbGetAll('/squadrons');
+      allSquadrons = raw ? Object.values(raw).filter(function(s){ return s && s.id; }) : [];
+    } else {
+      allSquadrons = Object.values(lsAll('squadrons/')).filter(function(s){ return s && s.id; });
+    }
+  } catch(e) { allSquadrons = []; }
+}
+
+var allEthicsSquadrons = [];
+
+async function loadEthicsSquadrons() {
+  try {
+    if (firebaseReady) {
+      var raw = await fbGetAll('/ethics-squadrons');
+      allEthicsSquadrons = raw ? Object.values(raw).filter(function(s){ return s && s.id; }) : [];
+    } else {
+      allEthicsSquadrons = Object.values(lsAll('ethics-squadrons/')).filter(function(s){ return s && s.id; });
+    }
+  } catch(e) { allEthicsSquadrons = []; }
+}
+
+async function squadronSet(id, data) {
+  if (firebaseReady) await fbSet('/squadrons/' + id, data);
+  else lsSet('squadrons/' + id, data);
+}
+
+async function ethicsSquadronSet(id, data) {
+  if (firebaseReady) await fbSet('/ethics-squadrons/' + id, data);
+  else lsSet('ethics-squadrons/' + id, data);
+}
+
+async function ethicsSquadronDel(id) {
+  if (firebaseReady) await fbDelete('/ethics-squadrons/' + id);
+  else lsDel('ethics-squadrons/' + id);
+}
+
+async function squadronDel(id) {
+  if (firebaseReady) await fbDelete('/squadrons/' + id);
+  else lsDel('squadrons/' + id);
+}
+
+function openSquadronModal(mode, memberId, sqdId, type) {
+  if (!canEditPersonnel()) return;
+  type = type || 'pf';
+  document.getElementById('squadronModalMode').value    = mode;
+  document.getElementById('squadronType').value         = type;
+  document.getElementById('squadronTargetPfId').value   = memberId || '';
+  document.getElementById('squadronTargetSqdId').value  = sqdId || '';
+  document.getElementById('squadronErr').textContent    = '';
+
+  // Populate member select from the correct personnel list
+  var sel = document.getElementById('squadronMemberSelect');
+  sel.innerHTML = '<option value="">— SELECT PERSONNEL —</option>';
+  var personnelList = type === 'ef'
+    ? allEthicsPersonnel.filter(function(p){ return !p.status || p.status === 'Active'; })
+    : allPersonnel.filter(function(p){ return !p.status || p.status === 'Active'; });
+  personnelList.forEach(function(p) {
+    var opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + (type === 'pf' && p.rank ? ' · ' + p.rank : type === 'ef' && p.role ? ' · ' + p.role : '');
+    sel.appendChild(opt);
+  });
+
+  var sqdList = type === 'ef' ? allEthicsSquadrons : allSquadrons;
+
+  if (mode === 'create') {
+    document.getElementById('squadronModalTitle').textContent = 'CREATE ' + (type==='ef'?'ETHICS ':'') + 'SQUADRON';
+    document.getElementById('squadronNameGroup').style.display   = 'block';
+    document.getElementById('squadronMemberGroup').style.display = 'none';
+    document.getElementById('squadronRankGroup').style.display   = 'none';
+    document.getElementById('squadronName').value = '';
+    document.getElementById('squadronCurrentMembers').innerHTML  = '';
+  } else {
+    document.getElementById('squadronModalTitle').textContent = 'ADD SQUADRON MEMBER';
+    document.getElementById('squadronNameGroup').style.display   = 'none';
+    document.getElementById('squadronMemberGroup').style.display = 'block';
+    document.getElementById('squadronRankGroup').style.display   = 'block';
+    var sqd = sqdList.find(function(s){ return s.id === sqdId; });
+    if (sqd) {
+      document.getElementById('squadronCurrentMembers').innerHTML =
+        '<div style="font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;">CURRENT MEMBERS:</div>' +
+        (sqd.members||[]).map(function(m) {
+          return `<div class="sqd-member-row"><span>${e(m.name||m.memberId||m.pfId)}</span><span class="sqd-rank-badge ${m.rank==='Director'?'sqd-director':m.rank==='Co Director'?'sqd-codirector':m.rank==='Supervisor'?'sqd-supervisor':'sqd-agent'}">${e(m.rank)}</span><button class="award-del" data-action="remove-sqd-member" data-sqdid="${e(sqdId)}" data-memberid="${e(m.memberId||m.pfId)}" data-sqdtype="${type}" title="Remove">×</button></div>`;
+        }).join('');
+    }
+  }
+  document.getElementById('squadronModal').classList.add('open');
+}
+
+// Handle remove-sqd-member inside the modal
+document.addEventListener('click', function(ev) {
+  if (ev.target.dataset && ev.target.dataset.action === 'remove-sqd-member') {
+    ev.stopPropagation();
+    removeSqdMember(ev.target.dataset.sqdid, ev.target.dataset.memberid || ev.target.dataset.pfid, ev.target.dataset.sqdtype || 'pf');
+  }
+});
+
+async function removeSqdMember(sqdId, memberId, type) {
+  type = type || 'pf';
+  var sqdList = type === 'ef' ? allEthicsSquadrons : allSquadrons;
+  var sqd = sqdList.find(function(s){ return s.id === sqdId; });
+  if (!sqd) return;
+  sqd.members = (sqd.members||[]).filter(function(m){ return (m.memberId||m.pfId) !== memberId; });
+  if (type === 'ef') {
+    await ethicsSquadronSet(sqdId, sqd);
+    await loadEthicsSquadrons();
+    renderEthicsFiles();
+  } else {
+    await squadronSet(sqdId, sqd);
+    await loadSquadrons();
+    renderPersonnelFiles();
+  }
+  openSquadronModal('add', null, sqdId, type);
+}
+
+function closeSquadronModal() { document.getElementById('squadronModal').classList.remove('open'); }
+
+async function saveSquadron() {
+  var mode     = document.getElementById('squadronModalMode').value;
+  var type     = document.getElementById('squadronType').value || 'pf';
+  var memberId = document.getElementById('squadronTargetPfId').value;
+  var sqdId    = document.getElementById('squadronTargetSqdId').value;
+  document.getElementById('squadronErr').textContent = '';
+
+  var sqdList     = type === 'ef' ? allEthicsSquadrons : allSquadrons;
+  var setFn       = type === 'ef' ? ethicsSquadronSet  : squadronSet;
+  var loadFn      = type === 'ef' ? loadEthicsSquadrons : loadSquadrons;
+  var renderFn    = type === 'ef' ? renderEthicsFiles  : renderPersonnelFiles;
+  var personnelList = type === 'ef' ? allEthicsPersonnel : allPersonnel;
+
+  if (mode === 'create') {
+    var name = document.getElementById('squadronName').value.trim();
+    if (!name) { document.getElementById('squadronErr').textContent = '> NAME REQUIRED'; return; }
+    var creator = personnelList.find(function(p){ return p.id === memberId; });
+    var newSqd = {
+      id: (type==='ef'?'efsqd_':'sqd_') + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+      name: name, type: type,
+      createdByMemberId: memberId,
+      members: [{ memberId: memberId, pfId: memberId, name: creator ? creator.name : memberId, rank: 'Director', addedBy: currentUser ? currentUser.id : '—', added: Date.now() }],
+      createdBy: currentUser ? currentUser.id : '—',
+      created: Date.now()
+    };
+    try {
+      await setFn(newSqd.id, newSqd);
+      sqdList.push(newSqd);
+      closeSquadronModal();
+      renderFn();
+    } catch(e) { document.getElementById('squadronErr').textContent = '> ERROR: ' + e.message; }
+  } else {
+    var newMemberId = document.getElementById('squadronMemberSelect').value;
+    var rank        = document.getElementById('squadronMemberRank').value;
+    if (!newMemberId) { document.getElementById('squadronErr').textContent = '> SELECT A MEMBER'; return; }
+    var sqd = sqdList.find(function(s){ return s.id === sqdId; });
+    if (!sqd) return;
+    if (!sqd.members) sqd.members = [];
+    if (sqd.members.find(function(m){ return (m.memberId||m.pfId) === newMemberId; })) {
+      document.getElementById('squadronErr').textContent = '> ALREADY A MEMBER'; return;
+    }
+    var memberRec = personnelList.find(function(p){ return p.id === newMemberId; });
+    sqd.members.push({ memberId: newMemberId, pfId: newMemberId, name: memberRec ? memberRec.name : newMemberId, rank: rank, addedBy: currentUser ? currentUser.id : '—', added: Date.now() });
+    try {
+      await setFn(sqdId, sqd);
+      await loadFn();
+      closeSquadronModal();
+      renderFn();
+    } catch(e) { document.getElementById('squadronErr').textContent = '> ERROR: ' + e.message; }
+  }
+}
+
+async function deletePfSquadron(sqdId) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) { alert('CLEARANCE LEVEL 5 REQUIRED TO DELETE SQUADRONS'); return; }
+  var sqd = allSquadrons.find(function(s){ return s.id === sqdId; });
+  if (!sqd) return;
+  if (!await pfConfirm('CONFIRM: PERMANENTLY DELETE SQUADRON "' + sqd.name + '"?')) return;
+  try {
+    await squadronDel(sqdId);
+    allSquadrons = allSquadrons.filter(function(s){ return s.id !== sqdId; });
+    renderPersonnelFiles();
+  } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+async function deleteEfSquadron(sqdId) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) { alert('CLEARANCE LEVEL 5 REQUIRED TO DELETE SQUADRONS'); return; }
+  var sqd = allEthicsSquadrons.find(function(s){ return s.id === sqdId; });
+  if (!sqd) return;
+  if (!await pfConfirm('CONFIRM: PERMANENTLY DELETE SQUADRON "' + sqd.name + '"?')) return;
+  try {
+    await ethicsSquadronDel(sqdId);
+    allEthicsSquadrons = allEthicsSquadrons.filter(function(s){ return s.id !== sqdId; });
+    renderEthicsFiles();
+  } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+// loadSquadrons is called from onLogin and from loadPersonnel directly
 
 async function setPersonnelStatus(id, status) {
   if (!canEditPersonnel()) return;
   var labels = { Retired: 'RETIRE', Discharged: 'DISCHARGE', Active: 'REACTIVATE' };
   var rec = allPersonnel.find(function(p){ return p.id === id; });
   if (!rec) return;
-  var ok=await cairoConfirm({msg:labels[status]+' "'+rec.name+'"?',sub:'Record retained for archival. Reversible by CL4+.',okLabel:labels[status],okClass:status==='Retired'?'ok-amber':status==='Discharged'?'ok-red':'ok-green'}); if(!ok)return;
+  if (!await pfConfirm('CONFIRM: ' + labels[status] + ' ' + rec.name + '?\n\nRecord will be retained for archival purposes.')) return;
   rec.status    = status;
   rec.updatedBy = currentUser ? currentUser.id : '';
   rec.updated   = Date.now();
@@ -1772,7 +2690,7 @@ async function setPersonnelStatus(id, status) {
 async function deletePersonnelRecord(id) {
   if (!canEditPersonnel()) return;
   var rec = allPersonnel.find(function(p){ return p.id === id; });
-  var ok=await cairoConfirm({msg:'DELETE RECORD FOR "'+(rec?rec.name:id)+'"?',sub:'Cannot be undone.',okLabel:'DELETE RECORD',okClass:'ok-red'}); if(!ok)return;
+  if (!await pfConfirm('CONFIRM: DELETE RECORD FOR ' + (rec ? rec.name : id) + '?\n\nThis cannot be undone.')) return;
   try { await personnelDel(id); } catch(e) {}
   allPersonnel = allPersonnel.filter(function(p){ return p.id !== id; });
   pfExpanded.delete(id);
@@ -1857,12 +2775,14 @@ async function ethicsPersonnelDel(id) {
 // State
 var allEthicsPersonnel = [];
 var efExpanded = new Set();
+var efCollapsed = new Set(); // "efId:sectionKey"
 
 async function loadEthicsPersonnel() {
   try {
     allEthicsPersonnel = await ethicsPersonnelGetAll();
     allEthicsPersonnel.sort(function(a,b){ return ethicsRankIndex(a.role) - ethicsRankIndex(b.role); });
   } catch(err) { allEthicsPersonnel = []; }
+  await loadEthicsSquadrons();
 
   // Show/hide new-record button based on clearance
   var btn = document.getElementById('efNewBtn');
@@ -1906,116 +2826,98 @@ function renderEthicsFiles() {
 function buildEthicsCard(p) {
   var isOpen  = efExpanded.has(p.id);
   var canEdit = canEditPersonnel();
-  var dob     = formatDob ? formatDob(p.dob) : (p.dob || '—');
   var pStatus = p.status || 'Active';
+  var notes   = Array.isArray(p.notes)      ? p.notes.slice().sort((a,b)=>a.created-b.created) : [];
+  var history = Array.isArray(p.rankHistory)? p.rankHistory.slice().sort((a,b)=>b.changedAt-a.changedAt) : [];
 
-  var roleBadge = '<span class="badge ' +
-    (p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan') +
-    '">' + e(p.role||'—') + '</span>';
+  var roleBadge   = `<span class="badge ${p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan'}">${e(p.role||'—')}</span>`;
+  var statusBadge = pStatus !== 'Active' ? `<span class="badge ${pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span>` : '';
 
-  var statusBadge = pStatus !== 'Active'
-    ? '<span class="badge ' + (pStatus==='Retired'?'b-retired':'b-discharged') + '">' + e(pStatus) + '</span>'
-    : '';
+  if (!isOpen) {
+    return `<div class="pf-card" id="efcard_${e(p.id)}">
+      <div class="pf-card-header" data-action="toggle-ef" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='rgba(0,255,136,.02)'" onmouseout="this.style.background=''">
+        <div>
+          <div class="pf-name">${e(p.name||'UNNAMED')}${p.nickname?` <span style="color:var(--text-dim);font-size:.6rem;">"${e(p.nickname)}"</span>`:''}</div>
+          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}</div>
+        </div>
+        <span style="font-size:.62rem;color:var(--text-dim);">▸</span>
+      </div>
+    </div>`;
+  }
 
-  // ── Role change log (most recent first) ──
-  var history = Array.isArray(p.rankHistory) ? p.rankHistory.slice().sort(function(a,b){ return b.changedAt-a.changedAt; }) : [];
-  var historyHtml = history.length
-    ? history.map(function(h){
-        var hts = new Date(h.changedAt).toISOString().slice(0,16).replace('T',' ');
-        var fromBadge = '<span class="badge '+(h.from==='Chairman'?'b-red':h.from==='Member'?'b-amber':'b-cyan')+'">' + e(h.from||'—') + '</span>';
-        var toBadge   = '<span class="badge '+(h.to==='Chairman'?'b-red':h.to==='Member'?'b-amber':'b-cyan')+'">' + e(h.to||'—') + '</span>';
-        return '<div class="rank-history-entry">' +
-          '<div class="rank-history-gutter"></div>' +
-          '<div class="rank-history-body">' +
-            '<div class="rank-history-meta">EC·' + e(h.changedBy||'—') + ' [L' + e(h.clearance||'—') + '] · ' + hts + ' UTC</div>' +
-            '<div class="rank-history-change">' + fromBadge + '<span class="rank-arrow">→</span>' + toBadge + '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('')
-    : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO ROLE CHANGES ON RECORD ]</div>';
+  // Role history
+  var histHtml = history.length ? history.map(h => {
+    var hts = new Date(h.changedAt).toISOString().slice(0,16).replace('T',' ');
+    var fromBadge = `<span class="badge ${h.from==='Chairman'?'b-red':h.from==='Member'?'b-amber':'b-cyan'}">${e(h.from||'—')}</span>`;
+    var toBadge   = `<span class="badge ${h.to==='Chairman'?'b-red':h.to==='Member'?'b-amber':'b-cyan'}">${e(h.to||'—')}</span>`;
+    return `<div class="rank-history-entry"><div class="rank-history-gutter"></div><div class="rank-history-body"><div class="rank-history-meta">EC·${e(h.changedBy||'—')} [L${e(h.clearance||'—')}] · ${hts} UTC</div><div class="rank-history-change">${fromBadge}<span class="rank-arrow">→</span>${toBadge}</div></div></div>`;
+  }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO ROLE CHANGES ]</div>';
 
-  // ── Notes ──
-  var notes = p.notes || [];
-  var notesHtml = notes.length
-    ? notes.map(function(n){
-        var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
-        return '<div class="pf-note">' +
-          '<div class="pf-note-gutter"></div>' +
-          '<div class="pf-note-body">' +
-            '<div class="pf-note-meta">EC·' + e(n.author) + ' [L' + e(n.clearance) + '] · ' + nts + ' UTC</div>' +
-            '<div class="pf-note-text">' + e(n.text) + '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('')
-    : '<div class="ef-empty">[ NO NOTES ON FILE ]</div>';
+  // Notes
+  var notesHtml = notes.length ? notes.map(n => {
+    var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
+    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta">EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+  }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
+  var noteForm = currentUser ? `<div class="pf-note-form"><textarea class="pf-note-input" id="efnote_${e(p.id)}" placeholder="Add note..." rows="2" onkeydown="handleNoteKey(event,this)"></textarea><button class="pf-btn" data-action="add-ef-note" data-id="${e(p.id)}">[ ADD ]</button></div>` : '';
 
-  var noteFormHtml = currentUser
-    ? '<div class="pf-note-form">' +
-        '<textarea class="pf-note-input" id="efnote_' + p.id + '" placeholder="Add note..." rows="2" ' +
-          'onkeydown="handleEfNoteKey(event,\'' + p.id + '\')"></textarea>' +
-        '<button class="pf-note-submit" onclick="addEthicsNote(\'' + p.id + '\')">[ ADD ]</button>' +
-      '</div>'
-    : '<div style="font-size:.6rem;color:var(--text-faint);margin-top:4px;">[ AUTHENTICATE TO ADD NOTES ]</div>';
+  var actionBtns = canEdit ? `<div class="pf-card-actions"><button class="pf-btn" data-action="edit-ef" data-id="${e(p.id)}">[ EDIT ]</button><button class="pf-btn danger" data-action="delete-ef" data-id="${e(p.id)}">[ DELETE ]</button></div>` : '';
+  var statusBtns = canEdit ? `<div class="pf-status-btns">${pStatus==='Active'
+    ? `<button class="pf-status-btn retire"    data-action="status-ef" data-id="${e(p.id)}" data-status="Retired">[ RETIRE ]</button><button class="pf-status-btn discharge" data-action="status-ef" data-id="${e(p.id)}" data-status="Discharged">[ DISCHARGE ]</button>`
+    : `<button class="pf-status-btn reactivate" data-action="status-ef" data-id="${e(p.id)}" data-status="Active">[ REACTIVATE ]</button>`
+  }</div>` : '';
 
-  // ── Status buttons ──
-  var statusBtns = canEdit
-    ? '<div class="pf-status-btns">' +
-        (pStatus === 'Active'
-          ? '<button class="pf-status-btn retire"    data-efid="' + e(p.id) + '" data-efstatus="Retired">[ RETIRE ]</button>' +
-            '<button class="pf-status-btn discharge" data-efid="' + e(p.id) + '" data-efstatus="Discharged">[ DISCHARGE ]</button>'
-          : '<button class="pf-status-btn reactivate" data-efid="' + e(p.id) + '" data-efstatus="Active">[ REACTIVATE ]</button>') +
-      '</div>'
-    : '';
+  // Squadron section
+  var efSqdns = allEthicsSquadrons.filter(s => s.members && s.members.some(m => (m.memberId||m.pfId) === p.id));
+  var efSqdHtml = efSqdns.length ? efSqdns.map(s => {
+    var myEntry = s.members.find(m => (m.memberId||m.pfId) === p.id);
+    var myRank  = myEntry ? myEntry.rank : '—';
+    var rankCls = myRank==='Director'?'sqd-director':myRank==='Co Director'?'sqd-codirector':myRank==='Supervisor'?'sqd-supervisor':'sqd-agent';
+    var membersHtml = (s.members||[]).map(m =>
+      `<div class="sqd-member-row"><span>${e(m.name||(m.memberId||m.pfId))}</span><span class="sqd-rank-badge ${m.rank==='Director'?'sqd-director':m.rank==='Co Director'?'sqd-codirector':m.rank==='Supervisor'?'sqd-supervisor':'sqd-agent'}">${e(m.rank)}</span></div>`
+    ).join('');
+    return `<div class="sqd-card"><div class="sqd-name">${e(s.name)} <span class="sqd-rank-badge ${rankCls}">${e(myRank)}</span>
+      <span style="float:right;display:flex;gap:.3rem;">
+        ${canEdit?`<button class="pf-section-btn" data-action="open-ef-sqd-add" data-sqdid="${e(s.id)}" data-efid="${e(p.id)}">+ MEMBER</button>`:''}
+        ${(currentUser && parseInt(currentUser.clearance)>=5)?`<button class="pf-section-btn" style="border-color:#4a1414;color:#dd4444;" data-action="delete-ef-sqd" data-sqdid="${e(s.id)}">✕ DELETE</button>`:''}
+      </span>
+      </div><div style="margin-top:.4rem;">${membersHtml}</div></div>`;
+  }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NOT IN ANY SQUADRON ]</div>';
 
-  // ── Edit/Delete buttons ──
-  var editBtns = canEdit
-    ? '<button class="pf-btn" onclick="event.stopPropagation();openEthicsModal(\'' + p.id + '\')">EDIT</button>' +
-      '<button class="pf-btn del" onclick="event.stopPropagation();deleteEthicsRecord(\'' + p.id + '\')">✕</button>'
-    : '';
-
-  return '<div class="pf-card" id="efcard_' + p.id + '">' +
-    '<div class="pf-card-header" onclick="toggleEfCard(\'' + p.id + '\')">' +
-      '<div>' +
-        '<span class="pf-name">' + e(p.name||'UNNAMED') + '</span>' +
-        (p.nickname ? '<span style="color:var(--text-dim);font-size:.6rem;margin-left:.5rem;">"' + e(p.nickname) + '"</span>' : '') +
-        '<div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">' +
-          roleBadge + statusBadge +
-        '</div>' +
-      '</div>' +
-      '<div class="pf-actions">' +
-        editBtns +
-        '<span style="font-size:.62rem;color:var(--text-dim);margin-left:.25rem;">' + (isOpen?'▾':'▸') + '</span>' +
-      '</div>' +
-    '</div>' +
-    (isOpen
-      ? '<div class="pf-body">' +
-          '<div class="pf-fields">' +
-            '<div class="pf-field"><span class="pf-fl">Full Name</span><br><span class="pf-fv">' + e(p.name||'—') + '</span></div>' +
-            '<div class="pf-field"><span class="pf-fl">Nickname</span><br><span class="pf-fv">' + e(p.nickname||'—') + '</span></div>' +
-            '<div class="pf-field"><span class="pf-fl">Date of Birth</span><br><span class="pf-fv">' + dob + '</span></div>' +
-            '<div class="pf-field"><span class="pf-fl">Role</span><br><span class="pf-fv">' + e(p.role||'—') + '</span></div>' +
-            '<div class="pf-field"><span class="pf-fl">Status</span><br><span class="pf-fv"><span class="badge ' + (pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged') + '">' + e(pStatus) + '</span></span></div>' +
-            '<div class="pf-field"><span class="pf-fl">Created</span><br><span class="pf-fv">' + new Date(p.created).toISOString().slice(0,10) + ' · EC·' + e(p.createdBy||'—') + '</span></div>' +
-          '</div>' +
-          '<div class="rank-history-sec">▸ ROLE CHANGE LOG (' + history.length + ')</div>' +
-          historyHtml +
-          '<div style="border-top:1px solid var(--border);margin-top:.6rem;padding-top:.6rem;">' +
-            '<div class="pf-notes-sec">▸ NOTES / ANNOTATIONS (' + notes.length + ')</div>' +
-            notesHtml +
-            noteFormHtml +
-          '</div>' +
-          statusBtns +
-        '</div>'
-      : '') +
-  '</div>';
-}
-
-function toggleEfCard(id) {
-  if (efExpanded.has(id)) efExpanded.delete(id);
-  else efExpanded.add(id);
-  renderEthicsFiles();
-  var inp = document.getElementById('efnote_' + id);
-  if (inp) inp.focus();
+  return `<div class="pf-card" id="efcard_${e(p.id)}">
+    <div class="pf-card-header" data-action="toggle-ef" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='rgba(0,255,136,.02)'" onmouseout="this.style.background=''">
+      <div>
+        <div class="pf-name">${e(p.name||'UNNAMED')}${p.nickname?` <span style="color:var(--text-dim);font-size:.6rem;">"${e(p.nickname)}"</span>`:''}</div>
+        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}</div>
+      </div>
+      <span style="font-size:.62rem;color:var(--text-dim);">▾</span>
+    </div>
+    <div class="pf-card-body open">
+      <div class="pf-fields">
+        <div class="pf-field"><span class="pf-fl">Full Name</span><br><span class="pf-fv">${e(p.name||'—')}</span></div>
+        <div class="pf-field"><span class="pf-fl">Nickname</span><br><span class="pf-fv">${e(p.nickname||'—')}</span></div>
+        <div class="pf-field"><span class="pf-fl">Date of Birth</span><br><span class="pf-fv">${formatDob(p.dob)}</span></div>
+        <div class="pf-field"><span class="pf-fl">Role</span><br><span class="pf-fv">${e(p.role||'—')}</span></div>
+        <div class="pf-field"><span class="pf-fl">Status</span><br><span class="pf-fv"><span class="badge ${pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span></span></div>
+        <div class="pf-field"><span class="pf-fl">Created</span><br><span class="pf-fv">${new Date(p.created).toISOString().slice(0,10)} · EC·${e(p.createdBy||'—')}</span></div>
+      </div>
+      <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="ranks">
+        <span>▸ ROLE CHANGE LOG (${history.length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':ranks')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':ranks')?'none':'block'};padding:0 .1rem .4rem;">${histHtml}</div>
+      <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="squadrons">
+        <span>▸ SQUADRON ASSIGNMENTS</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':squadrons')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':squadrons')?'none':'block'};padding:0 .1rem .4rem;">
+        ${efSqdHtml}
+        ${canEdit?`<button class="pf-section-btn" data-action="create-ef-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:''}
+      </div>
+      <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="notes">
+        <span>▸ NOTES (${notes.length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':notes')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':notes')?'none':'block'};padding:0 .1rem .4rem;">${notesHtml}${noteForm}</div>
+      ${actionBtns}${statusBtns}
+    </div>
+  </div>`;
 }
 
 function renderEthicsRoster() {
@@ -2135,7 +3037,7 @@ async function setEthicsStatus(id, status) {
   var labels = { Retired: 'RETIRE', Discharged: 'DISCHARGE', Active: 'REACTIVATE' };
   var rec = allEthicsPersonnel.find(function(p){ return p.id === id; });
   if (!rec) return;
-  var ok=await cairoConfirm({msg:labels[status]+' "'+rec.name+'"?',sub:'Record retained for archival. Reversible by CL4+.',okLabel:labels[status],okClass:status==='Retired'?'ok-amber':status==='Discharged'?'ok-red':'ok-green'}); if(!ok)return;
+  if (!await pfConfirm('CONFIRM: ' + labels[status] + ' ' + rec.name + '?\n\nRecord will be retained for archival purposes.')) return;
   rec.status    = status;
   rec.updatedBy = currentUser ? currentUser.id : '';
   rec.updated   = Date.now();
@@ -2146,7 +3048,7 @@ async function setEthicsStatus(id, status) {
 
 async function deleteEthicsRecord(id) {
   if (!canEditPersonnel()) return;
-  var ok=await cairoConfirm({msg:'PERMANENTLY DELETE THIS ETHICS RECORD?',sub:'Cannot be undone.',okLabel:'DELETE RECORD',okClass:'ok-red'}); if(!ok)return;
+  if (!await pfConfirm('CONFIRM: PERMANENTLY DELETE THIS ETHICS RECORD?')) return;
   await ethicsPersonnelDel(id);
   allEthicsPersonnel = allEthicsPersonnel.filter(function(p){ return p.id !== id; });
   efExpanded.delete(id);
@@ -2299,22 +3201,6 @@ async function queryCairo(query) {
     return 'Substrate connection error. Please retry.\n\nRef: ' + err.message;
   }
 }
-
-// ── Login overlay event wiring (deferred so all functions are defined) ──
-(function() {
-  var tabLogin = document.getElementById('tabLogin');
-  var tabReg   = document.getElementById('tabReg');
-  var loginBtn = document.getElementById('loginBtn');
-  var guestBtn = document.getElementById('guestBtn');
-  var loginUser = document.getElementById('loginUser');
-  var loginPass = document.getElementById('loginPass');
-  if (tabLogin)  tabLogin.addEventListener('click', function() { setLoginMode('login'); });
-  if (tabReg)    tabReg.addEventListener('click',   function() { setLoginMode('register'); });
-  if (loginBtn)  loginBtn.addEventListener('click',  doAuth);
-  if (guestBtn)  guestBtn.addEventListener('click',  doGuest);
-  if (loginUser) loginUser.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') doAuth(); });
-  if (loginPass) loginPass.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') doAuth(); });
-})();
 
 var _termInput = document.getElementById('termInput');
 if (_termInput) _termInput.addEventListener('keydown', function(ev) {
