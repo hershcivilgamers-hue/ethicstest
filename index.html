@@ -63,6 +63,70 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .nav-group .nav-tab:last-child{border-right:none;}
 .nav-standalone{display:flex;flex-direction:column;}
 
+/* ── Nav group collapse ── */
+.nav-group-label{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;gap:4px;transition:color .15s;}
+.nav-group-label:hover{color:var(--text-dim);}
+.ng-arrow{font-size:.45rem;transition:transform .2s;display:inline-block;}
+.ng-arrow.closed{transform:rotate(-90deg);}
+.nav-group-tabs{display:flex;flex:1;overflow:hidden;transition:max-height .2s ease,opacity .15s ease;max-height:60px;opacity:1;}
+.nav-group-tabs.collapsed{max-height:0;opacity:0;pointer-events:none;}
+
+/* ── POI / Target ── */
+.poi-list-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem;}
+.poi-list-title{font-size:.62rem;letter-spacing:.18em;color:var(--green-dim);border-bottom:1px solid var(--border2);padding-bottom:3px;flex:1;}
+.poi-list-item{display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;border:1px solid var(--border2);background:#030806;margin-bottom:3px;cursor:pointer;transition:all .15s;flex-wrap:wrap;}
+.poi-list-item:hover{border-color:var(--green-dim);background:rgba(0,255,136,.02);}
+.poi-item-num{font-size:.58rem;color:var(--text-faint);min-width:40px;font-family:'Share Tech Mono',monospace;}
+.poi-item-name{color:var(--green);font-family:'VT323',monospace;font-size:.85rem;letter-spacing:.05em;flex:1;min-width:80px;}
+.poi-item-dept{font-size:.58rem;color:var(--text-dim);min-width:80px;}
+.poi-item-badges{display:flex;gap:3px;flex-wrap:wrap;margin-left:auto;}
+.poi-empty{font-size:.63rem;color:var(--text-faint);padding:.75rem;border:1px dashed var(--border);text-align:center;}
+.poi-file{display:none;}
+.poi-file.open{display:block;animation:fadeIn .2s ease;}
+.poi-file-back{font-size:.6rem;color:var(--text-dim);cursor:pointer;margin-bottom:.75rem;display:inline-flex;align-items:center;gap:4px;transition:color .15s;}
+.poi-file-back:hover{color:var(--green);}
+.poi-file-title{font-family:'VT323',monospace;font-size:1.3rem;color:var(--green);letter-spacing:.1em;text-shadow:0 0 8px rgba(0,255,136,.3);margin-bottom:.75rem;line-height:1.2;}
+.poi-field{margin-bottom:.35rem;font-size:.66rem;display:flex;gap:.5rem;padding:3px 0;border-bottom:1px solid rgba(10,42,20,.3);flex-wrap:wrap;}
+.poi-field:last-of-type{border-bottom:none;}
+.poi-field-label{color:var(--text-dim);min-width:160px;flex-shrink:0;}
+.poi-field-value{color:var(--text);}
+.poi-note-form{display:flex;gap:.5rem;margin-top:.4rem;}
+.poi-note-input{flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.3rem .5rem;outline:none;resize:none;min-height:32px;}
+.poi-note-input:focus{border-color:var(--green-dim);}
+
+/* ── Recruitment ── */
+.rec-section{margin-bottom:1rem;}
+.rec-section-header{display:flex;align-items:center;justify-content:space-between;padding:.3rem 0;border-bottom:2px solid var(--border2);margin-bottom:.5rem;}
+.rec-section-title{font-size:.62rem;letter-spacing:.2em;color:var(--green-dim);}
+.rec-card{border:1px solid var(--border2);background:#030806;padding:.6rem .8rem;margin-bottom:.4rem;}
+.rec-card-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.4rem;}
+.rec-name{font-family:'VT323',monospace;font-size:1rem;color:var(--green);letter-spacing:.06em;}
+.rec-meta{font-size:.58rem;color:var(--text-dim);margin-top:2px;}
+.rec-comment{font-size:.62rem;padding:.3rem 0;border-bottom:1px solid var(--border);}
+.rec-comment:last-child{border-bottom:none;}
+.rec-comment-meta{font-size:.56rem;color:var(--text-faint);margin-bottom:2px;}
+.rec-vote-bar{display:flex;align-items:center;gap:.5rem;margin:.4rem 0;font-size:.62rem;flex-wrap:wrap;}
+.rec-vote-btn{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 9px;cursor:pointer;border:1px solid;background:transparent;transition:all .15s;}
+.rec-vote-btn.yes{border-color:#1a5a2a;color:#44dd88;}
+.rec-vote-btn.yes:hover,.rec-vote-btn.yes.voted{background:#0a2a14;}
+.rec-vote-btn.no{border-color:#4a1414;color:#dd4444;}
+.rec-vote-btn.no:hover,.rec-vote-btn.no.voted{background:#0a0202;}
+.rec-majority{font-size:.58rem;color:#ffcc44;letter-spacing:.06em;animation:pulse 2s ease-in-out infinite;}
+.rec-btns{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem;}
+.rec-btn{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 8px;cursor:pointer;border:1px solid var(--border2);color:var(--text-dim);background:transparent;transition:all .15s;}
+.rec-btn:hover{border-color:var(--text-dim);color:var(--text);}
+.rec-btn.approve{border-color:#1a5a2a;color:#44dd88;}
+.rec-btn.approve:hover{background:#0a2a14;}
+.rec-btn.deny{border-color:#4a1414;color:#dd4444;}
+.rec-btn.deny:hover{background:#0a0202;}
+.rec-archived-section{margin-top:1rem;border-top:1px dashed var(--border2);padding-top:.6rem;}
+
+/* ── POI archive ── */
+.poi-archived-section{margin-top:1rem;border-top:1px dashed var(--border2);padding-top:.75rem;}
+.poi-archived-toggle{font-size:.6rem;color:var(--text-faint);cursor:pointer;letter-spacing:.1em;margin-bottom:.5rem;display:inline-flex;align-items:center;gap:4px;}
+.poi-archived-toggle:hover{color:var(--text-dim);}
+.poi-closed-badge{display:inline-block;padding:0 5px;font-size:.55rem;border-radius:2px;background:#0a0a14;color:#8888cc;border:1px solid #2a2a4a;margin-left:4px;}
+
 /* ── Panel / Tabs ── */
 .panel{border:1px solid var(--border2);border-top:none;background:var(--bg2);flex:1;}
 .tab-content{display:none;padding:1.25rem;}
@@ -486,12 +550,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <input class="login-input" type="password" id="loginPass" placeholder="••••••••"
            autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
     <div id="loginExtras" style="display:none;">
-      <label class="login-label">CLEARANCE LEVEL</label>
-      <select class="login-input order-select" id="loginClearance" style="width:100%;margin-bottom:.9rem;">
+      <label class="login-label">REQUESTED CLEARANCE <span style="color:var(--text-faint);font-size:.6rem;">(final level set by CL5 on approval)</span></label>
+      <select class="login-input order-select" id="loginClearance" style="width:100%;margin-bottom:.5rem;">
         <option value="3">Level 3 — Standard EC Access</option>
         <option value="4">Level 4 — Senior EC Member</option>
         <option value="5">Level 5 — EC Chair / O5 Liaison</option>
       </select>
+      <div style="font-size:.6rem;color:var(--text-dim);background:rgba(0,255,136,.04);border:1px solid var(--border2);padding:.45rem .65rem;margin-bottom:.9rem;line-height:1.6;">
+        ⚑ New accounts require CL5 approval before access is granted.<br>
+        All accounts start at <strong style="color:var(--green-dim);">Level 3</strong> pending review.
+      </div>
     </div>
     <button class="login-btn" id="loginBtn" onclick="doAuth()">[ AUTHENTICATE ]</button>
     <button class="login-btn sec-btn" onclick="doGuest()">[ ENTER AS OBSERVER · READ-ONLY ]</button>
@@ -508,6 +576,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <div class="header-sub">ver2.0 · ETHICS COMMITTEE · ARTIFICIALLY INTELLIGENT CONSCRIPT</div>
     </div>
     <div class="header-right">
+      <button id="adminBtn" onclick="openAdminPanel()" style="display:none;font-family:'Share Tech Mono',monospace;font-size:.58rem;background:rgba(255,100,100,.06);border:1px solid #4a1414;color:#dd6666;padding:3px 9px;cursor:pointer;margin-right:.5rem;position:relative;" title="Manage pending registrations">
+        ADMIN <span id="adminBadge" style="display:none;background:#4a1414;color:#ff8888;border-radius:2px;padding:0 4px;margin-left:4px;font-size:.55rem;">0</span>
+      </button>
       <div id="userPill" class="user-pill" onclick="logout()" title="Click to sign out" style="display:none;"></div>
       <div class="header-meta">
         <div><span class="status-dot"></span><span style="color:var(--green);">ONLINE</span></div>
@@ -521,8 +592,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
     <!-- CAIRO group -->
     <div class="nav-group">
-      <div class="nav-group-label">CAIRO</div>
-      <div class="nav-group-tabs">
+      <div class="nav-group-label" data-action="toggle-nav-group" data-group="cairo">
+        CAIRO <span class="ng-arrow" id="nga-cairo">▾</span>
+      </div>
+      <div class="nav-group-tabs" id="ngt-cairo">
         <div class="nav-tab active" onclick="switchTab(this,'personnel')">PERSONNEL FILE</div>
         <div class="nav-tab" onclick="switchTab(this,'directives')">DIRECTIVES</div>
         <div class="nav-tab" onclick="switchTab(this,'matrix')">PSYCH MATRIX</div>
@@ -532,17 +605,27 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
     <!-- OMEGA-1 group -->
     <div class="nav-group">
-      <div class="nav-group-label">OMEGA-1</div>
-      <div class="nav-group-tabs">
+      <div class="nav-group-label" data-action="toggle-nav-group" data-group="omega1">
+        OMEGA-1 <span class="ng-arrow" id="nga-omega1">▾</span>
+      </div>
+      <div class="nav-group-tabs" id="ngt-omega1">
         <div class="nav-tab" onclick="switchTab(this,'personnel-files')">FILES</div>
         <div class="nav-tab" onclick="switchTab(this,'roster')">ROSTER</div>
+        <div class="nav-tab" onclick="switchTab(this,'poi')">POI / TARGET
+          <span id="poiBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
+        <div class="nav-tab" onclick="switchTab(this,'recruit')">RECRUIT
+          <span id="recruitBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
       </div>
     </div>
 
     <!-- ETHICS group -->
     <div class="nav-group">
-      <div class="nav-group-label">ETHICS</div>
-      <div class="nav-group-tabs">
+      <div class="nav-group-label" data-action="toggle-nav-group" data-group="ethics">
+        ETHICS <span class="ng-arrow" id="nga-ethics">▾</span>
+      </div>
+      <div class="nav-group-tabs" id="ngt-ethics">
         <div class="nav-tab" onclick="switchTab(this,'ethics-files')">FILES</div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ROSTER</div>
       </div>
@@ -551,7 +634,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <!-- Standalone tabs -->
     <div class="nav-group">
       <div class="nav-group-label">&nbsp;</div>
-      <div class="nav-group-tabs">
+      <div class="nav-group-tabs" id="ngt-standalone">
         <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
           <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
         </div>
@@ -784,6 +867,76 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <tbody id="ethicsRosterBody"></tbody>
       </table>
     </div>
+    <!-- RECRUITMENT -->
+    <div class="tab-content" id="tab-recruit">
+      <!-- Section 1: Scouting -->
+      <div class="rec-section" id="recScouting">
+        <div class="rec-section-header">
+          <span class="rec-section-title">[ SECTION 1 ] · SCOUTING</span>
+          <button class="pf-section-btn" id="newScoutBtn" style="display:none;" data-action="open-scout-modal">[ + NEW SCOUTING TARGET ]</button>
+        </div>
+        <div id="recScoutingList"></div>
+      </div>
+      <!-- Section 2: Greenlit -->
+      <div class="rec-section" id="recGreenlit">
+        <div class="rec-section-header">
+          <span class="rec-section-title">[ SECTION 2 ] · GREENLIT</span>
+        </div>
+        <div id="recGreenlitList"></div>
+      </div>
+      <!-- Section 3: Tryout -->
+      <div class="rec-section" id="recTryout">
+        <div class="rec-section-header">
+          <span class="rec-section-title">[ SECTION 3 ] · TRYOUT</span>
+        </div>
+        <div id="recTryoutList"></div>
+      </div>
+      <!-- Archived -->
+      <div class="rec-archived-section">
+        <div class="poi-archived-toggle" data-action="toggle-rec-archive">
+          <span id="recArchiveArrow">▸</span> VIEW ARCHIVED RECRUITMENT (<span id="recArchiveCount">0</span>)
+        </div>
+        <div id="recArchivedList" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- POI / TARGET -->
+    <div class="tab-content" id="tab-poi">
+      <!-- List view (shown by default) -->
+      <div id="poiListView">
+        <!-- POI section -->
+        <div class="poi-list-section">
+          <div class="poi-list-header">
+            <div class="poi-list-title">▸ PERSONS OF INTEREST</div>
+            <button class="pf-section-btn" id="newPoiBtn" onclick="openPoiModal(null,'poi')" style="display:none;">[ + NEW POI ]</button>
+          </div>
+          <div id="poiList"></div>
+        </div>
+        <!-- Target section -->
+        <div class="poi-list-section">
+          <div class="poi-list-header">
+            <div class="poi-list-title">▸ TARGETS</div>
+            <button class="pf-section-btn" id="newTargetBtn" onclick="openPoiModal(null,'target')" style="display:none;">[ + NEW TARGET ]</button>
+          </div>
+          <div id="targetList"></div>
+        </div>
+      </div>
+      <!-- Archived section toggle -->
+      <div class="poi-archived-section">
+        <div class="poi-archived-toggle" data-action="toggle-poi-archive">
+          <span id="poiArchiveArrow">▸</span> VIEW ARCHIVED FILES (<span id="poiArchiveCount">0</span>)
+        </div>
+        <div id="poiArchivedList" style="display:none;"></div>
+      </div>
+      <!-- File view (hidden until record selected) -->
+      <div id="poiFileView" class="poi-file">
+        <div class="poi-file-back" data-action="poi-back">◁ BACK TO POI / TARGET LIST</div>
+        <div class="poi-file-title" id="poiFileTitle"></div>
+        <div id="poiFileBody"></div>
+      </div>
+    </div>
+
+    <!-- TERMINAL -->
     <div class="tab-content" id="tab-terminal">
       <div class="term-header-bar">
         <span class="status-dot"></span>
@@ -1062,6 +1215,186 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   </div>
 </div>
 
+<!-- SCOUTING TARGET MODAL -->
+<div class="modal-overlay-2" id="scoutModal">
+  <div class="modal-box-2" style="width:460px;">
+    <h3 id="scoutModalTitle">NEW SCOUTING TARGET</h3>
+    <input type="hidden" id="scoutModalEditId"/>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>NAME</label>
+        <input type="text" id="scoutName" placeholder="Candidate name..."/>
+      </div>
+      <div class="modal-group">
+        <label>STEAM ID</label>
+        <input type="text" id="scoutSteamId" placeholder="76561198..."/>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>CURRENT DEPARTMENT</label>
+        <select id="scoutDept">
+          <option value="">— SELECT —</option>
+          <option>General Security</option><option>Medical</option><option>Research</option>
+          <option>Site Staff</option><option>Internal Security</option><option>External Affairs</option>
+          <option>MTF Alpha-1</option><option>Floor 3 Assistant</option><option>Site Inspector</option>
+          <option>Site Administration</option><option>MTF Nu-7</option><option>MTF E-11</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>CURRENT RANK</label>
+        <input type="text" id="scoutRank" placeholder="Rank or role..."/>
+      </div>
+    </div>
+    <div class="modal-err" id="scoutErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-scout-modal">[ CANCEL ]</button>
+      <button class="modal-save"   data-action="save-scout">[ CREATE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- POI CLOSE MODAL -->
+<div class="modal-overlay-2" id="poiCloseModal">
+  <div class="modal-box-2" style="width:420px;">
+    <h3 id="poiCloseTitle">CLOSE FILE</h3>
+    <input type="hidden" id="poiCloseId"/>
+    <input type="hidden" id="poiCloseType"/>
+    <div class="modal-group">
+      <label>REASON FOR CLOSURE</label>
+      <textarea id="poiCloseReason" placeholder="State reason for closing this file..."></textarea>
+    </div>
+    <div class="modal-err" id="poiCloseErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-poi-close-modal">[ CANCEL ]</button>
+      <button class="modal-save"   data-action="save-poi-close" style="background:rgba(80,30,30,.3);border-color:#5a2020;">[ CLOSE FILE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- POI / TARGET MODAL -->
+<div class="modal-overlay-2" id="poiModal">
+  <div class="modal-box-2" style="width:500px;">
+    <h3 id="poiModalTitle">NEW PERSON OF INTEREST</h3>
+    <input type="hidden" id="poiModalType"/>
+    <input type="hidden" id="poiModalEditId"/>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>NAME</label>
+        <input type="text" id="poiName" placeholder="Full name..."/>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>DEPARTMENT</label>
+        <select id="poiDept" onchange="handlePoiDeptChange()">
+          <option value="">— SELECT —</option>
+          <option>General Security</option>
+          <option>Medical</option>
+          <option>Research</option>
+          <option>Site Staff</option>
+          <option>Internal Security</option>
+          <option>External Affairs</option>
+          <option>MTF Alpha-1</option>
+          <option>Floor 3 Assistant</option>
+          <option>Site Inspector</option>
+          <option>Site Administration</option>
+          <option>MTF Nu-7</option>
+          <option>MTF E-11</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="modal-group" id="poiDeptOtherGroup" style="display:none;">
+        <label>SPECIFY DEPARTMENT</label>
+        <input type="text" id="poiDeptOther" placeholder="Enter department..."/>
+      </div>
+    </div>
+    <div class="modal-group">
+      <label>POSITION / ROLE</label>
+      <input type="text" id="poiPosition" placeholder="Job title or role..."/>
+    </div>
+    <div class="modal-group">
+      <label>REASON / JUSTIFICATION</label>
+      <textarea id="poiReason" placeholder="State reason for listing..."></textarea>
+    </div>
+    <!-- POI-only fields -->
+    <div id="poiOnlyFields">
+      <div class="modal-row">
+        <div class="modal-group">
+          <label>STATUS</label>
+          <select id="poiStatus">
+            <option value="In Progress">In Progress</option>
+            <option value="Absolved">Absolved</option>
+            <option value="Summoned to Tribunal">Summoned to Tribunal</option>
+            <option value="Killed">Killed</option>
+          </select>
+        </div>
+        <div class="modal-group">
+          <label>PRIORITY</label>
+          <select id="poiPriority">
+            <option value="1">1 — High</option>
+            <option value="2" selected>2 — Medium</option>
+            <option value="3">3 — Low</option>
+          </select>
+        </div>
+        <div class="modal-group">
+          <label>STANDING</label>
+          <select id="poiStanding">
+            <option value="Friend">Friend</option>
+            <option value="Neutral" selected>Neutral</option>
+            <option value="Foe">Foe</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <!-- Target-only fields -->
+    <div id="targetOnlyFields" style="display:none;">
+      <div class="modal-row">
+        <div class="modal-group">
+          <label>PRIORITY</label>
+          <select id="targetPriority">
+            <option value="1">1 — High</option>
+            <option value="2" selected>2 — Medium</option>
+            <option value="3">3 — Low</option>
+          </select>
+        </div>
+        <div class="modal-group">
+          <label>ETHICS MEMBER AUTHORISATION</label>
+          <select id="poiAuthority">
+            <option value="">— SELECT ETHICS MEMBER —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-err" id="poiErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-poi-modal">[ CANCEL ]</button>
+      <button class="modal-save"   data-action="save-poi">[ SAVE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL MODAL (CL5 only) -->
+<div class="modal-overlay-2" id="adminModal" style="z-index:1050;">
+  <div class="modal-box-2" style="width:560px;max-height:80vh;overflow-y:auto;">
+    <h3 style="display:flex;align-items:center;justify-content:space-between;">
+      ACCOUNT MANAGEMENT
+      <button class="modal-cancel" style="font-size:.58rem;padding:2px 8px;" data-action="close-admin-modal">[ CLOSE ]</button>
+    </h3>
+    <div style="font-size:.6rem;color:var(--text-dim);margin-bottom:.75rem;line-height:1.6;border-left:2px solid var(--border2);padding-left:.6rem;">
+      Pending accounts are locked at <strong style="color:var(--green-dim);">CL3</strong> until you approve them.<br>
+      Set the granted clearance before approving. Denied accounts cannot log in.
+    </div>
+
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin-bottom:.4rem;">▸ PENDING REGISTRATIONS</div>
+    <div id="adminPendingList"><div style="font-size:.63rem;color:var(--text-faint);padding:.5rem;">[ LOADING... ]</div></div>
+
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ ACTIVE ACCOUNTS</div>
+    <div id="adminActiveList"></div>
+  </div>
+</div>
+
 <script>
 // ================================================================
 //  FIREBASE REST HELPERS
@@ -1148,6 +1481,14 @@ async function userSet(userId, data) {
   if (firebaseReady) await fbSet('/' + k, data);
   else lsSet(k, data);
 }
+async function userGetAll() {
+  if (firebaseReady) return await fbGetAll('/users');
+  return lsAll('users/');
+}
+async function userDel(userId) {
+  var k = 'users/' + safeKey(userId);
+  if (firebaseReady) await fbDelete('/' + k); else lsDel(k);
+}
 
 async function ordersGetAll() {
   if (firebaseReady) {
@@ -1230,14 +1571,37 @@ async function doAuth() {
     if (loginMode === 'register') {
       var existing = await userGet(uid);
       if (existing) { setErr('ID ALREADY REGISTERED'); setBusy(false); return; }
-      var cl = document.getElementById('loginClearance').value;
-      await userSet(uid, { hash: h, clearance: cl, created: Date.now(), displayId: uid });
-      currentUser = { id: uid, clearance: cl };
+      var reqCl = document.getElementById('loginClearance').value;
+      // Check if any active account exists yet (bootstrap case)
+      var allU = await userGetAll();
+      var hasActive = allU && Object.values(allU).some(function(x){ return x.status==='active' || (!x.status && x.hash); });
+      if (hasActive) {
+        // Normal path: save as pending CL3, do NOT log in
+        await userSet(uid, { hash: h, clearance: '3', requestedClearance: reqCl,
+          status: 'pending', created: Date.now(), displayId: uid });
+        setBusy(false);
+        setErr('REGISTRATION SUBMITTED · Awaiting CL5 approval. You will be notified via EC channels.');
+        return;
+      } else {
+        // Bootstrap: first-ever account, auto-approve at requested clearance
+        await userSet(uid, { hash: h, clearance: reqCl, requestedClearance: reqCl,
+          status: 'active', created: Date.now(), displayId: uid });
+        currentUser = { id: uid, clearance: reqCl };
+      }
 
     } else {
       var rec = await userGet(uid);
-      if (!rec)        { setErr('ID NOT FOUND · REGISTER FIRST'); setBusy(false); return; }
-      if (rec.hash !== h) { setErr('AUTHENTICATION FAILED');         setBusy(false); return; }
+      if (!rec)           { setErr('ID NOT FOUND · REGISTER FIRST'); setBusy(false); return; }
+      if (rec.hash !== h) { setErr('AUTHENTICATION FAILED');          setBusy(false); return; }
+      var acctStatus = rec.status || 'active'; // legacy accounts (no status) = active
+      if (acctStatus === 'pending') {
+        setErr('ACCOUNT PENDING · A CL5 member must authorise your registration before you can access the system.');
+        setBusy(false); return;
+      }
+      if (acctStatus === 'denied') {
+        setErr('REGISTRATION DENIED · Contact the Ethics Committee Chair for assistance.');
+        setBusy(false); return;
+      }
       currentUser = { id: uid, clearance: rec.clearance };
     }
   } catch(e) {
@@ -1267,6 +1631,10 @@ function onLogin() {
     pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']  ✕ logout';
     document.getElementById('ordersAuthNotice').style.display = 'none';
     document.getElementById('ordersForm').style.display = 'block';
+    // Show ADMIN button for CL5 only
+    var adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) adminBtn.style.display = parseInt(currentUser.clearance) >= 5 ? 'inline-block' : 'none';
+    if (parseInt(currentUser.clearance) >= 5) loadAdminData();
   } else {
     document.getElementById('ordersAuthNotice').style.display = 'block';
     document.getElementById('ordersForm').style.display = 'none';
@@ -1283,6 +1651,8 @@ function logout() {
   allOrders = [];
   renderOrders();
   document.getElementById('userPill').style.display = 'none';
+  var adminBtn = document.getElementById('adminBtn');
+  if (adminBtn) adminBtn.style.display = 'none';
   document.getElementById('loginOverlay').style.display = 'flex';
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginUser').value = '';
@@ -1598,6 +1968,23 @@ function updateOrderBadge() {
   badge.textContent   = pend;
 }
 
+function updatePoiBadge() {
+  var count = allPOI.filter(function(p){ return !p.closed; }).length
+            + allTargets.filter(function(t){ return !t.closed; }).length;
+  var badge = document.getElementById('poiBadge');
+  if (!badge) return;
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+  badge.textContent   = count;
+}
+
+function updateRecruitBadge() {
+  var count = allRecruitment.filter(function(r){ return r.stage !== 'archived'; }).length;
+  var badge = document.getElementById('recruitBadge');
+  if (!badge) return;
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+  badge.textContent   = count;
+}
+
 // ================================================================
 //  CLOCK / TABS / BARS / LOG
 // ================================================================
@@ -1619,6 +2006,8 @@ function switchTab(el, id) {
   if (id === 'roster')          loadPersonnel();
   if (id === 'ethics-files')    loadEthicsPersonnel();
   if (id === 'ethics-roster')   loadEthicsPersonnel();
+  if (id === 'poi')             loadPOIData();
+  if (id === 'recruit')         loadRecruitment();
 }
 
 var barsData = [
@@ -1699,6 +2088,142 @@ var RANKS = [
 ];
 
 function rankIndex(r) { return RANKS.indexOf(r); }
+// ================================================================
+//  ADMIN PANEL (CL5 only)
+//  Manage pending registrations and active accounts.
+// ================================================================
+var allUsers = {};
+
+async function loadAdminData() {
+  try {
+    var raw = await userGetAll();
+    allUsers = raw || {};
+  } catch(e) { allUsers = {}; }
+  updateAdminBadge();
+}
+
+function updateAdminBadge() {
+  var pending = Object.values(allUsers).filter(function(u){ return u.status === 'pending'; }).length;
+  var badge   = document.getElementById('adminBadge');
+  if (!badge) return;
+  badge.textContent   = pending;
+  badge.style.display = pending > 0 ? 'inline-block' : 'none';
+}
+
+function openAdminPanel() {
+  document.getElementById('adminModal').classList.add('open');
+  renderAdminPanel();
+}
+function closeAdminPanel() { document.getElementById('adminModal').classList.remove('open'); }
+
+function renderAdminPanel() {
+  var users    = Object.values(allUsers);
+  var pending  = users.filter(function(u){ return u.status === 'pending'; });
+  var active   = users.filter(function(u){ return u.status === 'active' || (!u.status && u.hash); });
+  var denied   = users.filter(function(u){ return u.status === 'denied'; });
+
+  // Pending list
+  var pendingEl = document.getElementById('adminPendingList');
+  if (pendingEl) {
+    if (!pending.length) {
+      pendingEl.innerHTML = '<div style="font-size:.63rem;color:var(--text-faint);padding:.4rem;">[ NO PENDING REGISTRATIONS ]</div>';
+    } else {
+      pendingEl.innerHTML = pending.map(function(u) {
+        var date = u.created ? new Date(u.created).toISOString().slice(0,10) : '—';
+        var uid  = e(u.displayId || '?');
+        return `<div style="border:1px solid var(--border2);background:#030806;padding:.5rem .75rem;margin-bottom:.35rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+            <div>
+              <div style="font-family:'VT323',monospace;font-size:.9rem;color:var(--green);">EC·${uid}</div>
+              <div style="font-size:.58rem;color:var(--text-dim);">Registered: ${date} · Requested CL${e(u.requestedClearance||'3')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+              <label style="font-size:.58rem;color:var(--text-dim);">GRANT CL:</label>
+              <select id="grantCl_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:2px 4px;">
+                <option value="3">CL3</option>
+                <option value="4"${u.requestedClearance==='4'?' selected':''}>CL4</option>
+                <option value="5"${u.requestedClearance==='5'?' selected':''}>CL5</option>
+              </select>
+              <button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}">✓ APPROVE</button>
+              <button class="rec-btn deny"    data-action="admin-deny"    data-uid="${uid}">✗ DENY</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Active + denied list
+  var activeEl = document.getElementById('adminActiveList');
+  if (activeEl) {
+    var combined = active.concat(denied).sort(function(a,b){ return (b.created||0)-(a.created||0); });
+    activeEl.innerHTML = combined.length ? combined.map(function(u) {
+      var uid    = e(u.displayId || '?');
+      var status = u.status || 'active';
+      var scls   = status==='denied' ? 'b-red' : 'b-green';
+      var slbl   = status==='denied' ? 'DENIED' : 'ACTIVE';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);padding:.35rem .65rem;margin-bottom:2px;font-size:.62rem;flex-wrap:wrap;gap:.3rem;">
+        <div>
+          <span style="font-family:'VT323',monospace;color:var(--green);">EC·${uid}</span>
+          <span style="color:var(--text-dim);margin-left:.5rem;">CL${e(u.clearance||'3')}</span>
+          <span class="badge ${scls}" style="margin-left:.4rem;">${slbl}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+          <label style="font-size:.56rem;color:var(--text-dim);">SET CL:</label>
+          <select id="setCl_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:1px 3px;">
+            <option value="3"${u.clearance==='3'?' selected':''}>CL3</option>
+            <option value="4"${u.clearance==='4'?' selected':''}>CL4</option>
+            <option value="5"${u.clearance==='5'?' selected':''}>CL5</option>
+          </select>
+          <button class="rec-btn" data-action="admin-set-cl" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE</button>
+          ${status==='denied' ? `<button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">RESTORE</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') : '<div style="font-size:.63rem;color:var(--text-faint);">[ NO ACTIVE ACCOUNTS ]</div>';
+  }
+}
+
+async function adminApprove(uid) {
+  var sel = document.getElementById('grantCl_' + uid) || document.getElementById('setCl_' + uid);
+  var cl  = sel ? sel.value : '3';
+  if (!await pfConfirm('APPROVE EC·' + uid + ' with Clearance Level ' + cl + '?')) return;
+  var rec = allUsers[uid] || {};
+  rec.status = 'active'; rec.clearance = cl;
+  rec.approvedBy = currentUser.id; rec.approvedAt = Date.now();
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    updateAdminBadge();
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+async function adminDeny(uid) {
+  if (!await pfConfirm('DENY registration for EC·' + uid + '? They will be unable to log in.')) return;
+  var rec = allUsers[uid] || {};
+  rec.status = 'denied'; rec.deniedBy = currentUser.id; rec.deniedAt = Date.now();
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    updateAdminBadge();
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+async function adminSetClearance(uid) {
+  var sel = document.getElementById('setCl_' + uid);
+  if (!sel) return;
+  var cl = sel.value;
+  if (!await pfConfirm('Set EC·' + uid + ' to Clearance Level ' + cl + '?')) return;
+  var rec = allUsers[uid] || {};
+  rec.clearance = cl; rec.clChangedBy = currentUser.id; rec.clChangedAt = Date.now();
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
 function canEditPersonnel() { return currentUser && parseInt(currentUser.clearance) >= 4; }
 function formatDob(s) {
   if (!s) return '—';
@@ -2097,6 +2622,7 @@ async function savePersonnelRecord() {
     try {
       await personnelSet(id, newRec);
       allPersonnel.push(newRec);
+      if (window._pendingRecruitApproval) finaliseRecruitApproval(id);
     } catch(err) { alert('SAVE ERROR: ' + err.message); }
   }
 
@@ -2129,6 +2655,28 @@ document.addEventListener('click', function(ev) {
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
+    case 'toggle-nav-group': toggleNavGroup(el.dataset.group); break;
+    case 'open-scout-modal':  openScoutModal(null); break;
+    case 'close-scout-modal': closeScoutModal(); break;
+    case 'save-scout':        saveScout(); break;
+    case 'rec-advance':       recAdvance(el.dataset.id, el.dataset.to); break;
+    case 'rec-archive':       recArchive(el.dataset.id, el.dataset.reason); break;
+    case 'rec-vote':          recVote(el.dataset.id, el.dataset.vote); break;
+    case 'rec-approve-final': recApproveFinal(el.dataset.id); break;
+    case 'add-rec-comment':   addRecComment(el.dataset.id); break;
+    case 'toggle-rec-archive':toggleRecArchive(); break;
+    case 'poi-back':         renderPoiList(); break;
+    case 'open-poi-file':        renderPoiFile(el.dataset.type, el.dataset.id); break;
+    case 'edit-poi':             openPoiModal(el.dataset.id, el.dataset.poitype); break;
+    case 'delete-poi':           deletePoi(el.dataset.id, el.dataset.poitype); break;
+    case 'toggle-poi-archive':   togglePoiArchive(); break;
+    case 'close-poi-file':       openPoiCloseModal(el.dataset.id, el.dataset.poitype); break;
+    case 'reopen-poi':           reopenPoi(el.dataset.id, el.dataset.poitype); break;
+    case 'close-poi-close-modal':closePoiCloseModal(); break;
+    case 'save-poi-close':       savePoiClose(); break;
+    case 'add-poi-note':     addPoiNote(el.dataset.id, el.dataset.poitype); break;
+    case 'close-poi-modal':  closePoiModal(); break;
+    case 'save-poi':         savePoi(); break;
     case 'edit-pf':          ev.stopPropagation(); openPersonnelModal(id); break;
     case 'delete-pf':        ev.stopPropagation(); deletePersonnelRecord(id); break;
     case 'add-pf-note':      ev.stopPropagation(); addPersonnelNote(id); break;
@@ -2161,6 +2709,10 @@ document.addEventListener('click', function(ev) {
     case 'open-ef-sqd-add':  ev.stopPropagation(); openSquadronModal('add', el.dataset.efid, el.dataset.sqdid, 'ef'); break;
     case 'delete-ef-sqd':    ev.stopPropagation(); deleteEfSquadron(el.dataset.sqdid); break;
     // Modals
+    case 'close-admin-modal':  closeAdminPanel(); break;
+    case 'admin-approve':      adminApprove(el.dataset.uid); break;
+    case 'admin-deny':         adminDeny(el.dataset.uid); break;
+    case 'admin-set-cl':       adminSetClearance(el.dataset.uid); break;
     case 'close-award-modal':    closeAwardModal(); break;
     case 'save-award':           saveAward(); break;
     case 'close-tag-modal':      closeTagModal(); break;
@@ -2669,6 +3221,734 @@ async function deleteEfSquadron(sqdId) {
     allEthicsSquadrons = allEthicsSquadrons.filter(function(s){ return s.id !== sqdId; });
     renderEthicsFiles();
   } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+// ================================================================
+//  RECRUITMENT SYSTEM
+// ================================================================
+var allRecruitment = [];
+var recArchiveOpen = false;
+
+// ── Firebase helpers ──
+async function recruitGetAll() {
+  if (firebaseReady) { var r=await fbGetAll('/recruitment'); return r?Object.values(r).filter(x=>x&&x.id):[];}
+  return Object.values(lsAll('recruitment/')).filter(x=>x&&x.id);
+}
+async function recruitSet(id,data) {
+  if(firebaseReady) await fbSet('/recruitment/'+id,data); else lsSet('recruitment/'+id,data);
+}
+async function recruitDel(id) {
+  if(firebaseReady) await fbDelete('/recruitment/'+id); else lsDel('recruitment/'+id);
+}
+
+// ── Load ──
+async function loadRecruitment() {
+  try { allRecruitment = (await recruitGetAll()).sort(function(a,b){return b.created-a.created;}); }
+  catch(e) { allRecruitment = []; }
+  var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
+  var btn = document.getElementById('newScoutBtn');
+  if (btn) btn.style.display = canEdit ? 'inline-block' : 'none';
+  renderRecruitment();
+}
+
+// ── Helpers ──
+function recYes(r)   { return Object.values(r.votes||{}).filter(function(v){return v==='yes';}).length; }
+function recNo(r)    { return Object.values(r.votes||{}).filter(function(v){return v==='no';}).length;  }
+function recMajYes(r){ var y=recYes(r),n=recNo(r); return (y+n)>0 && y>n; }
+
+// ── Render ──
+function renderRecruitment() {
+  var scouting  = allRecruitment.filter(function(r){return r.stage==='scouting';});
+  var greenlit  = allRecruitment.filter(function(r){return r.stage==='greenlit';});
+  var tryout    = allRecruitment.filter(function(r){return r.stage==='tryout';});
+  var archived  = allRecruitment.filter(function(r){return r.stage==='archived';});
+  var canEdit   = currentUser && parseInt(currentUser.clearance) >= 4;
+
+  var el; var empty = '<div class="poi-empty">[ NONE ]</div>';
+
+  // Section 1 — Scouting
+  el = document.getElementById('recScoutingList');
+  if (el) el.innerHTML = scouting.length ? scouting.map(function(r){ return buildRecCard(r, canEdit); }).join('') : empty;
+
+  // Section 2 — Greenlit
+  el = document.getElementById('recGreenlitList');
+  if (el) el.innerHTML = greenlit.length ? greenlit.map(function(r){ return buildRecCard(r, canEdit); }).join('') : empty;
+
+  // Section 3 — Tryout
+  el = document.getElementById('recTryoutList');
+  if (el) el.innerHTML = tryout.length ? tryout.map(function(r){ return buildRecCard(r, canEdit); }).join('') : empty;
+
+  // Archive count
+  var cnt = document.getElementById('recArchiveCount');
+  if (cnt) cnt.textContent = archived.length;
+  if (recArchiveOpen) renderRecArchive();
+  updateRecruitBadge();
+}
+
+function buildRecCard(r, canEdit) {
+  var stageCls = {scouting:'b-cyan', greenlit:'b-green', tryout:'b-amber', archived:'b-dim'};
+  var myVote   = currentUser ? (r.votes||{})[currentUser.id] : null;
+  var y = recYes(r), n = recNo(r), maj = recMajYes(r);
+
+  // Comments for current stage
+  var stageComments = {scouting:'scoutingComments', greenlit:'greenlitComments', tryout:'tryoutComments'};
+  var commKey  = stageComments[r.stage] || 'scoutingComments';
+  var comments = Array.isArray(r[commKey]) ? r[commKey] : [];
+
+  var commHtml = comments.length ? comments.map(function(c){
+    var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+    return `<div class="rec-comment"><div class="rec-comment-meta">EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</div>${e(c.text)}</div>`;
+  }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:2px 0;">[ NO COMMENTS ]</div>';
+
+  var commentForm = currentUser
+    ? `<div class="poi-note-form" style="margin-top:.35rem;">
+        <textarea class="poi-note-input" id="recnote_${e(r.id)}" placeholder="Add comment... (Ctrl+Enter)" rows="2" onkeydown="handleRecNoteKey(event,this)"></textarea>
+        <button class="rec-btn" data-action="add-rec-comment" data-id="${e(r.id)}">[ ADD ]</button>
+      </div>` : '';
+
+  // Vote bar (greenlit only)
+  var voteBar = r.stage === 'greenlit' && canEdit ? `
+    <div class="rec-vote-bar">
+      <span>VOTES:</span>
+      <span style="color:#44dd88;">✓ ${y} YES</span>
+      <span style="color:#dd4444;">✗ ${n} NO</span>
+      ${maj ? '<span class="rec-majority">⚑ MAJORITY YES — READY FOR APPROVAL</span>' : ''}
+      ${currentUser ? `
+        <button class="rec-vote-btn yes${myVote==='yes'?' voted':''}" data-action="rec-vote" data-id="${e(r.id)}" data-vote="yes">✓ YES</button>
+        <button class="rec-vote-btn no${myVote==='no'?' voted':''}"  data-action="rec-vote" data-id="${e(r.id)}" data-vote="no">✗ NO</button>
+      ` : ''}
+    </div>` : '';
+
+  // Action buttons
+  var btns = '<div class="rec-btns">';
+  if (canEdit) {
+    if (r.stage==='scouting') {
+      btns += `<button class="rec-btn approve" data-action="rec-advance" data-id="${e(r.id)}" data-to="greenlit">→ GREENLIT</button>`;
+      btns += `<button class="rec-btn deny"    data-action="rec-archive" data-id="${e(r.id)}" data-reason="denied">✗ DENY</button>`;
+    }
+    if (r.stage==='greenlit') {
+      if (maj) btns += `<button class="rec-btn approve" data-action="rec-advance" data-id="${e(r.id)}" data-to="tryout">→ TRYOUT</button>`;
+      btns += `<button class="rec-btn deny" data-action="rec-archive" data-id="${e(r.id)}" data-reason="denied">✗ DENY</button>`;
+    }
+    if (r.stage==='tryout') {
+      btns += `<button class="rec-btn approve" data-action="rec-approve-final" data-id="${e(r.id)}">✓ APPROVE & CREATE FILE</button>`;
+      btns += `<button class="rec-btn deny"    data-action="rec-archive"       data-id="${e(r.id)}" data-reason="denied">✗ DENY</button>`;
+    }
+  }
+  btns += '</div>';
+
+  return `<div class="rec-card" id="reccard_${e(r.id)}">
+    <div class="rec-card-header">
+      <div>
+        <div class="rec-name">${e(r.name||'—')}</div>
+        <div class="rec-meta">SteamID: ${e(r.steamId||'—')} · Dept: ${e(r.department||'—')} · Rank: ${e(r.rank||'—')}</div>
+        <div style="margin-top:3px;"><span class="badge ${stageCls[r.stage]||'b-dim'}">${r.stage.toUpperCase()}</span></div>
+      </div>
+    </div>
+    ${voteBar}
+    <div style="border-top:1px solid var(--border);margin:.4rem 0 .3rem;"></div>
+    ${commHtml}
+    ${commentForm}
+    ${btns}
+  </div>`;
+}
+
+function renderRecArchive() {
+  var el = document.getElementById('recArchivedList');
+  if (!el) return;
+  var archived = allRecruitment.filter(function(r){return r.stage==='archived';});
+  archived.sort(function(a,b){return (b.archivedAt||0)-(a.archivedAt||0);});
+  if (!archived.length) { el.innerHTML = '<div class="poi-empty">[ NO ARCHIVED RECRUITMENT ]</div>'; return; }
+  el.innerHTML = archived.map(function(r) {
+    var status = r.archiveStatus === 'approved'
+      ? '<span class="badge b-green">APPROVED</span>'
+      : '<span class="badge b-red">DENIED</span>';
+    return `<div class="rec-card" style="opacity:.7;">
+      <div class="rec-card-header">
+        <div>
+          <div class="rec-name">${e(r.name||'—')}</div>
+          <div class="rec-meta">SteamID: ${e(r.steamId||'—')} · ${e(r.department||'—')} · ${e(r.rank||'—')}</div>
+          <div style="margin-top:3px;">${status}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleRecArchive() {
+  recArchiveOpen = !recArchiveOpen;
+  var el    = document.getElementById('recArchivedList');
+  var arrow = document.getElementById('recArchiveArrow');
+  if (arrow) arrow.textContent = recArchiveOpen ? '▾' : '▸';
+  if (el)    el.style.display  = recArchiveOpen ? 'block' : 'none';
+  if (recArchiveOpen) renderRecArchive();
+}
+
+// ── Modal: create scouting target ──
+function openScoutModal(editId) {
+  if (!currentUser || parseInt(currentUser.clearance) < 4) return;
+  document.getElementById('scoutModalEditId').value = editId || '';
+  document.getElementById('scoutErr').textContent   = '';
+  document.getElementById('scoutModalTitle').textContent = editId ? 'EDIT SCOUTING TARGET' : 'NEW SCOUTING TARGET';
+  if (editId) {
+    var r = allRecruitment.find(function(x){return x.id===editId;});
+    if (r) {
+      document.getElementById('scoutName').value    = r.name    || '';
+      document.getElementById('scoutSteamId').value = r.steamId || '';
+      document.getElementById('scoutDept').value    = r.department || '';
+      document.getElementById('scoutRank').value    = r.rank    || '';
+    }
+  } else {
+    document.getElementById('scoutName').value = '';
+    document.getElementById('scoutSteamId').value = '';
+    document.getElementById('scoutDept').value = '';
+    document.getElementById('scoutRank').value = '';
+  }
+  document.getElementById('scoutModal').classList.add('open');
+}
+function closeScoutModal() { document.getElementById('scoutModal').classList.remove('open'); }
+
+async function saveScout() {
+  var editId = document.getElementById('scoutModalEditId').value;
+  var name   = document.getElementById('scoutName').value.trim();
+  var steam  = document.getElementById('scoutSteamId').value.trim();
+  var dept   = document.getElementById('scoutDept').value;
+  var rank   = document.getElementById('scoutRank').value.trim();
+  if (!name)  { document.getElementById('scoutErr').textContent = '> NAME REQUIRED';       return; }
+  if (!steam) { document.getElementById('scoutErr').textContent = '> STEAM ID REQUIRED';   return; }
+  if (!dept)  { document.getElementById('scoutErr').textContent = '> DEPARTMENT REQUIRED'; return; }
+
+  if (editId) {
+    var r = allRecruitment.find(function(x){return x.id===editId;});
+    if (!r) return;
+    r.name = name; r.steamId = steam; r.department = dept; r.rank = rank;
+    r.updatedBy = currentUser.id; r.updated = Date.now();
+    try { await recruitSet(editId, r); } catch(err) { document.getElementById('scoutErr').textContent='> ERROR: '+err.message; return; }
+  } else {
+    var newR = {
+      id:               'rec_'+Date.now()+'_'+Math.random().toString(36).slice(2,4),
+      stage:            'scouting', archiveStatus: null,
+      name: name, steamId: steam, department: dept, rank: rank,
+      scoutingComments: [], greenlitComments: [], tryoutComments: [],
+      votes: {}, personnelFileId: null,
+      createdBy: currentUser.id, created: Date.now(), transitions: []
+    };
+    try { await recruitSet(newR.id, newR); allRecruitment.unshift(newR); }
+    catch(err) { document.getElementById('scoutErr').textContent='> ERROR: '+err.message; return; }
+  }
+  closeScoutModal();
+  renderRecruitment();
+}
+
+// ── Stage actions ──
+async function recAdvance(id, toStage) {
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r || !currentUser || parseInt(currentUser.clearance) < 4) return;
+  var label = toStage === 'greenlit' ? '→ GREENLIT' : '→ TRYOUT';
+  if (!await pfConfirm('ADVANCE ' + e(r.name) + ' ' + label + '?')) return;
+  r.transitions = r.transitions || [];
+  r.transitions.push({ from: r.stage, to: toStage, by: currentUser.id, at: Date.now() });
+  r.stage = toStage;
+  try { await recruitSet(id, r); renderRecruitment(); } catch(err) { alert('ERROR: '+err.message); }
+}
+
+async function recArchive(id, reason) {
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r || !currentUser || parseInt(currentUser.clearance) < 4) return;
+  if (!await pfConfirm('DENY AND ARCHIVE ' + e(r.name) + '?')) return;
+  r.transitions = r.transitions || [];
+  r.transitions.push({ from: r.stage, to: 'archived', by: currentUser.id, at: Date.now(), reason: reason });
+  r.stage = 'archived'; r.archiveStatus = 'denied'; r.archivedAt = Date.now();
+  try { await recruitSet(id, r); renderRecruitment(); } catch(err) { alert('ERROR: '+err.message); }
+}
+
+async function recVote(id, vote) {
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r || !currentUser || parseInt(currentUser.clearance) < 4) return;
+  if (!r.votes) r.votes = {};
+  r.votes[currentUser.id] = vote;
+  try { await recruitSet(id, r); renderRecruitment(); } catch(err) { alert('ERROR: '+err.message); }
+}
+
+async function recApproveFinal(id) {
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r || !currentUser || parseInt(currentUser.clearance) < 4) return;
+  if (!await pfConfirm('APPROVE ' + e(r.name) + ' AND CREATE OMEGA-1 PERSONNEL FILE?')) return;
+  // Store pending recruitment ID so savePersonnelRecord can close it
+  window._pendingRecruitApproval = { recId: id, rec: r };
+  // Pre-fill modal
+  openPersonnelModal(null);
+  setTimeout(function() {
+    var nameEl = document.getElementById('pfName');
+    if (nameEl) nameEl.value = r.name || '';
+  }, 50);
+}
+
+// Called by savePersonnelRecord after creating the file
+async function finaliseRecruitApproval(newPersonnelId) {
+  if (!window._pendingRecruitApproval) return;
+  var rec = window._pendingRecruitApproval.rec;
+  rec.transitions = rec.transitions || [];
+  rec.transitions.push({ from: rec.stage, to: 'archived', by: currentUser.id, at: Date.now(), reason: 'approved' });
+  rec.stage = 'archived'; rec.archiveStatus = 'approved';
+  rec.archivedAt = Date.now(); rec.personnelFileId = newPersonnelId;
+  try { await recruitSet(rec.id, rec); renderRecruitment(); } catch(e) { console.error(e); }
+  window._pendingRecruitApproval = null;
+}
+
+// ── Comments ──
+async function addRecComment(id) {
+  if (!currentUser) return;
+  var inp = document.getElementById('recnote_' + id);
+  if (!inp || !inp.value.trim()) return;
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r) return;
+  var stageKeys = {scouting:'scoutingComments', greenlit:'greenlitComments', tryout:'tryoutComments'};
+  var key = stageKeys[r.stage] || 'scoutingComments';
+  if (!Array.isArray(r[key])) r[key] = [];
+  r[key].push({ author: currentUser.id, clearance: currentUser.clearance, text: inp.value.trim(), created: Date.now() });
+  try { await recruitSet(id, r); inp.value = ''; renderRecruitment(); } catch(err) { alert('ERROR: '+err.message); }
+}
+
+function handleRecNoteKey(ev, el) {
+  if (ev.key==='Enter' && (ev.ctrlKey||ev.metaKey)) {
+    ev.preventDefault();
+    var id = el.id.replace('recnote_','');
+    addRecComment(id);
+  }
+}
+
+// ================================================================
+//  NAV GROUP COLLAPSE
+// ================================================================
+var navCollapsed = new Set(); // which nav groups are collapsed
+
+function toggleNavGroup(group) {
+  var tabs  = document.getElementById('ngt-' + group);
+  var arrow = document.getElementById('nga-' + group);
+  if (!tabs) return;
+  if (navCollapsed.has(group)) {
+    navCollapsed.delete(group);
+    tabs.classList.remove('collapsed');
+    if (arrow) arrow.classList.remove('closed');
+  } else {
+    navCollapsed.add(group);
+    tabs.classList.add('collapsed');
+    if (arrow) arrow.classList.add('closed');
+  }
+}
+
+// ================================================================
+//  POI / TARGET SYSTEM
+// ================================================================
+var DEPARTMENTS = ['General Security','Medical','Research','Site Staff','Internal Security',
+  'External Affairs','MTF Alpha-1','Floor 3 Assistant','Site Inspector',
+  'Site Administration','MTF Nu-7','MTF E-11','Other'];
+
+var STATUS_CLS   = { 'In Progress':'b-cyan', 'Absolved':'b-green', 'Summoned to Tribunal':'b-amber', 'Killed':'b-dim' };
+var PRIORITY_CLS = { '1':'b-red', '2':'b-amber', '3':'b-cyan' };
+var STANDING_CLS = { 'Friend':'b-green', 'Neutral':'b-dim', 'Foe':'b-red' };
+
+var allPOI     = [];
+var allTargets = [];
+var currentPoiView = null; // null = list, {type:'poi'|'target', id} = file
+
+// ── Firebase helpers ──
+async function poiGetAll()     {
+  if (firebaseReady) { var r=await fbGetAll('/poi');     return r?Object.values(r).filter(x=>x&&x.id):[];}
+  return Object.values(lsAll('poi/')).filter(x=>x&&x.id);
+}
+async function targetGetAll()  {
+  if (firebaseReady) { var r=await fbGetAll('/targets'); return r?Object.values(r).filter(x=>x&&x.id):[];}
+  return Object.values(lsAll('targets/')).filter(x=>x&&x.id);
+}
+async function poiSet(id,data)    { if(firebaseReady)await fbSet('/poi/'+id,data);     else lsSet('poi/'+id,data);     }
+async function targetSet(id,data) { if(firebaseReady)await fbSet('/targets/'+id,data); else lsSet('targets/'+id,data); }
+async function poiDel(id)         { if(firebaseReady)await fbDelete('/poi/'+id);        else lsDel('poi/'+id);          }
+async function targetDel(id)      { if(firebaseReady)await fbDelete('/targets/'+id);    else lsDel('targets/'+id);      }
+
+// ── Load ──
+async function loadPOIData() {
+  try {
+    var ps = await poiGetAll();
+    var ts = await targetGetAll();
+    allPOI     = ps.sort(function(a,b){return a.number-b.number;});
+    allTargets = ts.sort(function(a,b){return a.number-b.number;});
+  } catch(err) { allPOI=[]; allTargets=[]; }
+  // Show new buttons for CL4+
+  var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
+  var npb = document.getElementById('newPoiBtn');
+  var ntb = document.getElementById('newTargetBtn');
+  if (npb) npb.style.display = canEdit ? 'inline-block' : 'none';
+  if (ntb) ntb.style.display = canEdit ? 'inline-block' : 'none';
+  if (currentPoiView) renderPoiFile(currentPoiView.type, currentPoiView.id);
+  else renderPoiList();
+  updatePoiBadge();
+}
+
+function deptDisplay(item) {
+  return item.department === 'Other' ? (item.deptOther||'Other') : (item.department||'—');
+}
+function poiTitle(p) {
+  return 'POI ' + String(p.number).padStart(3,'0') + ' — ' + e(p.name||'—') + ', ' + e(deptDisplay(p));
+}
+function targetTitle(t) {
+  return 'TARGET ' + String(t.number).padStart(3,'0') + ' — ' + e(t.name||'—') + ', ' + e(deptDisplay(t));
+}
+
+// ── Render list ──
+// ── Render list (filters closed records; shows archive count) ──
+function renderPoiList() {
+  currentPoiView = null;
+  var lv = document.getElementById('poiListView');
+  var fv = document.getElementById('poiFileView');
+  if (lv) lv.style.display = 'block';
+  if (fv) fv.classList.remove('open');
+
+  var active    = allPOI.filter(function(p){return !p.closed;});
+  var activeTgt = allTargets.filter(function(t){return !t.closed;});
+  var closed    = allPOI.filter(function(p){return p.closed;}).concat(allTargets.filter(function(t){return t.closed;}));
+
+  var poiEl = document.getElementById('poiList');
+  if (poiEl) poiEl.innerHTML = active.length ? active.map(function(p) {
+    return `<div class="poi-list-item" data-action="open-poi-file" data-type="poi" data-id="${e(p.id)}">
+      <span class="poi-item-num">POI ${String(p.number).padStart(3,'0')}</span>
+      <span class="poi-item-name">${e(p.name||'—')}</span>
+      <span class="poi-item-dept">${e(deptDisplay(p))}</span>
+      <span class="poi-item-badges">
+        <span class="badge ${STATUS_CLS[p.status]||'b-dim'}">${e(p.status)}</span>
+        <span class="badge ${PRIORITY_CLS[p.priority]||'b-dim'}">P${e(p.priority)}</span>
+        <span class="badge ${STANDING_CLS[p.standing]||'b-dim'}">${e(p.standing)}</span>
+      </span>
+    </div>`;
+  }).join('') : '<div class="poi-empty">[ NO PERSONS OF INTEREST ON RECORD ]</div>';
+
+  var tgtEl = document.getElementById('targetList');
+  if (tgtEl) tgtEl.innerHTML = activeTgt.length ? activeTgt.map(function(t) {
+    return `<div class="poi-list-item" data-action="open-poi-file" data-type="target" data-id="${e(t.id)}">
+      <span class="poi-item-num">TGT ${String(t.number).padStart(3,'0')}</span>
+      <span class="poi-item-name">${e(t.name||'—')}</span>
+      <span class="poi-item-dept">${e(deptDisplay(t))}</span>
+      <span class="poi-item-badges">
+        <span class="badge b-red" style="letter-spacing:.05em;">TARGET</span>
+        ${t.priority ? `<span class="badge ${PRIORITY_CLS[t.priority]||'b-dim'}">P${e(t.priority)}</span>` : ''}
+      </span>
+    </div>`;
+  }).join('') : '<div class="poi-empty">[ NO TARGETS ON RECORD ]</div>';
+
+  var cntEl = document.getElementById('poiArchiveCount');
+  if (cntEl) cntEl.textContent = closed.length;
+  // Refresh archive panel if open
+  if (poiArchiveOpen) renderPoiArchiveList();
+  updatePoiBadge();
+}
+
+var poiArchiveOpen = false;
+function togglePoiArchive() {
+  poiArchiveOpen = !poiArchiveOpen;
+  var listEl  = document.getElementById('poiArchivedList');
+  var arrowEl = document.getElementById('poiArchiveArrow');
+  if (arrowEl) arrowEl.textContent = poiArchiveOpen ? '▾' : '▸';
+  if (!listEl) return;
+  if (!poiArchiveOpen) { listEl.style.display = 'none'; return; }
+  listEl.style.display = 'block';
+  renderPoiArchiveList();
+}
+function renderPoiArchiveList() {
+  var listEl = document.getElementById('poiArchivedList');
+  if (!listEl) return;
+  var closed = allPOI.filter(function(p){return p.closed;}).concat(allTargets.filter(function(t){return t.closed;}));
+  closed.sort(function(a,b){return (b.closedAt||0)-(a.closedAt||0);});
+  listEl.innerHTML = closed.length ? closed.map(function(r) {
+    var isPoi = !!r.status;
+    var num   = isPoi ? 'POI '+String(r.number).padStart(3,'0') : 'TGT '+String(r.number).padStart(3,'0');
+    return `<div class="poi-list-item" style="opacity:.7;" data-action="open-poi-file" data-type="${isPoi?'poi':'target'}" data-id="${e(r.id)}">
+      <span class="poi-item-num">${num}</span>
+      <span class="poi-item-name">${e(r.name||'—')}</span>
+      <span class="poi-item-dept">${e(deptDisplay(r))}</span>
+      <span class="poi-closed-badge">CLOSED</span>
+      <span class="poi-item-badges" style="font-size:.56rem;color:var(--text-faint);">${e(r.closedReason||'')}</span>
+    </div>`;
+  }).join('') : '<div class="poi-empty">[ NO ARCHIVED FILES ]</div>';
+}
+
+// ── Close file modal ──
+function openPoiCloseModal(id, type) {
+  if (!currentUser || parseInt(currentUser.clearance) < 4) return;
+  document.getElementById('poiCloseId').value        = id;
+  document.getElementById('poiCloseType').value      = type;
+  document.getElementById('poiCloseReason').value    = '';
+  document.getElementById('poiCloseErr').textContent = '';
+  document.getElementById('poiCloseTitle').textContent = type==='poi' ? 'CLOSE POI FILE' : 'CLOSE TARGET FILE';
+  document.getElementById('poiCloseModal').classList.add('open');
+}
+function closePoiCloseModal() { document.getElementById('poiCloseModal').classList.remove('open'); }
+async function savePoiClose() {
+  var id     = document.getElementById('poiCloseId').value;
+  var type   = document.getElementById('poiCloseType').value;
+  var reason = document.getElementById('poiCloseReason').value.trim();
+  if (!reason) { document.getElementById('poiCloseErr').textContent = '> REASON REQUIRED'; return; }
+  var list = type==='poi' ? allPOI : allTargets;
+  var rec  = list.find(function(x){return x.id===id;});
+  if (!rec) return;
+  rec.closed = true; rec.closedReason = reason; rec.closedBy = currentUser.id; rec.closedAt = Date.now();
+  try {
+    if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
+    closePoiCloseModal();
+    renderPoiList();
+  } catch(err) { document.getElementById('poiCloseErr').textContent = '> ERROR: '+err.message; }
+}
+async function reopenPoi(id, type) {
+  if (!await pfConfirm('REOPEN THIS FILE?')) return;
+  var list = type==='poi' ? allPOI : allTargets;
+  var rec  = list.find(function(x){return x.id===id;});
+  if (!rec) return;
+  rec.closed = false; rec.closedReason = null; rec.closedBy = null; rec.closedAt = null;
+  try {
+    if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
+    renderPoiList();
+  } catch(err) { alert('ERROR: '+err.message); }
+}
+
+
+// ── Render file view ──
+function renderPoiFile(type, id) {
+  var record = type === 'poi'
+    ? allPOI.find(function(p){return p.id===id;})
+    : allTargets.find(function(t){return t.id===id;});
+  if (!record) { renderPoiList(); return; }
+  currentPoiView = { type: type, id: id };
+
+  var lv = document.getElementById('poiListView');
+  var fv = document.getElementById('poiFileView');
+  if (lv) lv.style.display = 'none';
+  if (fv) fv.classList.add('open');
+
+  var titleEl = document.getElementById('poiFileTitle');
+  if (titleEl) titleEl.innerHTML = type==='poi' ? poiTitle(record) : targetTitle(record);
+
+  var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
+  var notes   = Array.isArray(record.notes) ? record.notes : [];
+
+  var fields = [
+    ['Name',       e(record.name||'—')],
+    ['Department', e(deptDisplay(record))],
+    ['Position',   e(record.position||'—')],
+    ['Reason',     e(record.reason||'—')],
+  ];
+  if (type === 'poi') {
+    fields.push(['Status',   `<span class="badge ${STATUS_CLS[record.status]||'b-dim'}">${e(record.status||'—')}</span>`]);
+    fields.push(['Priority', `<span class="badge ${PRIORITY_CLS[record.priority]||'b-dim'}">PRIORITY ${e(record.priority||'—')}</span>`]);
+    fields.push(['Standing', `<span class="badge ${STANDING_CLS[record.standing]||'b-dim'}">${e(record.standing||'—')}</span>`]);
+  } else {
+    fields.push(['Priority',     `<span class="badge ${PRIORITY_CLS[record.priority]||'b-dim'}">PRIORITY ${e(record.priority||'—')}</span>`]);
+    fields.push(['Ethics Authorisation', e(record.authorisedByName||'—')]);
+  }
+  fields.push(['Created',    new Date(record.created).toISOString().slice(0,10) + ' · EC·' + e(record.createdBy||'—')]);
+
+  var fieldsHtml = fields.map(function(f) {
+    return `<div class="poi-field"><span class="poi-field-label">${f[0]}</span><span class="poi-field-value">${f[1]}</span></div>`;
+  }).join('');
+
+  var notesHtml = notes.length ? notes.map(function(n){
+    var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
+    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta">EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+  }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
+
+  var noteForm = currentUser
+    ? `<div class="poi-note-form"><textarea class="poi-note-input" id="poinote_${e(id)}" placeholder="Add note... (Ctrl+Enter)" rows="2" onkeydown="handlePoiNoteKey(event,this,'${type}')"></textarea><button class="pf-btn" data-action="add-poi-note" data-id="${e(id)}" data-poitype="${type}">[ ADD ]</button></div>`
+    : '';
+
+  var actionBtns = canEdit
+    ? `<div class="pf-card-actions" style="margin-top:.75rem;">
+        <button class="pf-btn" data-action="edit-poi" data-id="${e(id)}" data-poitype="${type}">[ EDIT ]</button>
+        ${record.closed
+          ? `<button class="pf-btn" data-action="reopen-poi" data-id="${e(id)}" data-poitype="${type}">[ REOPEN ]</button>`
+          : `<button class="pf-btn" data-action="close-poi-file" data-id="${e(id)}" data-poitype="${type}" style="border-color:#5a2020;color:#dd6666;">[ CLOSE FILE ]</button>`}
+        <button class="pf-btn danger" data-action="delete-poi" data-id="${e(id)}" data-poitype="${type}">[ DELETE ]</button>
+      </div>`
+    : '';
+
+  var bodyEl = document.getElementById('poiFileBody');
+  var closedBanner = record.closed
+    ? `<div style="background:#0a0a14;border:1px solid #2a2a4a;padding:.4rem .8rem;font-size:.62rem;color:#8888cc;margin-bottom:.6rem;">⚑ FILE CLOSED · ${e(record.closedReason||'')} · by EC·${e(record.closedBy||'—')} · ${record.closedAt?new Date(record.closedAt).toISOString().slice(0,10):''}</div>`
+    : '';
+  if (bodyEl) bodyEl.innerHTML = closedBanner +
+    `<div class="pf-card-body open" style="background:#030806;border:1px solid var(--border2);padding:.9rem;">` +
+      fieldsHtml +
+      `<div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin:.6rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ NOTES</div>` +
+      notesHtml + noteForm + actionBtns +
+    `</div>`;
+}
+
+// ── Modal open/close ──
+function handlePoiDeptChange() {
+  var val = document.getElementById('poiDept').value;
+  document.getElementById('poiDeptOtherGroup').style.display = val === 'Other' ? 'block' : 'none';
+}
+
+function openPoiModal(id, type) {
+  if (!currentUser || parseInt(currentUser.clearance) < 4) { alert('CLEARANCE LEVEL 4 REQUIRED'); return; }
+  type = type || 'poi';
+  document.getElementById('poiModalType').value   = type;
+  document.getElementById('poiModalEditId').value = id || '';
+  document.getElementById('poiErr').textContent   = '';
+  document.getElementById('poiModalTitle').textContent = id
+    ? (type==='poi' ? 'EDIT PERSON OF INTEREST' : 'EDIT TARGET')
+    : (type==='poi' ? 'NEW PERSON OF INTEREST'  : 'NEW TARGET');
+
+  // Show/hide POI vs Target specific fields
+  document.getElementById('poiOnlyFields').style.display    = type==='poi' ? 'block' : 'none';
+  document.getElementById('targetOnlyFields').style.display = type==='target' ? 'block' : 'none';
+
+  // Populate ethics authority select for targets
+  if (type === 'target') {
+    var sel = document.getElementById('poiAuthority');
+    sel.innerHTML = '<option value="">— SELECT ETHICS MEMBER —</option>';
+    allEthicsPersonnel.filter(function(p){ return !p.status||p.status==='Active'; }).forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = e(p.name) + ' · ' + e(p.role||'');
+      sel.appendChild(opt);
+    });
+  }
+
+  // Pre-fill if editing
+  if (id) {
+    var rec = type==='poi' ? allPOI.find(function(x){return x.id===id;}) : allTargets.find(function(x){return x.id===id;});
+    if (rec) {
+      document.getElementById('poiName').value     = rec.name     || '';
+      document.getElementById('poiDept').value     = rec.department || '';
+      document.getElementById('poiDeptOther').value= rec.deptOther|| '';
+      document.getElementById('poiPosition').value = rec.position  || '';
+      document.getElementById('poiReason').value   = rec.reason    || '';
+      handlePoiDeptChange();
+      if (type==='poi') {
+        document.getElementById('poiStatus').value   = rec.status   || 'In Progress';
+        document.getElementById('poiPriority').value = rec.priority || '2';
+        document.getElementById('poiStanding').value = rec.standing || 'Neutral';
+      } else {
+        document.getElementById('targetPriority').value = rec.priority || '2';
+        document.getElementById('poiAuthority').value   = rec.authorisedById || '';
+      }
+    }
+  } else {
+    document.getElementById('poiName').value     = '';
+    document.getElementById('poiDept').value     = '';
+    document.getElementById('poiDeptOther').value= '';
+    document.getElementById('poiPosition').value = '';
+    document.getElementById('poiReason').value   = '';
+    handlePoiDeptChange();
+    if (type==='poi') {
+      document.getElementById('poiStatus').value   = 'In Progress';
+      document.getElementById('poiPriority').value = '2';
+      document.getElementById('poiStanding').value = 'Neutral';
+    } else {
+      document.getElementById('poiAuthority').value = '';
+    }
+  }
+  document.getElementById('poiModal').classList.add('open');
+}
+
+function closePoiModal() { document.getElementById('poiModal').classList.remove('open'); }
+
+async function savePoi() {
+  var type     = document.getElementById('poiModalType').value;
+  var editId   = document.getElementById('poiModalEditId').value;
+  var name     = document.getElementById('poiName').value.trim();
+  var dept     = document.getElementById('poiDept').value;
+  var deptOther= document.getElementById('poiDeptOther').value.trim();
+  var position = document.getElementById('poiPosition').value.trim();
+  var reason   = document.getElementById('poiReason').value.trim();
+
+  if (!name) { document.getElementById('poiErr').textContent = '> NAME REQUIRED'; return; }
+  if (!dept) { document.getElementById('poiErr').textContent = '> DEPARTMENT REQUIRED'; return; }
+  if (dept === 'Other' && !deptOther) { document.getElementById('poiErr').textContent = '> SPECIFY DEPARTMENT'; return; }
+
+  var now = Date.now();
+  if (editId) {
+    var list = type==='poi' ? allPOI : allTargets;
+    var rec  = list.find(function(x){return x.id===editId;});
+    if (!rec) return;
+    rec.name = name; rec.department = dept; rec.deptOther = deptOther;
+    rec.position = position; rec.reason = reason;
+    rec.updatedBy = currentUser.id; rec.updated = now;
+    if (type==='poi') {
+      rec.status   = document.getElementById('poiStatus').value;
+      rec.priority = document.getElementById('poiPriority').value;
+      rec.standing = document.getElementById('poiStanding').value;
+    } else {
+      var authSel = document.getElementById('poiAuthority');
+      rec.authorisedById   = authSel.value;
+      rec.authorisedByName = authSel.options[authSel.selectedIndex] ? authSel.options[authSel.selectedIndex].text : '';
+      rec.priority = document.getElementById('targetPriority').value;
+    }
+    try {
+      if (type==='poi') await poiSet(editId, rec); else await targetSet(editId, rec);
+    } catch(err) { document.getElementById('poiErr').textContent = '> SAVE ERROR: '+err.message; return; }
+  } else {
+    var list2 = type==='poi' ? allPOI : allTargets;
+    var newRec = {
+      id: (type==='poi'?'poi_':'tgt_') + now + '_' + Math.random().toString(36).slice(2,4),
+      number: list2.length + 1, name: name, department: dept, deptOther: deptOther,
+      position: position, reason: reason, notes: [],
+      createdBy: currentUser.id, created: now
+    };
+    if (type==='poi') {
+      newRec.status   = document.getElementById('poiStatus').value;
+      newRec.priority = document.getElementById('poiPriority').value;
+      newRec.standing = document.getElementById('poiStanding').value;
+    } else {
+      var authSel2 = document.getElementById('poiAuthority');
+      newRec.authorisedById   = authSel2.value;
+      newRec.authorisedByName = authSel2.options[authSel2.selectedIndex] ? authSel2.options[authSel2.selectedIndex].text : '';
+      newRec.priority = document.getElementById('targetPriority').value;
+    }
+    try {
+      if (type==='poi') { await poiSet(newRec.id, newRec); allPOI.push(newRec); }
+      else              { await targetSet(newRec.id, newRec); allTargets.push(newRec); }
+    } catch(err) { document.getElementById('poiErr').textContent = '> SAVE ERROR: '+err.message; return; }
+  }
+  closePoiModal();
+  if (currentPoiView) renderPoiFile(currentPoiView.type, currentPoiView.id);
+  else renderPoiList();
+}
+
+async function deletePoi(id, type) {
+  var list = type==='poi' ? allPOI : allTargets;
+  var rec  = list.find(function(x){return x.id===id;});
+  if (!rec) return;
+  var label = type==='poi' ? 'POI '+String(rec.number).padStart(3,'0') : 'TARGET '+String(rec.number).padStart(3,'0');
+  if (!await pfConfirm('CONFIRM: DELETE ' + label + ' — ' + rec.name + '?')) return;
+  try {
+    if (type==='poi') { await poiDel(id); allPOI = allPOI.filter(function(x){return x.id!==id;}); }
+    else              { await targetDel(id); allTargets = allTargets.filter(function(x){return x.id!==id;}); }
+  } catch(err) { alert('ERROR: '+err.message); return; }
+  renderPoiList();
+}
+
+async function addPoiNote(id, type) {
+  if (!currentUser) return;
+  var inp = document.getElementById('poinote_' + id);
+  if (!inp || !inp.value.trim()) return;
+  var list = type==='poi' ? allPOI : allTargets;
+  var rec  = list.find(function(x){return x.id===id;});
+  if (!rec) return;
+  if (!Array.isArray(rec.notes)) rec.notes = [];
+  rec.notes.push({ author: currentUser.id, clearance: currentUser.clearance, text: inp.value.trim(), created: Date.now() });
+  try {
+    if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
+    inp.value = '';
+    renderPoiFile(type, id);
+  } catch(err) { alert('ERROR: '+err.message); }
+}
+
+function handlePoiNoteKey(ev, el, type) {
+  if (ev.key==='Enter' && (ev.ctrlKey||ev.metaKey)) {
+    ev.preventDefault();
+    var id = el.id.replace('poinote_','');
+    addPoiNote(id, type);
+  }
 }
 
 // loadSquadrons is called from onLogin and from loadPersonnel directly
