@@ -1170,13 +1170,12 @@ function renderOrders() {
     var cached   = commentCache[o.id] || [];
     var cCount   = cached.length;
 
-var canEditOrder = isOwner || (currentUser && parseInt(currentUser.clearance) >= 4);
-var statusCtrl = canEditOrder
-  ? '<select class="status-select" onchange="updateOrderStatus(\'' + o.id + '\',this.value)">' +
-    ['PENDING','IN PROGRESS','COMPLETED','FLAGGED'].map(function(s) {
-      return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
-    }).join('') + '</select>'
-  : '<span class="badge ' + statusBadge(o.status) + '">' + e(o.status) + '</span>';
+    var canEditOrder = isOwner || (currentUser && parseInt(currentUser.clearance) >= 4);
+      ? '<select class="status-select" onchange="updateOrderStatus(\'' + o.id + '\',this.value)">' +
+        ['PENDING','IN PROGRESS','COMPLETED','FLAGGED'].map(function(s) {
+          return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
+        }).join('') + '</select>'
+      : '<span class="badge ' + statusBadge(o.status) + '">' + e(o.status) + '</span>';
 
     // Comment thread HTML (only rendered when expanded)
     var commentsHtml = '';
