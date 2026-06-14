@@ -38,7 +38,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
 /* ── Layout ── */
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
-.shell{position:relative;max-width:1700px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+.shell{position:relative;max-width:880px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
 
 /* ── Header ── */
 .header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}
@@ -2773,7 +2773,7 @@ function renderPersonnelFiles() {
             { key:'leave',     label:'LEAVE (LOA / ROA)',    count: ' ('+activeLv.length+' active)', body: buildLeaveSection(p, 'pf') },
             { key:'ranks',     label:'RANK CHANGE LOG',      count: ' ('+history.length+')',body: histHtml },
             { key:'squadrons', label:'SQUADRON ASSIGNMENTS',  count:'',
-              body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'`) },
+              body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'') },
             { key:'notes',     label:'NOTES ON FILE',        count: ' ('+notes.length+')', body: notesHtml + noteForm },
           ];
           return sections.map(sec => {
