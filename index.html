@@ -1910,7 +1910,8 @@ async function doAuth() {
         setErr('REGISTRATION DENIED · Contact the Ethics Committee Chair for assistance.');
         setBusy(false); return;
       }
-      currentUser = { id: uid, clearance: rec.clearance };
+      var derivedCl = deriveClearance(rec);
+currentUser = { id: uid, clearance: derivedCl, rawClearance: rec.clearance, linkedPfId: rec.linkedPfId || null, linkedEfId: rec.linkedEfId || null };
     }
   } catch(e) {
     setErr('CONNECTION ERROR: ' + e.message);
@@ -1927,13 +1928,21 @@ function doGuest() {
   onLogin();
 }
 
-function onLogin() {
+async function onLogin() { // Make function async
   document.getElementById('loginOverlay').style.display = 'none';
 
   // Show config warning if Firebase not set up
   document.getElementById('cfgWarn').style.display = firebaseReady ? 'none' : 'block';
 
   if (currentUser) {
+    var userRec = await userGet(currentUser.id);
+    if (userRec && !userRec.linkedPfId && !userRec.linkedEfId) {
+      openLinkPersonnelModal();
+      // Keep user in read-only mode until file is linked
+      var roBanner = document.getElementById('cl3Banner');
+      if (roBanner) roBanner.style.display = 'block';
+      return; // Stop further execution until linked
+    }
     var pill = document.getElementById('userPill');
     pill.style.display = 'inline-block';
     // Fetch current user record to get unit tag
@@ -2853,6 +2862,35 @@ function formatDob(s) {
   return isNaN(d) ? s : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
 
+function deriveClearance(userRec) {
+  if (!userRec) return '3';
+  // If no linked personnel file, default to CL3 read-only
+  if (!userRec.linkedPfId && !userRec.linkedEfId) return '3';
+
+  // Ethics Committee roles
+  if (userRec.linkedEfId) {
+    var ef = allEthicsPersonnel.find(function(p){ return p.id === userRec.linkedEfId; });
+    if (ef) {
+      if (ef.role === 'Chairman' || ef.role === 'Member') return '5';
+      if (ef.role === 'Assistant') return '4';
+    }
+    return '3'; // Default if file not found
+  }
+
+  // Omega-1 ranks
+  if (userRec.linkedPfId) {
+    var pf = allPersonnel.find(function(p){ return p.id === userRec.linkedPfId; });
+    if (pf) {
+      var rank = pf.rank;
+      if (['Commander', 'Lieutenant Commander', 'Major'].includes(rank)) return '4'; // Senior CL4
+      if (['Captain', 'Lieutenant'].includes(rank)) return '4'; // Junior CL4
+      if (['Command Sergeant', 'Sergeant', 'Corporal', 'Lance Corporal', 'Specialist', 'Private'].includes(rank)) return '3';
+    }
+    return '3'; // Default if file not found
+  }
+  return '3'; // Fallback
+}
+
 var allPersonnel   = [];    // array of personnel record objects
 var pfExpanded     = new Set(); // which cards are open
 var pfCollapsed    = new Set(); // "pfId:sectionKey" — which sections are folded
@@ -2916,9 +2954,21 @@ function renderPersonnelFiles() {
     return;
   }
 
-  list.innerHTML = filtered.map(function(p) {
+  var linkedPfIds = new Set();
+  // Ensure allUsers is populated before using it
+  if (Object.keys(allUsers).length > 0) {
+      Object.values(allUsers).forEach(function(u) {
+        if (u.linkedPfId) linkedPfIds.add(u.linkedPfId);
+        if (u.linkedEfId) linkedPfIds.add(u.linkedEfId);
+      });
+  }
+
+list.innerHTML = filtered.map(function(p) {
     var isOpen  = pfExpanded.has(p.id);
     var canEdit = canEditPersonnel();
+    var isSelf = currentUser && currentUser.linkedPfId === p.id;
+    var isCL5 = currentUser && parseInt(currentUser.clearance) >= 5;
+    var selfRestricted = isSelf && !isCL5;
     var pStatus = p.status || 'Active';
     var notes   = Array.isArray(p.notes)      ? p.notes.slice().sort((a,b)=>a.created-b.created) : [];
     var awards  = Array.isArray(p.awards)     ? p.awards : [];
@@ -2935,13 +2985,16 @@ function renderPersonnelFiles() {
       var del = canEdit ? `<button class="tag-del" data-action="remove-tag" data-id="${e(p.id)}" data-tagtype="${e(t.type)}" title="Remove">×</button>` : '';
       return `<span class="tag-pill ${cls}"><span class="tag-manager">${e(t.role)}</span> · ${e(t.type)}${del}</span>`;
     }).join('');
+var linkedBadge = linkedPfIds.has(p.id) 
+    ? '<span class="badge b-green" style="font-size:.5rem; margin-left:4px;">● LINKED</span>' 
+    : '';
 
     if (!isOpen) {
       return `<div class="pf-card" id="pfcard_${e(p.id)}">
         <div class="pf-card-header" data-action="toggle-pf" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='rgba(0,255,136,.02)'" onmouseout="this.style.background=''">
           <div>
             <div class="pf-name">${e(p.name||'—')}${p.nickname?` <span style="color:var(--text-dim);font-size:.75rem;">"${e(p.nickname)}"</span>`:''}</div>
-            <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${tagPills}</div>
+            <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${tagPills}${linkedBadge}</div>
           </div>
           <span style="font-size:.62rem;color:var(--text-dim);">▸</span>
         </div>
@@ -3046,7 +3099,7 @@ function renderPersonnelFiles() {
     }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NOT IN ANY SQUADRON ]</div>';
 
     // ── action buttons ──
-    var actionBtns = canEdit ? `
+    var actionBtns = (canEdit && !selfRestricted) ? `
       <div class="pf-card-actions">
         <button class="pf-btn"    data-action="edit-pf"    data-id="${e(p.id)}">[ EDIT RECORD ]</button>
         <button class="pf-btn"    data-action="award-pf"   data-id="${e(p.id)}">[ AWARD MEDAL ]</button>
@@ -3072,6 +3125,7 @@ function renderPersonnelFiles() {
         <span style="font-size:.62rem;color:var(--text-dim);">▾</span>
       </div>
       <div class="pf-card-body open">
+        ${selfRestricted ? '<div class="order-denied" style="margin-bottom:.75rem;"><span>⛔</span><span>FULL SELF-VIEW OF YOUR OWN PERSONNEL FILE IS RESTRICTED.</span><br><span style="font-size:.58rem;">You may request LoA/RoA, view medals, rank changes, strikes, and notes below. For full access, contact a CL5 user.</span></div>' : `
         <div class="pf-detail-grid">
           <div class="pf-detail"><span class="pf-detail-label">FULL NAME · </span><span class="pf-detail-val">${e(p.name||'—')}</span></div>
           <div class="pf-detail"><span class="pf-detail-label">NICKNAME · </span><span class="pf-detail-val">${e(p.nickname||'—')}</span></div>
@@ -3082,6 +3136,7 @@ function renderPersonnelFiles() {
           <div class="pf-detail"><span class="pf-detail-label">STATUS · </span><span class="pf-detail-val"><span class="badge ${pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span></span></div>
           <div class="pf-detail"><span class="pf-detail-label">CREATED · </span><span class="pf-detail-val">${new Date(p.created).toISOString().slice(0,10)} · EC·${e(p.createdBy||'—')}</span></div>
         </div>
+`}
 
         ${(()=>{
            var leaves  = Array.isArray(p.leaves) ? p.leaves : [];
@@ -3258,6 +3313,13 @@ async function savePersonnelRecord() {
       await personnelSet(id, newRec);
       allPersonnel.push(newRec);
       if (window._pendingRecruitApproval) finaliseRecruitApproval(id);
+if (window._awaitingPfLink) {
+    var userRec = await userGet(currentUser.id);
+    userRec.linkedPfId = id;
+    await userSet(currentUser.id, userRec);
+    window._awaitingPfLink = false;
+    onLogin(); // Re-trigger login flow to get full access
+}
     } catch(err) { alert('SAVE ERROR: ' + err.message); }
   }
 
@@ -3445,6 +3507,10 @@ var AWARD_META = {
 };
 
 function openAwardModal(pfId) {
+  if (currentUser && currentUser.linkedPfId === pfId) {
+    alert('YOU CANNOT AWARD MEDALS TO YOURSELF.');
+    return;
+  }
   if (!canEditPersonnel()) return;
   document.getElementById('awardTargetId').value = pfId;
   document.getElementById('awardName').value = '';
@@ -3768,6 +3834,10 @@ async function saveAppeal() {
 
 // ── Resolve appeal (CL5 only) ──
 async function resolveStrikeAppeal(pfId, strikeId, resolution, system) {
+  if (currentUser && (currentUser.linkedPfId === pfId || currentUser.linkedEfId === pfId)) {
+    alert('YOU CANNOT RESOLVE APPEALS ON YOUR OWN RECORD.');
+    return;
+  }
   if (!canIssueStrike()) return;
   var label = resolution === 'Overturned' ? 'OVERTURN (remove strike)' : 'UPHOLD (keep strike active)';
   if (!await pfConfirm('CONFIRM: ' + label + '?')) return;
@@ -5842,6 +5912,13 @@ async function saveEthicsRecord() {
     await ethicsPersonnelSet(newId, record);
     allEthicsPersonnel.push(record);
     if (window._pendingEthicsRecApproval) finaliseEthicsRecApproval(newId);
+if (window._awaitingEfLink) {
+    var userRec = await userGet(currentUser.id);
+    userRec.linkedEfId = newId;
+    await userSet(currentUser.id, userRec);
+    window._awaitingEfLink = false;
+    onLogin(); // Re-trigger login flow
+}
   }
 
   btn.disabled = false; btn.textContent = '[ SAVE RECORD ]';
@@ -6256,7 +6333,109 @@ function openEthicsOrderEdit(id) {
   );
 }
 
+// ================================================================
+//  PERSONNEL FILE LINKING (First Login)
+// ================================================================
+function openLinkPersonnelModal() {
+  var sel = document.getElementById('linkExistingSelect');
+  sel.innerHTML = '<option value="">— SELECT EXISTING UNLINKED FILE —</option>';
+
+  // Get all users to find out which personnel files are already linked
+  userGetAll().then(function(allUsers) {
+    var linkedPfIds = new Set();
+    var linkedEfIds = new Set();
+    Object.values(allUsers).forEach(function(u) {
+      if (u.linkedPfId) linkedPfIds.add(u.linkedPfId);
+      if (u.linkedEfId) linkedEfIds.add(u.linkedEfId);
+    });
+
+    // Populate Omega-1 unlinked files
+    allPersonnel.forEach(function(p) {
+      if (!linkedPfIds.has(p.id)) {
+        var opt = document.createElement('option');
+        opt.value = 'pf_' + p.id;
+        opt.textContent = 'Ω-1: ' + p.name + ' (' + p.rank + ')';
+        sel.appendChild(opt);
+      }
+    });
+
+    // Populate Ethics unlinked files
+    allEthicsPersonnel.forEach(function(p) {
+      if (!linkedEfIds.has(p.id)) {
+        var opt = document.createElement('option');
+        opt.value = 'ef_' + p.id;
+        opt.textContent = 'EC: ' + p.name + ' (' + p.role + ')';
+        sel.appendChild(opt);
+      }
+    });
+
+    document.getElementById('linkPersonnelModal').style.display = 'flex';
+  });
+}
+
+function closeLinkPersonnelModal() {
+  document.getElementById('linkPersonnelModal').style.display = 'none';
+}
+
+async function handleLinkAction(action) {
+  var userRec = await userGet(currentUser.id);
+  if (!userRec) return;
+
+  if (action === 'create_omega') {
+    closeLinkPersonnelModal();
+    openPersonnelModal(null); // This will create a new file
+    // After save, we need to link it. We'll add a hook in `savePersonnelRecord`
+    window._awaitingPfLink = true;
+  } else if (action === 'create_ethics') {
+    closeLinkPersonnelModal();
+    openEthicsModal(null); // This creates a new ethics file
+    window._awaitingEfLink = true;
+  } else if (action === 'link_existing') {
+    var selected = document.getElementById('linkExistingSelect').value;
+    if (!selected) {
+      document.getElementById('linkPersonnelErr').textContent = '> PLEASE SELECT A FILE';
+      return;
+    }
+    var parts = selected.split('_');
+    var type = parts[0];
+    var fileId = parts[1];
+
+    if (type === 'pf') {
+      userRec.linkedPfId = fileId;
+    } else {
+      userRec.linkedEfId = fileId;
+    }
+    await userSet(currentUser.id, userRec);
+    currentUser.linkedPfId = userRec.linkedPfId;
+    currentUser.linkedEfId = userRec.linkedEfId;
+    currentUser.clearance = deriveClearance(userRec); // Re-derive clearance
+    closeLinkPersonnelModal();
+    onLogin(); // Re-run login logic to update UI
+  }
+}
+
 </script>
+
+<!-- PERSONNEL LINK MODAL (First Login) -->
+<div class="modal-overlay-2" id="linkPersonnelModal" style="z-index:1200;">
+  <div class="modal-box-2" style="width:500px;">
+    <h3>LINK PERSONNEL FILE</h3>
+    <div style="font-size:.62rem;color:var(--text-dim);line-height:1.7;margin-bottom:1rem;">
+      Your account requires a linked personnel file for full system access.<br>
+      Without a linked file, you will remain in read-only mode.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.5rem;">
+      <button class="modal-save" id="linkCreateOmega1">[ CREATE NEW OMEGA-1 FILE ]</button>
+      <button class="modal-save" id="linkCreateEthics">[ CREATE NEW ETHICS COMMITTEE FILE ]</button>
+      <div style="font-size:.58rem;color:var(--text-dim);text-align:center;margin:.3rem 0;">— OR —</div>
+      <select id="linkExistingSelect" style="...">
+        <option value="">— SELECT EXISTING UNLINKED FILE —</option>
+      </select>
+      <button class="modal-save" id="linkExistingBtn">[ LINK SELECTED FILE ]</button>
+      <button class="modal-cancel" id="linkSkipBtn">[ SKIP — REMAIN READ-ONLY ]</button>
+    </div>
+  </div>
+</div>
 
 <!-- INLINE EDIT MODAL (replaces prompt() which is blocked in iframes) -->
 <div class="modal-overlay-2" id="inlineEditModal">
