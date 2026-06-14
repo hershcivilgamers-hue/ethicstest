@@ -118,7 +118,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
 /* ── Layout ── */
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
-.shell{position:relative;max-width:1600px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+.shell{position:relative;max-width:880px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
 
 /* ── Header ── */
 .header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}
@@ -680,6 +680,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         ADMIN <span id="adminBadge" style="display:none;background:#4a1414;color:#ff8888;border-radius:2px;padding:0 4px;margin-left:4px;font-size:.55rem;">0</span>
       </button>
       <button id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="font-family:'Share Tech Mono',monospace;font-size:.7rem;background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:2px 8px;cursor:pointer;margin-right:.5rem;transition:all .2s;">☀</button>
+      <span id="syncIndicator" style="font-size:.52rem;letter-spacing:.06em;margin-right:.6rem;transition:color .3s;"></span>
       <div id="userPill" class="user-pill" onclick="logout()" title="Click to sign out" style="display:none;"></div>
       <div class="header-meta">
         <div><span class="status-dot"></span><span style="color:var(--green);">ONLINE</span></div>
@@ -2001,12 +2002,174 @@ async function loadOrders() {
   updateOrderBadge();
 }
 
+// ================================================================
+//  LIVE SYNC — Firebase SSE (real-time push) + background poll
+//  EventSource automatically sends Accept: text/event-stream,
+//  which Firebase REST recognises and responds with SSE format.
+// ================================================================
+var _sseConns = {};     // path → EventSource
+var _bgPollTimer = null;
+
+// ── Start / stop ──
 function startPolling() {
   stopPolling();
-  pollTimer = setInterval(loadOrders, 10000); // refresh every 10 s
+  if (firebaseReady) {
+    // SSE for high-frequency collaboration paths (real-time push)
+    _openSSE('orders',             _onOrdersSSE);
+    _openSSE('ethics-orders',      _onEthicsOrdersSSE);
+    _openSSE('recruitment',        _onRecruitSSE);
+    _openSSE('ethics-recruitment', _onEthicsRecruitSSE);
+    // Background poll every 30 s for personnel, POI, admin
+    _bgPollTimer = setInterval(_bgPoll, 30000);
+    _setSyncStatus('connecting');
+  } else {
+    // Fallback: poll orders every 10 s when using localStorage
+    _bgPollTimer = setInterval(loadOrders, 10000);
+  }
 }
+
 function stopPolling() {
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  // Close all SSE connections
+  Object.keys(_sseConns).forEach(function(k) {
+    try { _sseConns[k].close(); } catch(_) {}
+    delete _sseConns[k];
+  });
+  if (_bgPollTimer) { clearInterval(_bgPollTimer); _bgPollTimer = null; }
+  _setSyncStatus('off');
+}
+
+// ── Open an SSE connection to a Firebase path ──
+function _openSSE(path, callback) {
+  if (_sseConns[path]) { try { _sseConns[path].close(); } catch(_) {} }
+  var cache = {};
+  var url   = FIREBASE_URL + '/' + path + '.json';
+  var es    = new EventSource(url);
+  var connected = false;
+
+  es.addEventListener('put', function(ev) {
+    try {
+      var m = JSON.parse(ev.data);
+      if (m.path === '/') {
+        cache = m.data || {};
+      } else {
+        var k = m.path.replace(/^\/+/, '');
+        if (m.data === null) delete cache[k]; else cache[k] = m.data;
+      }
+      if (!connected) { connected = true; _setSyncStatus('live'); }
+      callback(cache);
+    } catch(err) { console.warn('[CAIRO sync put]', path, err); }
+  });
+
+  es.addEventListener('patch', function(ev) {
+    try {
+      var m = JSON.parse(ev.data);
+      var root = m.path === '/' ? cache
+               : (cache[m.path.replace(/^\/+/, '')] = cache[m.path.replace(/^\/+/, '')] || {});
+      Object.assign(root, m.data || {});
+      callback(cache);
+    } catch(err) { console.warn('[CAIRO sync patch]', path, err); }
+  });
+
+  es.onerror = function() {
+    connected = false;
+    _setSyncStatus('reconnecting');
+    // EventSource auto-reconnects; update status once next put arrives
+  };
+
+  _sseConns[path] = es;
+}
+
+// ── SSE data callbacks ──
+function _onOrdersSSE(raw) {
+  allOrders = Object.values(raw).filter(function(o){ return o && o.id; })
+              .sort(function(a,b){ return b.created - a.created; });
+  updateOrderBadge();
+  _safeRender(renderOrders, 'ordersList');
+}
+
+function _onEthicsOrdersSSE(raw) {
+  allEthicsOrders = Object.values(raw).filter(function(o){ return o && o.id; })
+                    .sort(function(a,b){ return b.created - a.created; });
+  updateEthicsOrderBadge();
+  _safeRender(renderEthicsOrders, 'eoOrdersList');
+}
+
+function _onRecruitSSE(raw) {
+  allRecruitment = Object.values(raw).filter(function(r){ return r && r.id; })
+                   .sort(function(a,b){ return b.created - a.created; });
+  updateRecruitBadge();
+  _safeRender(renderRecruitment, 'recScoutingList');
+}
+
+function _onEthicsRecruitSSE(raw) {
+  allEthicsRecruit = Object.values(raw).filter(function(r){ return r && r.id; })
+                     .sort(function(a,b){ return b.created - a.created; });
+  updateEthicsRecruitBadge();
+  _safeRender(renderEthicsRecruit, 'ethicsAppList');
+}
+
+// ── Guard against re-rendering while a user is typing in that section ──
+function _safeRender(fn, anchorId) {
+  var anchor  = document.getElementById(anchorId);
+  var focused = document.activeElement;
+  if (anchor && focused && anchor !== focused && typeof anchor.contains === 'function' && anchor.contains(focused)) {
+    // User is focused inside this section — retry after 1.5 s
+    setTimeout(function(){ _safeRender(fn, anchorId); }, 1500);
+    return;
+  }
+  try { fn(); } catch(err) { console.warn('[CAIRO render]', err); }
+}
+
+// ── Background poll for personnel, POI, admin ──
+async function _bgPoll() {
+  if (!currentUser || !firebaseReady) return;
+  var tabId = '';
+  var active = document.querySelector('.tab-content.active');
+  if (active) tabId = active.id || '';
+
+  // Personnel — full reload if on tab, else just update state silently
+  if (tabId === 'tab-personnel-files' || tabId === 'tab-roster') {
+    try { await loadPersonnel(); } catch(_) {}
+  } else {
+    try { allPersonnel = (await personnelGetAll()).filter(function(p){ return p && p.id; }); }
+    catch(_) {}
+  }
+
+  // Ethics personnel
+  if (tabId === 'tab-ethics-files' || tabId === 'tab-ethics-roster') {
+    try { await loadEthicsPersonnel(); } catch(_) {}
+  } else {
+    try { allEthicsPersonnel = (await ethicsPersonnelGetAll()).filter(function(p){ return p && p.id; }); }
+    catch(_) {}
+  }
+
+  // POI + Targets — update state + badge; re-render if on tab
+  try {
+    var ps = await poiGetAll(); var ts = await targetGetAll();
+    allPOI     = ps.sort(function(a,b){ return (a.number||0)-(b.number||0); });
+    allTargets = ts.sort(function(a,b){ return (a.number||0)-(b.number||0); });
+    updatePoiBadge();
+    if (tabId === 'tab-poi' && !currentPoiView) renderPoiList();
+  } catch(_) {}
+
+  // Admin badge for CL5
+  if (parseInt(currentUser.clearance || 0) >= 5) {
+    try { await loadAdminData(); } catch(_) {}
+  }
+}
+
+// ── Sync status indicator ──
+function _setSyncStatus(s) {
+  var el = document.getElementById('syncIndicator');
+  if (!el) return;
+  var cfg = {
+    live:         { text:'● LIVE',         color:'var(--green-dim)' },
+    connecting:   { text:'○ connecting',   color:'var(--text-faint)' },
+    reconnecting: { text:'○ reconnecting', color:'var(--amber)' },
+    off:          { text:'',               color:'transparent' }
+  }[s] || { text:'', color:'transparent' };
+  el.textContent = cfg.text;
+  el.style.color = cfg.color;
 }
 
 async function submitOrder() {
