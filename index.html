@@ -644,7 +644,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 <div class="login-tab" id="tabReg">REGISTER</div>
     </div>
     <div class="login-err" id="loginErr"></div>
-    <label class="login-label">EC MEMBER ID</label>
+    <label class="login-label">MEMBER ID</label>
     <input class="login-input" id="loginUser" placeholder="identifier..." autocomplete="username"
        spellcheck="false"/>
     <label class="login-label">PASSPHRASE</label>
@@ -653,9 +653,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div id="loginExtras" style="display:none;">
       <label class="login-label">REQUESTED CLEARANCE <span style="color:var(--text-faint);font-size:.6rem;">(final level set by CL5 on approval)</span></label>
       <select class="login-input order-select" id="loginClearance" style="width:100%;margin-bottom:.5rem;">
-        <option value="3">Level 3 — Standard EC Access</option>
-        <option value="4">Level 4 — Senior EC Member</option>
-        <option value="5">Level 5 — EC Chair / O5 Liaison</option>
+        <option value="3">Level 3 — Standard Access</option>
+        <option value="4">Level 4 — Senior Access</option>
+        <option value="5">Level 5 — Command Access</option>
       </select>
       <div style="font-size:.6rem;color:var(--text-dim);background:rgba(0,255,136,.04);border:1px solid var(--border2);padding:.45rem .65rem;margin-bottom:.9rem;line-height:1.6;">
         ⚑ New accounts require CL5 approval before access is granted.<br>
@@ -2735,9 +2735,9 @@ function renderAdminPanel() {
             <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
               <label style="font-size:.58rem;color:var(--text-dim);">GRANT CL:</label>
               <select id="grantCl_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:2px 4px;">
-                <option value="3">CL3</option>
-                <option value="4"${u.requestedClearance==='4'?' selected':''}>CL4</option>
-                <option value="5"${u.requestedClearance==='5'?' selected':''}>CL5</option>
+                <option value="3">Level 3 — Standard Access</option>
+                <option value="4"${u.requestedClearance==='4'?' selected':''}>Level 4 — Senior Access</option>
+                <option value="5"${u.requestedClearance==='5'?' selected':''}>Level 5 — Command Access</option>
               </select>
               <button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}">✓ APPROVE</button>
               <button class="rec-btn deny"    data-action="admin-deny"    data-uid="${uid}">✗ DENY</button>
