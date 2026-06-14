@@ -5397,8 +5397,36 @@ if (_termInput) _termInput.addEventListener('keydown', function(ev) {
         showTyping(false);
         appendMsg('cairo', 'Unexpected substrate fault.\n\nRef: ' + err.message);
       });
-	 function openOrderEdit()
-	 function openEthicsOrderEdit()
+	  
+// ── CL5 Order Edit (Omega-1) ──
+function openOrderEdit(id) {
+  var o = allOrders.find(function(x){return x.id===id;});
+  if (!o) return;
+  var title = prompt('EDIT ORDER TITLE:', o.title);
+  if (title === null) return;
+  var desc  = prompt('EDIT ORDER DESCRIPTION:', o.desc||'');
+  if (desc  === null) return;
+  o.title   = title.toUpperCase().trim() || o.title;
+  o.desc    = desc.trim();
+  o.editedBy = currentUser.id;
+  o.editedAt = Date.now();
+  orderSet(o.id, o).then(function(){ renderOrders(); });
+}
+
+// ── CL5 Order Edit (Ethics) ──
+function openEthicsOrderEdit(id) {
+  var o = allEthicsOrders.find(function(x){return x.id===id;});
+  if (!o) return;
+  var title = prompt('EDIT ORDER TITLE:', o.title);
+  if (title === null) return;
+  var body  = prompt('EDIT ORDER BODY:', o.body||'');
+  if (body  === null) return;
+  o.title    = title.toUpperCase().trim() || o.title;
+  o.body     = body.trim();
+  o.editedBy = currentUser.id;
+  o.editedAt = Date.now();
+  ethicsOrderSet(o.id, o).then(function(){ renderEthicsOrders(); });
+}
   }
 });
 </script>
