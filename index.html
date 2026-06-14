@@ -559,16 +559,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="login-title">CAIRO.AIC</div>
     <div class="login-sub">EC PERSONNEL AUTHENTICATION · SITE-65</div>
     <div class="login-tabs">
-      <div class="login-tab active" id="tabLogin" onclick="setLoginMode('login')">SIGN IN</div>
-      <div class="login-tab" id="tabReg"   onclick="setLoginMode('register')">REGISTER</div>
+      <div class="login-tab active" id="tabLogin">SIGN IN</div>
+<div class="login-tab" id="tabReg">REGISTER</div>
     </div>
     <div class="login-err" id="loginErr"></div>
     <label class="login-label">EC MEMBER ID</label>
     <input class="login-input" id="loginUser" placeholder="identifier..." autocomplete="username"
-           spellcheck="false" onkeydown="if(event.key==='Enter')doAuth()"/>
+       spellcheck="false"/>
     <label class="login-label">PASSPHRASE</label>
     <input class="login-input" type="password" id="loginPass" placeholder="••••••••"
-           autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()"/>
+       autocomplete="current-password"/>
     <div id="loginExtras" style="display:none;">
       <label class="login-label">REQUESTED CLEARANCE <span style="color:var(--text-faint);font-size:.6rem;">(final level set by CL5 on approval)</span></label>
       <select class="login-input order-select" id="loginClearance" style="width:100%;margin-bottom:.5rem;">
@@ -581,8 +581,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         All accounts start at <strong style="color:var(--green-dim);">Level 3</strong> pending review.
       </div>
     </div>
-    <button class="login-btn" id="loginBtn" onclick="doAuth()">[ AUTHENTICATE ]</button>
-    <button class="login-btn sec-btn" onclick="doGuest()">[ ENTER AS OBSERVER · READ-ONLY ]</button>
+    <button class="login-btn" id="loginBtn">[ AUTHENTICATE ]</button>
+<button class="login-btn sec-btn" id="guestBtn">[ ENTER AS OBSERVER · READ-ONLY ]</button>
   </div>
 </div>
 
@@ -1969,7 +1969,7 @@ async function deleteOrder(id) {
 
 function setFilter(f, btn) {
   activeFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('#tab-orders .filter-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   renderOrders();
 }
@@ -4397,10 +4397,11 @@ async function saveEthicsDeny() {
   if (!reason){ document.getElementById('ethicsDenyErr').textContent='> REASON REQUIRED'; return; }
   var r = allEthicsRecruit.find(function(x){return x.id===id;});
   if (!r) return;
-  r.stage='archived'; r.archiveStatus='denied'; r.archiveReason=reason; r.tag='Denied';
-  r.archivedAt=Date.now();
-  r.transitions=r.transitions||[];
-  r.transitions.push({from:r.stage,to:'archived',by:currentUser.id,at:Date.now(),reason});
+  var prevStage = r.stage;
+r.stage='archived'; r.archiveStatus='denied'; r.archiveReason=reason; r.tag='Denied';
+r.archivedAt=Date.now();
+r.transitions=r.transitions||[];
+r.transitions.push({from:prevStage,to:'archived',by:currentUser.id,at:Date.now(),reason});
   try { await ethicsRecruitSet(id, r); closeEthicsDenyModal(); renderEthicsRecruit(); } catch(e){ document.getElementById('ethicsDenyErr').textContent='> ERROR: '+e.message; }
 }
 
@@ -5181,12 +5182,14 @@ function renderEthicsRoster() {
     }
     var activeLvEf = getActiveLeave(p);
     rows += '<tr>' +
-      '<td class="roster-num">' + counter++ + '</td>' +
-      '<td class="roster-name">' + e(p.name||'—') +
-        (activeLvEf ? ' <span class="roster-leave roster-' + activeLvEf.type.toLowerCase() + '">' + activeLvEf.type.toUpperCase() + '</span>' : '') +
-      '</td>' +
-      '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
-    '</tr>';
+  '<td class="roster-num">' + counter++ + '</td>' +
+  '<td class="roster-name">' + e(p.name||'—') +
+    (activeLvEf ? ' <span class="roster-leave roster-' + activeLvEf.type.toLowerCase() + '">' + activeLvEf.type.toUpperCase() + '</span>' : '') +
+  '</td>' +
+  '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
+  '<td><span class="badge ' + (p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan') + '">' + e(p.role||'—') + '</span></td>' +
+  '<td style="font-size:.62rem;color:var(--text-dim);">' + formatDob(p.dob) + '</td>' +
+'</tr>';
   });
   tbody.innerHTML = rows;
 }
@@ -5465,35 +5468,6 @@ if (_termInput) _termInput.addEventListener('keydown', function(ev) {
       });
   }
 });
-// ── CL5 Order Edit (Omega-1) ──
-function openOrderEdit(id) {
-  var o = allOrders.find(function(x){return x.id===id;});
-  if (!o) return;
-  var title = prompt('EDIT ORDER TITLE:', o.title);
-  if (title === null) return;
-  var desc  = prompt('EDIT ORDER DESCRIPTION:', o.desc||'');
-  if (desc  === null) return;
-  o.title   = title.toUpperCase().trim() || o.title;
-  o.desc    = desc.trim();
-  o.editedBy = currentUser.id;
-  o.editedAt = Date.now();
-  orderSet(o.id, o).then(function(){ renderOrders(); });
-}
-
-// ── CL5 Order Edit (Ethics) ──
-function openEthicsOrderEdit(id) {
-  var o = allEthicsOrders.find(function(x){return x.id===id;});
-  if (!o) return;
-  var title = prompt('EDIT ORDER TITLE:', o.title);
-  if (title === null) return;
-  var body  = prompt('EDIT ORDER BODY:', o.body||'');
-  if (body  === null) return;
-  o.title    = title.toUpperCase().trim() || o.title;
-  o.body     = body.trim();
-  o.editedBy = currentUser.id;
-  o.editedAt = Date.now();
-  ethicsOrderSet(o.id, o).then(function(){ renderEthicsOrders(); });
-}
 
 // ================================================================
 //  LEAVE OF ABSENCE / REDUCTION OF ACTIVITY SYSTEM
@@ -5635,8 +5609,105 @@ function buildLeaveSection(p, division) {
 
   return issueBtn + leavesHtml;
 }
+// ================================================================
+//  FIX: Bind login buttons programmatically (works in sandboxed iframes)
+// ================================================================
+(function() {
+  var tabLogin = document.getElementById('tabLogin');
+  var tabReg   = document.getElementById('tabReg');
+  var loginBtn = document.getElementById('loginBtn');
+  var guestBtn = document.getElementById('guestBtn');
+
+  if (tabLogin) tabLogin.addEventListener('click', function() { setLoginMode('login'); });
+  if (tabReg)   tabReg.addEventListener('click',   function() { setLoginMode('register'); });
+  if (loginBtn) loginBtn.addEventListener('click',  function() { doAuth(); });
+  if (guestBtn) guestBtn.addEventListener('click',  function() { doGuest(); });
+
+  // Also bind Enter key on login inputs
+  var loginUser = document.getElementById('loginUser');
+  var loginPass = document.getElementById('loginPass');
+  if (loginUser) loginUser.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') doAuth(); });
+  if (loginPass) loginPass.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') doAuth(); });
+})();
+
+// ── Inline edit modal helper (replaces blocked prompt()) ──
+function openInlineEditModal(title, label1, val1, label2, val2, onSave) {
+  document.getElementById('inlineEditTitle').textContent   = title;
+  document.getElementById('inlineEditLabel1').textContent  = label1;
+  document.getElementById('inlineEditField1').value        = val1 || '';
+  document.getElementById('inlineEditLabel2').textContent  = label2;
+  document.getElementById('inlineEditField2').value        = val2 || '';
+  document.getElementById('inlineEditErr').textContent     = '';
+  document.getElementById('inlineEditModal').classList.add('open');
+
+  var saveBtn   = document.getElementById('inlineEditSave');
+  var cancelBtn = document.getElementById('inlineEditCancel');
+
+  function cleanup() {
+    document.getElementById('inlineEditModal').classList.remove('open');
+    saveBtn.removeEventListener('click', onClickSave);
+    cancelBtn.removeEventListener('click', onClickCancel);
+  }
+  function onClickSave() {
+    var f1 = document.getElementById('inlineEditField1').value.trim();
+    if (!f1) { document.getElementById('inlineEditErr').textContent = '> TITLE REQUIRED'; return; }
+    var f2 = document.getElementById('inlineEditField2').value.trim();
+    cleanup();
+    onSave(f1, f2);
+  }
+  function onClickCancel() { cleanup(); }
+
+  saveBtn.addEventListener('click',   onClickSave);
+  cancelBtn.addEventListener('click', onClickCancel);
+}
+
+function openOrderEdit(id) {
+  var o = allOrders.find(function(x){ return x.id === id; });
+  if (!o) return;
+  openInlineEditModal(
+    'EDIT OMEGA-1 ORDER', 'ORDER TITLE', o.title, 'ORDER DESCRIPTION', o.desc || '',
+    function(newTitle, newDesc) {
+      o.title = newTitle.toUpperCase(); o.desc = newDesc;
+      o.editedBy = currentUser.id; o.editedAt = Date.now();
+      orderSet(o.id, o).then(function() { renderOrders(); });
+    }
+  );
+}
+
+function openEthicsOrderEdit(id) {
+  var o = allEthicsOrders.find(function(x){ return x.id === id; });
+  if (!o) return;
+  openInlineEditModal(
+    'EDIT ETHICS ORDER', 'ORDER TITLE', o.title, 'ORDER BODY', o.body || '',
+    function(newTitle, newBody) {
+      o.title = newTitle.toUpperCase(); o.body = newBody;
+      o.editedBy = currentUser.id; o.editedAt = Date.now();
+      ethicsOrderSet(o.id, o).then(function() { renderEthicsOrders(); });
+    }
+  );
+}
 
 </script>
+
+<!-- INLINE EDIT MODAL (replaces prompt() which is blocked in iframes) -->
+<div class="modal-overlay-2" id="inlineEditModal">
+  <div class="modal-box-2" style="width:480px;">
+    <h3 id="inlineEditTitle">EDIT ORDER</h3>
+    <div class="modal-group">
+      <label id="inlineEditLabel1">TITLE</label>
+      <input type="text" id="inlineEditField1" style="text-transform:uppercase;"/>
+    </div>
+    <div class="modal-group">
+      <label id="inlineEditLabel2">DESCRIPTION</label>
+      <textarea id="inlineEditField2" rows="4"></textarea>
+    </div>
+    <div class="modal-err" id="inlineEditErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="inlineEditCancel">[ CANCEL ]</button>
+      <button class="modal-save"   id="inlineEditSave">[ SAVE ]</button>
+    </div>
+  </div>
+</div>
 
 </body>
 <!--
