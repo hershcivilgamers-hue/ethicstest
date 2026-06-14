@@ -26,18 +26,85 @@
   --text:#88bb99;--text-dim:#3a6a4a;--text-faint:#1a3a26;
 }
 [data-theme="light"]{
-  --green:#006633;--green-dim:#008844;--green-trace:#e0f0e6;
+  --green:#006633;--green-dim:#008844;--green-trace:#dff0e6;
   --amber:#7a4800;--red:#bb0000;--cyan:#005f5f;
-  --bg:#f2f7f4;--bg2:#e6ede8;--border:#b8d4be;--border2:#9abfa2;
-  --text:#1a4428;--text-dim:#4a7a58;--text-faint:#90b09a;
+  --bg:#f4f7f5;--bg2:#e8ede9;--border:#b8d4be;--border2:#9abfa2;
+  --text:#1a4428;--text-dim:#4a7a58;--text-faint:#88aa95;
 }
-[data-theme="light"] body,[data-theme="light"] .shell{background:var(--bg);}
-[data-theme="light"] .pf-card,[data-theme="light"] .rec-card,
-[data-theme="light"] .order-card,[data-theme="light"] #tab-poi{background:var(--bg2);}
-[data-theme="light"] .poi-list-item{background:var(--bg2);}
-[data-theme="light"] .scanlines{display:none;}
-[data-theme="light"] .order-form,[data-theme="light"] .comment-form input,
-[data-theme="light"] .comment-input{background:var(--bg);}
+/* Shell + structure */
+[data-theme="light"] body,
+[data-theme="light"] .shell        { background:var(--bg); }
+[data-theme="light"] .header       { background:var(--bg2); }
+[data-theme="light"] .footer       { background:var(--bg2); border-color:var(--border); }
+[data-theme="light"] .scanlines    { display:none; }
+/* Nav */
+[data-theme="light"] .nav          { background:var(--bg2); }
+[data-theme="light"] .nav-group-label { background:var(--bg2); color:var(--text-dim); }
+[data-theme="light"] .nav-tab      { color:var(--text-dim); border-color:var(--border); }
+[data-theme="light"] .nav-tab:hover{ background:var(--green-trace); color:var(--green); }
+[data-theme="light"] .nav-tab.active{ background:var(--bg); color:var(--green); border-bottom-color:var(--green); }
+[data-theme="light"] .panel        { background:var(--bg); }
+/* Cards */
+[data-theme="light"] .pf-card,
+[data-theme="light"] .rec-card,
+[data-theme="light"] .order-card,
+[data-theme="light"] .sqd-card,
+[data-theme="light"] .strike-card.expired,
+[data-theme="light"] .leave-card.ended  { background:var(--bg2); }
+[data-theme="light"] .strike-card       { background:#fff0f0; border-color:#e8a8a8; }
+/* POI */
+[data-theme="light"] .poi-list-item     { background:var(--bg2); }
+[data-theme="light"] .poi-list-item:hover{ background:var(--green-trace); }
+/* Forms + inputs */
+[data-theme="light"] .order-form,
+[data-theme="light"] .login-form        { background:var(--bg2); }
+[data-theme="light"] .order-input,
+[data-theme="light"] .order-textarea,
+[data-theme="light"] .order-select,
+[data-theme="light"] .comment-input,
+[data-theme="light"] .pf-search,
+[data-theme="light"] .login-input       { background:var(--bg); border-color:var(--border); color:var(--text); }
+[data-theme="light"] .modal-input,
+[data-theme="light"] .modal-select,
+[data-theme="light"] .modal-textarea,
+[data-theme="light"] .pf-form-input,
+[data-theme="light"] .pf-form-select,
+[data-theme="light"] .ef-form-input,
+[data-theme="light"] .ef-form-select,
+[data-theme="light"] .poi-note-input    { background:var(--bg); border-color:var(--border); color:var(--text); }
+[data-theme="light"] .modal-cancel,
+[data-theme="light"] .pf-form-cancel,
+[data-theme="light"] .ef-form-cancel,
+[data-theme="light"] .login-btn.sec-btn { background:var(--bg2); border-color:var(--border); color:var(--text-dim); }
+/* Modals */
+[data-theme="light"] .modal-box,
+[data-theme="light"] .modal-box-2,
+[data-theme="light"] .pf-modal,
+[data-theme="light"] .ef-modal,
+[data-theme="light"] .modal-overlay,
+[data-theme="light"] .modal-overlay-2  { background:rgba(180,210,185,.35); }
+[data-theme="light"] .modal-box,
+[data-theme="light"] .modal-box-2,
+[data-theme="light"] .pf-modal,
+[data-theme="light"] .ef-modal          { background:var(--bg); }
+/* Admin panel inline backgrounds */
+[data-theme="light"] #adminModal .modal-box-2,
+[data-theme="light"] #adminPendingList > div,
+[data-theme="light"] #adminActiveList > div { background:var(--bg2); }
+/* Terminal */
+[data-theme="light"] .term-output      { background:var(--bg2); }
+[data-theme="light"] .input-bar        { background:var(--bg2); border-color:var(--border); }
+[data-theme="light"] .term-input       { background:transparent; color:var(--text); }
+/* Config warn + notices */
+[data-theme="light"] .config-warn      { background:#fff8e0; border-color:#e0c060; color:#7a5800; }
+[data-theme="light"] .cl3Banner        { background:rgba(0,80,160,.06); }
+[data-theme="light"] .order-denied     { background:rgba(180,0,0,.06); }
+/* Misc elements with hardcoded dark inline styles */
+[data-theme="light"] .poi-closed-badge { background:#e8e8f4; color:#4444aa; border-color:#b0b0d4; }
+[data-theme="light"] .con-block        { background:#fff0f0; }
+[data-theme="light"] .pf-card-body.open,
+[data-theme="light"] [style*="background:#030806"],
+[data-theme="light"] [style*="background: #030806"] { background:var(--bg2) !important; }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;width:100%;min-height:100vh;overflow-x:hidden;}
 
@@ -51,7 +118,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
 /* ── Layout ── */
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
-.shell{position:relative;max-width:880px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+.shell{position:relative;max-width:1600px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
 
 /* ── Header ── */
 .header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}
@@ -1376,6 +1443,26 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="modal-actions">
       <button class="modal-cancel" data-action="close-ethics-app-modal">[ CANCEL ]</button>
       <button class="modal-save"   data-action="save-ethics-app">[ SUBMIT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- STRIKE REASON MODAL (Tryout full strike) -->
+<div class="modal-overlay-2" id="strikeReasonModal">
+  <div class="modal-box-2" style="width:420px;">
+    <h3 style="color:#dd4444;">ISSUE FULL STRIKE</h3>
+    <input type="hidden" id="strikeReasonId"/>
+    <div style="font-size:.62rem;color:var(--text-dim);margin-bottom:.6rem;line-height:1.6;border-left:2px solid #4a1414;padding-left:.6rem;">
+      A full strike will immediately disqualify this candidate and archive the thread as <strong style="color:#dd4444;">DENIED</strong>.
+    </div>
+    <div class="modal-group">
+      <label>REASON FOR STRIKE</label>
+      <textarea id="strikeReasonText" placeholder="State clearly why this candidate is receiving a full strike..." rows="3"></textarea>
+    </div>
+    <div class="modal-err" id="strikeReasonErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-strike-reason-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="confirm-full-strike" style="background:rgba(80,10,10,.4);border-color:#5a0000;color:#ff6666;">[ CONFIRM STRIKE ]</button>
     </div>
   </div>
 </div>
@@ -3044,6 +3131,8 @@ document.addEventListener('click', function(ev) {
     case 'rec-approve-final': recApproveFinal(el.dataset.id); break;
     case 'rec-add-strike':    recAddStrike(el.dataset.id, el.dataset.amount); break;
     case 'rec-remove-strike': recRemoveStrike(el.dataset.id); break;
+    case 'close-strike-reason-modal': closeStrikeReasonModal(); break;
+    case 'confirm-full-strike':       confirmFullStrike(); break;
     case 'add-rec-comment':   addRecComment(el.dataset.id); break;
     case 'toggle-rec-archive':toggleRecArchive(); break;
     // Ethics Orders
@@ -3864,12 +3953,16 @@ function renderRecArchive() {
     var status = r.archiveStatus === 'approved'
       ? '<span class="badge b-green">APPROVED</span>'
       : '<span class="badge b-red">DENIED</span>';
-    return `<div class="rec-card" style="opacity:.7;">
+    var reasonHtml = r.archiveReason
+      ? `<div style="font-size:.6rem;color:var(--text-dim);margin-top:5px;border-left:2px solid var(--border2);padding-left:6px;font-style:italic;">${e(r.archiveReason)}</div>`
+      : '';
+    return `<div class="rec-card" style="opacity:.82;">
       <div class="rec-card-header">
         <div>
           <div class="rec-name">${e(r.name||'—')}</div>
           <div class="rec-meta">SteamID: ${e(r.steamId||'—')} · ${e(r.department||'—')} · ${e(r.rank||'—')}</div>
           <div style="margin-top:3px;">${status}</div>
+          ${reasonHtml}
         </div>
       </div>
     </div>`;
@@ -3972,31 +4065,51 @@ async function recVote(id, vote) {
 }
 
 // ── Tryout strike management ──
+function openStrikeReasonModal(id) {
+  document.getElementById('strikeReasonId').value   = id;
+  document.getElementById('strikeReasonText').value  = '';
+  document.getElementById('strikeReasonErr').textContent = '';
+  document.getElementById('strikeReasonModal').classList.add('open');
+}
+function closeStrikeReasonModal() { document.getElementById('strikeReasonModal').classList.remove('open'); }
+
+async function confirmFullStrike() {
+  var id     = document.getElementById('strikeReasonId').value;
+  var reason = document.getElementById('strikeReasonText').value.trim();
+  if (!reason) { document.getElementById('strikeReasonErr').textContent = '> REASON REQUIRED'; return; }
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r) return;
+  r.tryoutStrikes = 1;
+  r.strikeLog = r.strikeLog || [];
+  r.strikeLog.push({ amount: 1, reason: reason, by: currentUser.id, at: Date.now() });
+  r.stage = 'archived'; r.archiveStatus = 'denied';
+  r.archiveReason = 'Full strike issued during tryout: ' + reason;
+  r.archivedAt = Date.now();
+  r.transitions = r.transitions || [];
+  r.transitions.push({ from:'tryout', to:'archived', by:currentUser.id, at:Date.now(), reason:'full strike: '+reason });
+  try {
+    await recruitSet(id, r);
+    closeStrikeReasonModal();
+    renderRecruitment();
+  } catch(err) { document.getElementById('strikeReasonErr').textContent = '> ERROR: '+err.message; }
+}
+
 async function recAddStrike(id, amount) {
   var r = allRecruitment.find(function(x){return x.id===id;});
   if (!r || !currentUser || parseInt(currentUser.clearance) < 4) return;
+  if (parseFloat(amount) >= 1) {
+    // Full strike → open reason modal
+    openStrikeReasonModal(id);
+    return;
+  }
+  // Half strike — no reason required, just confirm
   var current = r.tryoutStrikes || 0;
-  var newVal  = Math.min(1, current + parseFloat(amount));
-  var label   = amount === '0.5' ? '½ strike' : 'full strike';
-  if (!await pfConfirm('Issue ' + label + ' to ' + e(r.name) + '?\n\n'
-    + 'Current: ' + current + ' → New: ' + newVal + '/1\n'
-    + (newVal >= 1 ? '⚠ This will result in INSTANT DENIAL.' : ''))) return;
-  r.tryoutStrikes = newVal;
+  if (!await pfConfirm('Issue ½ strike to ' + e(r.name) + '?\nCurrent: ' + current + ' → 0.5 / 1')) return;
+  r.tryoutStrikes = 0.5;
   r.strikeLog = r.strikeLog || [];
-  r.strikeLog.push({ amount: parseFloat(amount), by: currentUser.id, at: Date.now() });
-  try {
-    await recruitSet(id, r);
-    // Auto-deny if full strike reached
-    if (r.tryoutStrikes >= 1) {
-      r.stage = 'archived'; r.archiveStatus = 'denied';
-      r.archiveReason = 'Disqualified — full strike issued during tryout';
-      r.archivedAt = Date.now();
-      r.transitions = r.transitions || [];
-      r.transitions.push({ from:'tryout', to:'archived', by:currentUser.id, at:Date.now(), reason:'full strike' });
-      await recruitSet(id, r);
-    }
-    renderRecruitment();
-  } catch(err) { alert('ERROR: ' + err.message); }
+  r.strikeLog.push({ amount: 0.5, by: currentUser.id, at: Date.now() });
+  try { await recruitSet(id, r); renderRecruitment(); }
+  catch(err) { alert('ERROR: ' + err.message); }
 }
 
 async function recRemoveStrike(id) {
