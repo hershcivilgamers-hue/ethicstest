@@ -2995,6 +2995,46 @@ async function loadPersonnel() {
 }
 
 // ── Render Personnel Files ──
+// ── Personnel file read-access level helpers ──
+// Access levels: 3=CL3, 4=CL4-Junior, 5=CL4-Senior/EC-Assistant, 6=CL5
+var CL4_SENIOR_RANKS  = ['Commander','Lieutenant Commander','Major'];
+var CL4_JUNIOR_RANKS  = ['Captain','Lieutenant'];
+
+function getPfReadLevel(p) {
+  if (CL4_SENIOR_RANKS.includes(p.rank)) return 5;
+  if (CL4_JUNIOR_RANKS.includes(p.rank)) return 4;
+  return 3;
+}
+function getEfReadLevel(p) {
+  if (p.role === 'Chairman' || p.role === 'Member') return 6;
+  if (p.role === 'Assistant') return 5;
+  return 3;
+}
+// Determine how high a file the current user may read
+function getUserReadLevel() {
+  if (!currentUser) return 0;
+  var cl = parseInt(currentUser.clearance || '3');
+  if (cl >= 5) return 6;
+  if (currentUser.linkedEfId) {
+    var ef = allEthicsPersonnel.find(function(p){ return p.id === currentUser.linkedEfId; });
+    if (ef) {
+      if (ef.role === 'Chairman' || ef.role === 'Member') return 6;
+      if (ef.role === 'Assistant') return 5;
+    }
+    return cl >= 4 ? 5 : 3;
+  }
+  if (currentUser.linkedPfId) {
+    var pf = allPersonnel.find(function(p){ return p.id === currentUser.linkedPfId; });
+    if (pf) {
+      if (CL4_SENIOR_RANKS.includes(pf.rank)) return 5;
+      if (CL4_JUNIOR_RANKS.includes(pf.rank)) return 4;
+      return 3;
+    }
+  }
+  if (cl >= 4) return 4;
+  return 3;
+}
+
 function renderPersonnelFiles() {
   var query = (document.getElementById('pfSearch') && document.getElementById('pfSearch').value || '').toLowerCase();
   var list  = document.getElementById('pfList');
@@ -3013,6 +3053,16 @@ function renderPersonnelFiles() {
            (p.nickname || '').toLowerCase().includes(query) ||
            (p.rank     || '').toLowerCase().includes(query);
   });
+
+  // Access control: hide files of ranks above the current user's level.
+  // Users always see their own file regardless of rank.
+  var readLevel = getUserReadLevel();
+  if (readLevel < 6) {
+    filtered = filtered.filter(function(p) {
+      var isSelf = currentUser && currentUser.linkedPfId === p.id;
+      return isSelf || getPfReadLevel(p) <= readLevel;
+    });
+  }
 
   // Sort alphabetically within rank for display; roster sorts by rank
   filtered.sort(function(a, b) {
@@ -5704,6 +5754,16 @@ function renderEthicsFiles() {
                (p.role||'').toLowerCase().includes(q);
       })
     : allEthicsPersonnel;
+
+  // Access control: hide files of roles above the current user's level.
+  // Users always see their own linked EC file.
+  var readLevel = getUserReadLevel();
+  if (readLevel < 6) {
+    filtered = filtered.filter(function(p) {
+      var isSelf = currentUser && currentUser.linkedEfId === p.id;
+      return isSelf || getEfReadLevel(p) <= readLevel;
+    });
+  }
 
   // Split by role into three groups
   var groups = { Chairman: [], Member: [], Assistant: [] };
