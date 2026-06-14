@@ -6276,6 +6276,18 @@ function buildLeaveSection(p, division) {
   if (loginPass) loginPass.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') doAuth(); });
 })();
 
+// ── Link Personnel Modal button bindings (iframe-safe) ──
+(function() {
+  function wire(id, fn) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', fn);
+  }
+  wire('linkCreateOmega1', function() { handleLinkAction('create_omega'); });
+  wire('linkCreateEthics',  function() { handleLinkAction('create_ethics'); });
+  wire('linkExistingBtn',   function() { handleLinkAction('link_existing'); });
+  wire('linkSkipBtn',       function() { closeLinkPersonnelModal(); });
+})();
+
 // ── Inline edit modal helper (replaces blocked prompt()) ──
 function openInlineEditModal(title, label1, val1, label2, val2, onSave) {
   document.getElementById('inlineEditTitle').textContent   = title;
@@ -6393,12 +6405,13 @@ async function handleLinkAction(action) {
   } else if (action === 'link_existing') {
     var selected = document.getElementById('linkExistingSelect').value;
     if (!selected) {
-      document.getElementById('linkPersonnelErr').textContent = '> PLEASE SELECT A FILE';
+      var errEl = document.getElementById('linkPersonnelErr');
+      if (errEl) errEl.textContent = '> PLEASE SELECT A FILE';
       return;
     }
-    var parts = selected.split('_');
-    var type = parts[0];
-    var fileId = parts[1];
+    // type is first 2 chars ('pf' or 'ef'), fileId is everything after the separator '_'
+    var type   = selected.slice(0, 2);
+    var fileId = selected.slice(3);   // skip 'pf_' or 'ef_'
 
     if (type === 'pf') {
       userRec.linkedPfId = fileId;
@@ -6428,10 +6441,11 @@ async function handleLinkAction(action) {
       <button class="modal-save" id="linkCreateOmega1">[ CREATE NEW OMEGA-1 FILE ]</button>
       <button class="modal-save" id="linkCreateEthics">[ CREATE NEW ETHICS COMMITTEE FILE ]</button>
       <div style="font-size:.58rem;color:var(--text-dim);text-align:center;margin:.3rem 0;">— OR —</div>
-      <select id="linkExistingSelect" style="...">
+      <select id="linkExistingSelect" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:4px 8px;">
         <option value="">— SELECT EXISTING UNLINKED FILE —</option>
       </select>
       <button class="modal-save" id="linkExistingBtn">[ LINK SELECTED FILE ]</button>
+      <div class="modal-err" id="linkPersonnelErr"></div>
       <button class="modal-cancel" id="linkSkipBtn">[ SKIP — REMAIN READ-ONLY ]</button>
     </div>
   </div>
