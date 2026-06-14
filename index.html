@@ -94,6 +94,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .poi-note-input{flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.3rem .5rem;outline:none;resize:none;min-height:32px;}
 .poi-note-input:focus{border-color:var(--green-dim);}
 
+/* ── Order access denied ── */
+.order-denied{padding:.55rem .75rem;background:rgba(60,10,10,.3);border-left:3px solid #4a1414;font-size:.63rem;color:#dd4444;letter-spacing:.06em;display:flex;align-items:center;gap:.5rem;}
+.order-denied-badge{background:#4a1414;color:#ff8888;font-size:.55rem;padding:1px 6px;border-radius:2px;white-space:nowrap;}
+
 /* ── Recruitment ── */
 .rec-section{margin-bottom:1rem;}
 .rec-section-header{display:flex;align-items:center;justify-content:space-between;padding:.3rem 0;border-bottom:2px solid var(--border2);margin-bottom:.5rem;}
@@ -762,6 +766,11 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
               <option value="FLAG">ARTICLE VII FLAG</option>
               <option value="OTHER">OTHER</option>
             </select>
+            <select class="order-select" id="oMinClearance" title="Minimum clearance to view this order">
+              <option value="3">VISIBLE: CL3+</option>
+              <option value="4">VISIBLE: CL4+</option>
+              <option value="5">VISIBLE: CL5 ONLY</option>
+            </select>
           </div>
           <textarea class="order-textarea" id="oDesc"
             placeholder="Detailed directive description. Specify scope, expected output, and any relevant precedent references..."></textarea>
@@ -962,9 +971,14 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
             <option value="COMPLETE">COMPLETE</option>
             <option value="CANCELLED">CANCELLED</option>
           </select>
+          <select class="order-select" id="ethicsOrderMinClearance" title="Minimum clearance to view this order">
+            <option value="3">VISIBLE: CL3+</option>
+            <option value="4">VISIBLE: CL4+</option>
+            <option value="5">VISIBLE: CL5 ONLY</option>
+          </select>
         </div>
         <input class="order-input" id="ethicsOrderTitle" placeholder="Order designation..."/>
-        <textarea class="order-ta" id="ethicsOrderBody" placeholder="Full order text..." rows="3"></textarea>
+        <textarea class="order-textarea" id="ethicsOrderBody" placeholder="Full order text..." rows="3"></textarea>
         <button class="order-btn" onclick="submitEthicsOrder()">[ ISSUE ORDER ]</button>
       </div>
       <div id="ethicsOrdersList"></div>
@@ -1841,6 +1855,7 @@ async function submitOrder() {
     priority: document.getElementById('oPriority').value,
     type:     document.getElementById('oType').value,
     status:   'PENDING',
+    minClearance: document.getElementById('oMinClearance').value || '3',
     author:   currentUser.id,
     clearance: currentUser.clearance,
     created:  now
@@ -1858,6 +1873,7 @@ async function submitOrder() {
   allOrders.unshift(order);
   document.getElementById('oTitle').value = '';
   document.getElementById('oDesc').value  = '';
+  document.getElementById('oMinClearance').value = '3';
   btn.disabled = false;
   btn.textContent = '[ SUBMIT ORDER → CAIRO.AIC ]';
   renderOrders();
@@ -2003,6 +2019,9 @@ function renderOrders() {
       ? '▾ hide updates' + (cCount ? ' (' + cCount + ')' : '')
       : '▸ updates' + (cCount ? ' (' + cCount + ')' : ' (0)');
 
+    // ── Clearance gate ──
+    if (orderIsRestricted(o)) return buildOrderDeniedCard(o, 'ocard_' + o.id);
+
     return '<div class="order-card" id="ocard_' + o.id + '">' +
       '<div class="order-card-header">' +
         '<div>' +
@@ -2094,6 +2113,36 @@ function handleCommentKey(ev, orderId) {
     ev.preventDefault();
     postComment(orderId);
   }
+}
+
+// ── Order clearance access helpers ──
+function orderIsRestricted(o) {
+  // CL5 always has full access
+  if (currentUser && parseInt(currentUser.clearance) >= 5) return false;
+  var min = parseInt(o.minClearance || '3');
+  var cur = parseInt((currentUser && currentUser.clearance) || '0');
+  return cur < min;
+}
+
+function buildOrderDeniedCard(o, cardId) {
+  var min = o.minClearance || '3';
+  var ts  = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
+  return '<div class="order-card" id="' + cardId + '">' +
+    '<div class="order-card-header">' +
+      '<div>' +
+        '<div class="order-card-title" style="color:var(--text-faint);">' + e(o.title || 'CLASSIFIED ORDER') + '</div>' +
+        '<div class="order-card-meta">' + ts + ' UTC · EC·' + e(o.author||'—') + '</div>' +
+      '</div>' +
+      '<div class="order-card-actions">' +
+        '<span class="badge b-dim" style="letter-spacing:.05em;">CL' + e(min) + '+ ONLY</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="order-denied">' +
+      '<span>⛔</span>' +
+      '<span>ACCESS DENIED · INSUFFICIENT CLEARANCE</span>' +
+      '<span class="order-denied-badge">MINIMUM CL' + e(min) + ' REQUIRED</span>' +
+    '</div>' +
+  '</div>';
 }
 
 function updateOrderBadge() {
@@ -2855,6 +2904,10 @@ document.addEventListener('click', function(ev) {
     case 'toggle-rec-archive':toggleRecArchive(); break;
     // Ethics Orders
     case 'del-ethics-order-comment': deleteEthicsOrderComment(el.dataset.orderid, el.dataset.commentid); break;
+    case 'toggle-eo-comments':       toggleEthicsComments(el.dataset.id); break;
+    case 'del-eo':                   deleteEthicsOrder(el.dataset.id); break;
+    case 'eo-status':                updateEthicsOrderStatus(el.dataset.id, el.value); break;
+    case 'post-ethics-comment':      postEthicsComment(el.dataset.id); break;
     // Ethics Recruit
     case 'toggle-ethics-rec-archive': toggleEthicsRecArchive(); break;
     case 'open-ethics-app-modal':   openEthicsAppModal(el.dataset.id||null); break;
@@ -3395,6 +3448,15 @@ document.addEventListener('click', function(ev) {
   }
 });
 
+// Handle ethics orders status select (change event)
+document.addEventListener('change', function(ev) {
+  var el = ev.target.closest('[data-action]');
+  if (!el) return;
+  if (el.dataset.action === 'eo-status') {
+    updateEthicsOrderStatus(el.dataset.id, el.value);
+  }
+});
+
 async function removeSqdMember(sqdId, memberId, type) {
   type = type || 'pf';
   var sqdList = type === 'ef' ? allEthicsSquadrons : allSquadrons;
@@ -3802,6 +3864,10 @@ async function ethicsCommentSet(oid,cid,d){ if(firebaseReady)await fbSet('/ethic
 async function ethicsCommentDel(oid,cid)  { if(firebaseReady)await fbDelete('/ethics-comments/'+oid+'/'+cid); else lsDel('ethics-comments/'+oid+'/'+cid); }
 async function ethicsCommentsGetAll(oid){ if(firebaseReady){var r=await fbGetAll('/ethics-comments/'+oid);return r?Object.values(r):[]; } return Object.values(lsAll('ethics-comments/'+oid+'/')); }
 
+// Ethics orders state (mirrors Omega-1 pattern)
+var ethicsExpandedOrders = new Set();
+var ethicsCommentCache   = {};
+
 async function loadEthicsOrders() {
   try {
     var raw = await ethicsOrdersGetAll();
@@ -3817,15 +3883,17 @@ async function submitEthicsOrder() {
   var body  = document.getElementById('ethicsOrderBody').value.trim();
   if (!title) return;
   var id = 'eord_'+Date.now()+'_'+Math.random().toString(36).slice(2,4);
-  var order = { id, title, body,
+  var order = { id:id, title:title, body:body,
     priority: document.getElementById('ethicsOrderPriority').value,
     status:   document.getElementById('ethicsOrderStatus').value,
-    author:   currentUser.id, clearance: currentUser.clearance, created: Date.now() };
+    minClearance: document.getElementById('ethicsOrderMinClearance').value || '3',
+    author: currentUser.id, clearance: currentUser.clearance, created: Date.now() };
   try {
     await ethicsOrderSet(id, order);
     allEthicsOrders.unshift(order);
     document.getElementById('ethicsOrderTitle').value = '';
     document.getElementById('ethicsOrderBody').value  = '';
+    document.getElementById('ethicsOrderMinClearance').value = '3';
     renderEthicsOrders();
     updateEthicsOrderBadge();
   } catch(e){ alert('ERROR: '+e.message); }
@@ -3834,82 +3902,159 @@ async function submitEthicsOrder() {
 async function updateEthicsOrderStatus(id, status) {
   var o = allEthicsOrders.find(function(x){return x.id===id;});
   if (!o) return;
-  o.status = status; o.updatedBy = currentUser.id; o.updated = Date.now();
+  o.status = status;
   try { await ethicsOrderSet(id, o); renderEthicsOrders(); updateEthicsOrderBadge(); } catch(e){ alert('ERROR: '+e.message); }
 }
 
 async function deleteEthicsOrder(id) {
   if (!await pfConfirm('DELETE THIS ETHICS ORDER?')) return;
   allEthicsOrders = allEthicsOrders.filter(function(o){return o.id!==id;});
+  ethicsExpandedOrders.delete(id);
+  delete ethicsCommentCache[id];
   try { await ethicsOrderDel(id); renderEthicsOrders(); updateEthicsOrderBadge(); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+async function toggleEthicsComments(orderId) {
+  if (ethicsExpandedOrders.has(orderId)) {
+    ethicsExpandedOrders.delete(orderId);
+    renderEthicsOrders();
+  } else {
+    ethicsExpandedOrders.add(orderId);
+    if (!ethicsCommentCache[orderId]) {
+      ethicsCommentCache[orderId] = [];
+      try {
+        var raw = await ethicsCommentsGetAll(orderId);
+        ethicsCommentCache[orderId] = raw.filter(function(c){ return c&&c.id; });
+      } catch(err) {}
+    }
+    renderEthicsOrders();
+    var inp = document.getElementById('ethcinput_'+orderId);
+    if (inp) inp.focus();
+  }
 }
 
 async function postEthicsComment(orderId) {
   if (!currentUser) return;
-  var inp = document.getElementById('ethicsComment_'+orderId);
-  if (!inp || !inp.value.trim()) return;
-  var cid = 'ec_'+Date.now();
-  var comment = { id: cid, text: inp.value.trim(), author: currentUser.id, clearance: currentUser.clearance, created: Date.now() };
+  var inp = document.getElementById('ethcinput_'+orderId);
+  if (!inp) return;
+  var text = inp.value.trim();
+  if (!text) return;
+  var btn = inp.nextElementSibling;
+  if (btn) { btn.disabled=true; btn.textContent='[ POSTING... ]'; }
+  inp.disabled = true;
+  var comment = {
+    id: 'ec_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
+    author: currentUser.id, clearance: currentUser.clearance, text: text, created: Date.now()
+  };
   try {
-    await ethicsCommentSet(orderId, cid, comment);
+    await ethicsCommentSet(orderId, comment.id, comment);
+    if (!ethicsCommentCache[orderId]) ethicsCommentCache[orderId] = [];
+    ethicsCommentCache[orderId].push(comment);
     inp.value = '';
-    toggleEthicsComments(orderId);
-  } catch(e){ alert('ERROR: '+e.message); }
+  } catch(err) { alert('POST ERROR: '+err.message); }
+  if (btn) { btn.disabled=false; btn.textContent='[ POST ]'; }
+  inp.disabled = false;
+  renderEthicsOrders();
+  var newInp = document.getElementById('ethcinput_'+orderId);
+  if (newInp) newInp.focus();
 }
 
-async function toggleEthicsComments(orderId) {
-  var box = document.getElementById('ethicsCommentBox_'+orderId);
-  if (!box) return;
-  if (box.style.display !== 'none' && box.innerHTML !== '') { box.style.display='none'; return; }
-  box.style.display='block';
-  box.innerHTML = '<div style="font-size:.6rem;color:var(--text-faint);">Loading...</div>';
-  try {
-    var comments = await ethicsCommentsGetAll(orderId);
-    comments.sort(function(a,b){return a.created-b.created;});
-    var isCL5 = currentUser && parseInt(currentUser.clearance)>=5;
-    box.innerHTML = (comments.length ? comments.map(function(c){
-      var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
-      return '<div class="comment-card"><div class="comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·'+e(c.author)+' [L'+e(c.clearance)+'] · '+ct+' UTC</span>'+(isCL5?'<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ethics-order-comment" data-orderid="'+e(orderId)+'" data-commentid="'+e(c.id)+'" title="Delete">×</button>':'')+'</div><div class="comment-text">'+e(c.text)+'</div></div>';
-    }).join('') : '<div style="font-size:.62rem;color:var(--text-faint);">[ NO COMMENTS ]</div>')
-    + (currentUser ? '<div style="display:flex;gap:.4rem;margin-top:.4rem;"><input class="order-input" id="ethicsComment_'+orderId+'" placeholder="Add comment..." style="flex:1;" onkeydown="if(event.key===\'Enter\'&&(event.ctrlKey||event.metaKey))postEthicsComment(\''+orderId+'\')"/><button class="order-btn" onclick="postEthicsComment(\''+orderId+'\')">[ REPLY ]</button></div>' : '');
-  } catch(e){ box.innerHTML='<div style="color:var(--red);">ERROR: '+e.message+'</div>'; }
+function handleEthicsCommentKey(ev, orderId) {
+  if (ev.key==='Enter' && (ev.ctrlKey||ev.metaKey)) { ev.preventDefault(); postEthicsComment(orderId); }
 }
 
 async function deleteEthicsOrderComment(orderId, commentId) {
   if (!canDeleteComment()) return;
   if (!await pfConfirm('DELETE THIS COMMENT?')) return;
-  try { await ethicsCommentDel(orderId, commentId); toggleEthicsComments(orderId); } catch(e){ alert('ERROR: '+e.message); }
+  try {
+    await ethicsCommentDel(orderId, commentId);
+    if (ethicsCommentCache[orderId])
+      ethicsCommentCache[orderId] = ethicsCommentCache[orderId].filter(function(c){ return c.id!==commentId; });
+    renderEthicsOrders();
+  } catch(e){ alert('ERROR: '+e.message); }
 }
 
 function renderEthicsOrders() {
   var el = document.getElementById('ethicsOrdersList');
   if (!el) return;
   var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
-  var PRIORITY_BADGE = { ELEVATED:'b-cyan', URGENT:'b-amber', CRITICAL:'b-red' };
-  var STATUS_BADGE   = { PENDING:'b-amber', ACTIVE:'b-green', COMPLETE:'b-dim', CANCELLED:'b-dim' };
-  if (!allEthicsOrders.length) { el.innerHTML='<div class="poi-empty">[ NO ETHICS ORDERS ISSUED ]</div>'; return; }
+  var PBADGE = { ELEVATED:'b-cyan', URGENT:'b-amber', CRITICAL:'b-red' };
+  var SBADGE = { PENDING:'b-amber', ACTIVE:'b-green', COMPLETE:'b-dim', CANCELLED:'b-dim' };
+  if (!allEthicsOrders.length) {
+    el.innerHTML = '<div class="order-empty">[ NO ETHICS ORDERS ISSUED ]</div>';
+    return;
+  }
   el.innerHTML = allEthicsOrders.map(function(o) {
-    var ts = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
-    return '<div class="order-card">'
-      + '<div class="order-header"><div>'
-      + '<span class="badge '+( PRIORITY_BADGE[o.priority]||'b-dim')+'">'+e(o.priority)+'</span> '
-      + '<span class="badge '+(STATUS_BADGE[o.status]||'b-dim')+'">'+e(o.status)+'</span> '
-      + '<span class="order-title">'+e(o.title)+'</span>'
-      + '<div class="order-meta">'+ts+' UTC · EC·'+e(o.author)+' [L'+e(o.clearance)+']</div>'
-      + '</div>'
-      + (canEdit ? '<div class="order-actions">'
-        + '<select class="order-select" onchange="updateEthicsOrderStatus(\''+o.id+'\',this.value)">'
-        + ['PENDING','ACTIVE','COMPLETE','CANCELLED'].map(function(s){ return '<option'+(o.status===s?' selected':'')+'>'+s+'</option>'; }).join('')
-        + '</select>'
-        + '<button class="order-btn danger" onclick="deleteEthicsOrder(\''+o.id+'\')">✕</button>'
-        + '</div>' : '')
-      + '</div>'
-      + '<div class="order-body">'+e(o.body||'')+'</div>'
-      + '<button class="order-toggle" onclick="toggleEthicsComments(\''+o.id+'\')">[ COMMENTS ]</button>'
-      + '<div id="ethicsCommentBox_'+o.id+'" class="comment-box" style="display:none;"></div>'
-      + '</div>';
+    var ts       = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
+    var expanded = ethicsExpandedOrders.has(o.id);
+    var cached   = ethicsCommentCache[o.id] || [];
+    var cCount   = cached.length;
+
+    var statusOpts = ['PENDING','ACTIVE','COMPLETE','CANCELLED'].map(function(s) {
+      return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
+    }).join('');
+    var statusCtrl = canEdit
+      ? '<select class="order-select" data-action="eo-status" data-id="' + e(o.id) + '">' + statusOpts + '</select>'
+      : '<span class="badge ' + (SBADGE[o.status]||'b-dim') + '">' + e(o.status) + '</span>';
+
+    var commentsHtml = '';
+    if (expanded) {
+      var threadHtml = cCount === 0
+        ? '<div class="comment-empty">[ NO COMMENTS ]</div>'
+        : cached.slice().sort(function(a,b){return a.created-b.created;}).map(function(c) {
+            var cts = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+            var del = canDeleteComment()
+              ? '<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ethics-order-comment" data-orderid="' + e(o.id) + '" data-commentid="' + e(c.id) + '">×</button>'
+              : '';
+            return '<div class="comment-entry">' +
+              '<div class="comment-gutter"></div>' +
+              '<div class="comment-body">' +
+                '<div class="comment-meta" style="display:flex;justify-content:space-between;align-items:center;">' +
+                  '<span>EC·' + e(c.author) + ' [L' + e(c.clearance) + '] · ' + cts + ' UTC</span>' + del +
+                '</div>' +
+                '<div class="comment-text">' + e(c.text) + '</div>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+
+      var formHtml = currentUser
+        ? '<div class="comment-form">' +
+            '<textarea class="comment-input" id="ethcinput_' + e(o.id) + '" placeholder="Add comment..." rows="2" data-orderid="' + e(o.id) + '" onkeydown="if(event.key===\'Enter\'&&(event.ctrlKey||event.metaKey)){event.preventDefault();postEthicsComment(this.dataset.orderid);}"></textarea>' +
+            '<button class="comment-submit" data-action="post-ethics-comment" data-id="' + e(o.id) + '">[ POST ]</button>' +
+          '</div>'
+        : '<div class="comment-empty">[ AUTHENTICATE TO COMMENT ]</div>';
+
+      commentsHtml = '<div class="order-comments"><div class="comment-thread">' + threadHtml + '</div>' + formHtml + '</div>';
+    }
+
+    var toggleLabel = expanded
+      ? '▾ hide comments' + (cCount ? ' (' + cCount + ')' : '')
+      : '▸ comments' + (cCount ? ' (' + cCount + ')' : ' (0)');
+
+    // ── Clearance gate ──
+    if (orderIsRestricted(o)) return buildOrderDeniedCard(o, 'eocard_' + e(o.id));
+
+    return '<div class="order-card" id="eocard_' + e(o.id) + '">' +
+      '<div class="order-card-header">' +
+        '<div>' +
+          '<div class="order-card-title">' + e(o.title) + '</div>' +
+          '<div class="order-card-meta">' +
+            ts + ' UTC · EC·' + e(o.author) + ' [L' + e(o.clearance) + '] · ' +
+            '<span class="badge ' + (PBADGE[o.priority]||'b-dim') + '">' + e(o.priority) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="order-card-actions">' +
+          statusCtrl +
+          (canEdit ? '<button class="order-action-btn del-btn" data-action="del-eo" data-id="' + e(o.id) + '">✕</button>' : '') +
+        '</div>' +
+      '</div>' +
+      (o.body ? '<div class="order-card-desc">' + e(o.body) + '</div>' : '') +
+      '<div class="comment-toggle" data-action="toggle-eo-comments" data-id="' + e(o.id) + '">' + toggleLabel + '</div>' +
+      commentsHtml +
+    '</div>';
   }).join('');
 }
+
 
 // ================================================================
 //  ETHICS RECRUIT SYSTEM
@@ -4459,7 +4604,7 @@ function renderPoiFile(type, id) {
 
   var notesHtml = notes.length ? notes.map(function(n){
     var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
-    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ef-note" data-efid="${e(p.id)}" data-created="${n.created}" title="Delete note">×</button>`:''}</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-poi-note" data-recid="${e(id)}" data-poitype="${type}" data-created="${n.created}" title="Delete note">×</button>`:''}</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
   }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
 
   var noteForm = currentUser
@@ -4843,7 +4988,7 @@ function buildEthicsCard(p) {
   // Notes
   var notesHtml = notes.length ? notes.map(n => {
     var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
-    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-poi-note" data-recid="${e(id)}" data-poitype="${type}" data-created="${n.created}" title="Delete note">×</button>`:''}</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ef-note" data-efid="${e(p.id)}" data-created="${n.created}" title="Delete note">×</button>`:''}</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
   }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
   var noteForm = currentUser ? `<div class="pf-note-form"><textarea class="pf-note-input" id="efnote_${e(p.id)}" placeholder="Add note..." rows="2" onkeydown="handleNoteKey(event,this)"></textarea><button class="pf-btn" data-action="add-ef-note" data-id="${e(p.id)}">[ ADD ]</button></div>` : '';
 
