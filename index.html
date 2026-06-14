@@ -38,7 +38,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
 /* ── Layout ── */
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
-.shell{position:relative;max-width:1200px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+.shell{position:relative;max-width:880px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
 
 /* ── Header ── */
 .header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}
@@ -234,8 +234,6 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .order-submit{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.08em;padding:.35rem 1rem;cursor:pointer;transition:all .15s;}
 .order-submit:hover{background:rgba(0,255,136,.08);}
 .order-submit:disabled{opacity:.4;cursor:not-allowed;}
-.order-btn{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.08em;padding:.35rem 1rem;cursor:pointer;transition:all .15s;margin-top:.5rem;}
-.order-btn:hover{background:rgba(0,255,136,.08);}
 .order-card{border:1px solid var(--border2);padding:.75rem .9rem;margin-bottom:.5rem;font-size:.64rem;background:#030806;animation:fadeIn .2s ease;}
 .order-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;}
 .order-card-title{color:var(--green);font-size:.72rem;font-family:'VT323',monospace;letter-spacing:.08em;}
@@ -4093,6 +4091,7 @@ function renderEthicsOrders() {
           (isCL5 ? '<button class="order-action-btn" onclick="openEthicsOrderEdit(\'' + e(o.id) + '\')" title="Edit order" style="font-size:.6rem;">✎</button>' : '') +
           (canEdit ? '<button class="order-action-btn del-btn" data-action="del-eo" data-id="' + e(o.id) + '">✕</button>' : '') +
         '</div>' +
+      '</div>' +
       (o.body ? '<div class="order-card-desc">' + e(o.body) + '</div>' : '') +
       (o.editedBy ? '<div style="font-size:.56rem;color:var(--text-faint);margin-top:3px;">✎ last edited by EC·' + e(o.editedBy) + ' · ' + new Date(o.editedAt).toISOString().slice(0,16).replace('T',' ') + ' UTC</div>' : '') +
       '<div class="comment-toggle" data-action="toggle-eo-comments" data-id="' + e(o.id) + '">' + toggleLabel + '</div>' +
@@ -5397,7 +5396,8 @@ if (_termInput) _termInput.addEventListener('keydown', function(ev) {
         showTyping(false);
         appendMsg('cairo', 'Unexpected substrate fault.\n\nRef: ' + err.message);
       });
-	  
+  }
+});
 // ── CL5 Order Edit (Omega-1) ──
 function openOrderEdit(id) {
   var o = allOrders.find(function(x){return x.id===id;});
@@ -5427,8 +5427,7 @@ function openEthicsOrderEdit(id) {
   o.editedAt = Date.now();
   ethicsOrderSet(o.id, o).then(function(){ renderEthicsOrders(); });
 }
-  }
-});
+
 </script>
 
 </body>
