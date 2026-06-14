@@ -3086,7 +3086,7 @@ function renderPersonnelFiles() {
           var sections = [
             { key:'tags',      label:'MANAGEMENT TAGS',      count:'',                    body: tagsSection },
             { key:'awards',    label:'AWARDS & DECORATIONS', count: ' ('+awards.length+')', body: awardsHtml },
-            { key:'strikes',   label:'STRIKES',              count: ' ('+strikes.length+')', body: strikesHeader + strikesHtml },
+            { key:'strikes',   label:'STRIKES',              count: ' ('+strikes.length+')', btn: strikesHeader, body: strikesHtml },
             { key:'leave',     label:'LEAVE (LOA / ROA)',    count: ' ('+activeLv.length+' active)', body: buildLeaveSection(p, 'pf') },
             { key:'ranks',     label:'RANK CHANGE LOG',      count: ' ('+history.length+')',body: histHtml },
             { key:'squadrons', label:'SQUADRON ASSIGNMENTS',  count:'',
@@ -3096,7 +3096,10 @@ function renderPersonnelFiles() {
           return sections.map(sec => {
             var collapsed = pfCollapsed.has(p.id + ':' + sec.key);
             return `<div class="pf-sec-hdr" data-action="toggle-section" data-id="${e(p.id)}" data-section="${sec.key}">
-              <span>▸ ${sec.label}${sec.count}</span>
+              <span style="display:flex;align-items:center;justify-content:space-between;flex:1;gap:.5rem;">
+                <span>▸ ${sec.label}${sec.count}</span>
+                ${sec.btn || ''}
+              </span>
               <span class="pf-sec-arrow" style="transform:rotate(${collapsed?'-90':'0'}deg)">▾</span>
             </div>
             <div class="pf-sec-body" style="display:${collapsed?'none':'block'};padding:0 .1rem .4rem;">
@@ -3651,7 +3654,18 @@ async function saveStrike() {
   if (!reason) { document.getElementById('strikeErr').textContent = '> REASON REQUIRED'; return; }
 
   var rec = allPersonnel.find(function(p){ return p.id === pfId; });
-  if (!rec) return;
+  if (!rec) {
+    // allPersonnel may be stale — try a fresh fetch
+    try {
+      var fresh = await personnelGetAll();
+      allPersonnel = fresh.filter(function(p){ return p && p.id; });
+      rec = allPersonnel.find(function(p){ return p.id === pfId; });
+    } catch(_) {}
+    if (!rec) {
+      document.getElementById('strikeErr').textContent = '> ERROR: Personnel record not found. Please refresh the page.';
+      return;
+    }
+  }
   if (!Array.isArray(rec.strikes)) rec.strikes = [];
 
   if (strikeId) {
@@ -3688,7 +3702,13 @@ async function deleteStrike(pfId, strikeId) {
   if (!rec) return;
   rec.strikes = (rec.strikes||[]).filter(function(s){ return s.id !== strikeId; });
   rec.updated = Date.now();
-  try { await personnelSet(pfId, rec); renderPersonnelFiles(); renderRoster(); } catch(e) { alert('ERROR: ' + e.message); }
+  try {
+    await personnelSet(pfId, rec);
+    // Keep strikes section open so CL5 can immediately issue a new strike
+    pfCollapsed.delete(pfId + ':strikes');
+    renderPersonnelFiles();
+    renderRoster();
+  } catch(e) { alert('ERROR: ' + e.message); }
 }
 
 // ── Modal: Appeal ──
