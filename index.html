@@ -617,6 +617,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <div class="nav-tab" onclick="switchTab(this,'recruit')">RECRUIT
           <span id="recruitBadge" style="display:none;" class="badge b-amber">0</span>
         </div>
+        <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
+          <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
       </div>
     </div>
 
@@ -628,6 +631,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <div class="nav-group-tabs" id="ngt-ethics">
         <div class="nav-tab" onclick="switchTab(this,'ethics-files')">FILES</div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ROSTER</div>
+        <div class="nav-tab" onclick="switchTab(this,'ethics-recruit')">RECRUIT
+          <span id="ethicsRecruitBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
+        <div class="nav-tab" onclick="switchTab(this,'ethics-orders')">ORDERS
+          <span id="ethicsOrderBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
       </div>
     </div>
 
@@ -635,9 +644,6 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="nav-group">
       <div class="nav-group-label">&nbsp;</div>
       <div class="nav-group-tabs" id="ngt-standalone">
-        <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
-          <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
-        </div>
         <div class="nav-tab" onclick="switchTab(this,'terminal')">TERMINAL
           <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
         </div>
@@ -646,6 +652,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
   </div>
 
+  <div id="cl3Banner" style="display:none;background:rgba(0,80,160,.08);border-bottom:1px solid #1a3a5a;color:#6699cc;font-size:.6rem;letter-spacing:.08em;padding:.4rem 1.2rem;line-height:1.6;">
+    ⚑ READ-ONLY MODE · Level 3 Clearance · You may read and reply to threads. Contact the Ethics Committee Chair to request elevated access.
+  </div>
   <div class="panel">
 
     <!-- PERSONNEL FILE -->
@@ -936,6 +945,57 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       </div>
     </div>
 
+    <!-- ETHICS ORDERS -->
+    <div class="tab-content" id="tab-ethics-orders">
+      <div class="sec">▸ ETHICS COMMITTEE ORDERS — OPERATIONAL QUEUE</div>
+      <div id="ethicsOrdersAuthNotice" style="display:block;font-size:.65rem;color:var(--text-dim);padding:.75rem;">Authenticate to create and manage Ethics orders.</div>
+      <div id="ethicsOrdersForm" style="display:none;">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
+          <select class="order-select" id="ethicsOrderPriority">
+            <option value="ELEVATED">ELEVATED</option>
+            <option value="URGENT">URGENT</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+          <select class="order-select" id="ethicsOrderStatus">
+            <option value="PENDING">PENDING</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="COMPLETE">COMPLETE</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+        </div>
+        <input class="order-input" id="ethicsOrderTitle" placeholder="Order designation..."/>
+        <textarea class="order-ta" id="ethicsOrderBody" placeholder="Full order text..." rows="3"></textarea>
+        <button class="order-btn" onclick="submitEthicsOrder()">[ ISSUE ORDER ]</button>
+      </div>
+      <div id="ethicsOrdersList"></div>
+    </div>
+
+    <!-- ETHICS RECRUIT -->
+    <div class="tab-content" id="tab-ethics-recruit">
+      <!-- Section 1: Applications -->
+      <div class="rec-section">
+        <div class="rec-section-header">
+          <span class="rec-section-title">[ SECTION 1 ] · APPLICATIONS</span>
+          <button class="pf-section-btn" id="newEthicsAppBtn" style="display:none;" data-action="open-ethics-app-modal">[ + NEW APPLICATION ]</button>
+        </div>
+        <div id="ethicsAppList"></div>
+      </div>
+      <!-- Section 2: Interview -->
+      <div class="rec-section">
+        <div class="rec-section-header">
+          <span class="rec-section-title">[ SECTION 2 ] · INTERVIEW</span>
+        </div>
+        <div id="ethicsInterviewList"></div>
+      </div>
+      <!-- Archived -->
+      <div class="rec-archived-section">
+        <div class="poi-archived-toggle" data-action="toggle-ethics-rec-archive">
+          <span id="ethicsRecArchiveArrow">▸</span> VIEW ARCHIVED APPLICATIONS (<span id="ethicsRecArchiveCount">0</span>)
+        </div>
+        <div id="ethicsRecArchivedList" style="display:none;"></div>
+      </div>
+    </div>
+
     <!-- TERMINAL -->
     <div class="tab-content" id="tab-terminal">
       <div class="term-header-bar">
@@ -1017,6 +1077,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="modal-field">
       <label class="modal-label">ISD BADGE NUMBER</label>
       <input class="modal-input" id="pfIsdBadge" placeholder="e.g. ISD-0042..."/>
+      <label class="modal-label">STEAM ID</label>
+      <input class="modal-input" id="pfSteamId" placeholder="76561198..."/>
     </div>
     <div class="modal-footer">
       <button class="modal-btn cancel" onclick="closePersonnelModal()">[ CANCEL ]</button>
@@ -1211,6 +1273,67 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="modal-actions">
       <button class="modal-cancel" data-action="close-appeal-modal">[ CANCEL ]</button>
       <button class="modal-save" data-action="save-appeal">[ SUBMIT APPEAL ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ETHICS APPLICATION MODAL -->
+<div class="modal-overlay-2" id="ethicsAppModal">
+  <div class="modal-box-2" style="width:500px;">
+    <h3 id="ethicsAppModalTitle">NEW ETHICS APPLICATION</h3>
+    <input type="hidden" id="ethicsAppEditId"/>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>NAME</label>
+        <input type="text" id="ethicsAppName" placeholder="Candidate full name..."/>
+      </div>
+      <div class="modal-group">
+        <label>STEAM ID</label>
+        <input type="text" id="ethicsAppSteamId" placeholder="76561198..."/>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>CURRENT DEPARTMENT</label>
+        <select id="ethicsAppDept">
+          <option value="">— SELECT —</option>
+          <option>General Security</option><option>Medical</option><option>Research</option>
+          <option>Site Staff</option><option>Internal Security</option><option>External Affairs</option>
+          <option>MTF Alpha-1</option><option>Floor 3 Assistant</option><option>Site Inspector</option>
+          <option>Site Administration</option><option>MTF Nu-7</option><option>MTF E-11</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>CURRENT RANK</label>
+        <input type="text" id="ethicsAppRank" placeholder="Rank or role..."/>
+      </div>
+    </div>
+    <div class="modal-group">
+      <label>LINK TO APPLICATION</label>
+      <input type="url" id="ethicsAppLink" placeholder="https://..."/>
+    </div>
+    <div class="modal-err" id="ethicsAppErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-ethics-app-modal">[ CANCEL ]</button>
+      <button class="modal-save"   data-action="save-ethics-app">[ SUBMIT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ETHICS DENY MODAL -->
+<div class="modal-overlay-2" id="ethicsDenyModal">
+  <div class="modal-box-2" style="width:420px;">
+    <h3>DENY APPLICATION</h3>
+    <input type="hidden" id="ethicsDenyId"/>
+    <div class="modal-group">
+      <label>REASON FOR DENIAL</label>
+      <textarea id="ethicsDenyReason" placeholder="State clearly the reason for denial..."></textarea>
+    </div>
+    <div class="modal-err" id="ethicsDenyErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-ethics-deny-modal">[ CANCEL ]</button>
+      <button class="modal-save"   data-action="save-ethics-deny" style="background:rgba(80,30,30,.3);border-color:#5a2020;">[ CONFIRM DENIAL ]</button>
     </div>
   </div>
 </div>
@@ -1631,10 +1754,20 @@ function onLogin() {
     pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']  ✕ logout';
     document.getElementById('ordersAuthNotice').style.display = 'none';
     document.getElementById('ordersForm').style.display = 'block';
+    var eof = document.getElementById('ethicsOrdersForm');
+    var eoaN = document.getElementById('ethicsOrdersAuthNotice');
+    if (eof)  eof.style.display  = 'block';
+    if (eoaN) eoaN.style.display = 'none';
+    // Load ethics orders and recruit in background for badges
+    loadEthicsOrders();
+    loadEthicsRecruit();
     // Show ADMIN button for CL5 only
     var adminBtn = document.getElementById('adminBtn');
     if (adminBtn) adminBtn.style.display = parseInt(currentUser.clearance) >= 5 ? 'inline-block' : 'none';
     if (parseInt(currentUser.clearance) >= 5) loadAdminData();
+    // Show CL3 read-only banner
+    var roBanner = document.getElementById('cl3Banner');
+    if (roBanner) roBanner.style.display = parseInt(currentUser.clearance) <= 3 ? 'block' : 'none';
   } else {
     document.getElementById('ordersAuthNotice').style.display = 'block';
     document.getElementById('ordersForm').style.display = 'none';
@@ -1653,6 +1786,8 @@ function logout() {
   document.getElementById('userPill').style.display = 'none';
   var adminBtn = document.getElementById('adminBtn');
   if (adminBtn) adminBtn.style.display = 'none';
+  var roBanner = document.getElementById('cl3Banner');
+  if (roBanner) roBanner.style.display = 'none';
   document.getElementById('loginOverlay').style.display = 'flex';
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginUser').value = '';
@@ -1840,7 +1975,7 @@ function renderOrders() {
               return '<div class="comment-entry">' +
                 '<div class="comment-gutter' + (isOwn ? ' own' : '') + '"></div>' +
                 '<div class="comment-body">' +
-                  '<div class="comment-meta">EC·' + e(c.author) + ' [L' + e(c.clearance) + '] · ' + cts + ' UTC</div>' +
+                  '<div class="comment-meta" style="display:flex;justify-content:space-between;align-items:center;">' + '<span>EC·' + e(c.author) + ' [L' + e(c.clearance) + '] · ' + cts + ' UTC</span>' + (canDeleteComment() ? '<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;line-height:1;" data-action="del-order-comment" data-orderid="' + e(orderId) + '" data-commentid="' + e(c.id) + '" title="Delete comment">×</button>' : '') + '</div>' +
                   '<div class="comment-text">' + e(c.text) + '</div>' +
                 '</div>' +
               '</div>';
@@ -1964,8 +2099,25 @@ function handleCommentKey(ev, orderId) {
 function updateOrderBadge() {
   var pend  = allOrders.filter(function(o){ return o.status==='PENDING'; }).length;
   var badge = document.getElementById('orderBadge');
+  if (!badge) return;
   badge.style.display = pend > 0 ? 'inline-block' : 'none';
   badge.textContent   = pend;
+}
+
+function updateEthicsOrderBadge() {
+  var pend  = allEthicsOrders.filter(function(o){ return o.status==='PENDING'; }).length;
+  var badge = document.getElementById('ethicsOrderBadge');
+  if (!badge) return;
+  badge.style.display = pend > 0 ? 'inline-block' : 'none';
+  badge.textContent   = pend;
+}
+
+function updateEthicsRecruitBadge() {
+  var count = allEthicsRecruit.filter(function(r){ return r.stage !== 'archived'; }).length;
+  var badge = document.getElementById('ethicsRecruitBadge');
+  if (!badge) return;
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+  badge.textContent   = count;
 }
 
 function updatePoiBadge() {
@@ -2002,12 +2154,30 @@ function switchTab(el, id) {
   if (tab) tab.classList.add('active');
   if (id === 'matrix')          animateBars();
   if (id === 'orders')          loadOrders();
+  if (id === 'ethics-orders')   loadEthicsOrders();
+  if (id === 'ethics-recruit')  loadEthicsRecruit();
   if (id === 'personnel-files') loadPersonnel();
   if (id === 'roster')          loadPersonnel();
   if (id === 'ethics-files')    loadEthicsPersonnel();
   if (id === 'ethics-roster')   loadEthicsPersonnel();
   if (id === 'poi')             loadPOIData();
-  if (id === 'recruit')         loadRecruitment();
+  if (id === 'recruit') {
+    if (!currentUser || parseInt(currentUser.clearance) < 4) {
+      var rTab = document.getElementById('tab-recruit');
+      if (rTab) rTab.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:.75rem;">
+          <div style="font-size:3rem;color:#4a1414;">⛔</div>
+          <div style="font-family:'VT323',monospace;font-size:1.6rem;color:#dd4444;letter-spacing:.15em;">ACCESS DENIED</div>
+          <div style="font-size:.65rem;color:var(--text-dim);letter-spacing:.1em;">CLEARANCE LEVEL 4 REQUIRED</div>
+          <div style="font-size:.6rem;color:var(--text-faint);max-width:320px;text-align:center;line-height:1.7;">
+            The Recruitment section is restricted to Senior EC Members (CL4) and above.<br>
+            Contact the Ethics Committee Chair to request elevated clearance.
+          </div>
+        </div>`;
+    } else {
+      loadRecruitment();
+    }
+  }
 }
 
 var barsData = [
@@ -2177,6 +2347,7 @@ function renderAdminPanel() {
           </select>
           <button class="rec-btn" data-action="admin-set-cl" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE</button>
           ${status==='denied' ? `<button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">RESTORE</button>` : ''}
+          ${status!=='denied' && (u.clearance==='3'||u.clearance==='4') ? `<button class="rec-btn deny" data-action="admin-revoke" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Revoke access — user cannot log in">REVOKE</button>` : ''}
         </div>
       </div>`;
     }).join('') : '<div style="font-size:.63rem;color:var(--text-faint);">[ NO ACTIVE ACCOUNTS ]</div>';
@@ -2220,6 +2391,18 @@ async function adminSetClearance(uid) {
   try {
     await userSet(uid, rec);
     allUsers[uid] = rec;
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+async function adminRevoke(uid) {
+  if (!await pfConfirm('REVOKE ACCESS for EC·' + uid + '?\n\nThey will be unable to log in until restored.')) return;
+  var rec = allUsers[uid] || {};
+  rec.status = 'denied'; rec.revokedBy = currentUser.id; rec.revokedAt = Date.now();
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    updateAdminBadge();
     renderAdminPanel();
   } catch(err) { alert('ERROR: ' + err.message); }
 }
@@ -2357,7 +2540,7 @@ function renderPersonnelFiles() {
     // ── notes ──
     var notesHtml = notes.length ? notes.map(n => {
       var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
-      return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta">EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+      return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-pf-note" data-pfid="${e(p.id)}" data-created="${n.created}" title="Delete note">×</button>`:''}</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
     }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
     var noteForm = currentUser ? `<div class="pf-note-form"><textarea class="pf-note-input" id="pfnote_${e(p.id)}" placeholder="Add note..." rows="2" onkeydown="handleNoteKey(event,this)"></textarea><button class="pf-btn" data-action="add-pf-note" data-id="${e(p.id)}">[ ADD ]</button></div>` : '';
 
@@ -2456,6 +2639,7 @@ function renderPersonnelFiles() {
           <div class="pf-detail"><span class="pf-detail-label">DATE OF BIRTH · </span><span class="pf-detail-val">${formatDob(p.dob)}</span></div>
           <div class="pf-detail"><span class="pf-detail-label">RANK · </span><span class="pf-detail-val">${e(p.rank||'—')}</span></div>
           <div class="pf-detail"><span class="pf-detail-label">ISD BADGE NO. · </span><span class="pf-detail-val" style="color:var(--amber);">${e(p.isdBadge||'—')}</span></div>
+          <div class="pf-detail"><span class="pf-detail-label">STEAM ID · </span><span class="pf-detail-val" style="color:var(--amber);">${e(p.steamId||'—')}</span></div>
           <div class="pf-detail"><span class="pf-detail-label">STATUS · </span><span class="pf-detail-val"><span class="badge ${pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span></span></div>
           <div class="pf-detail"><span class="pf-detail-label">CREATED · </span><span class="pf-detail-val">${new Date(p.created).toISOString().slice(0,10)} · EC·${e(p.createdBy||'—')}</span></div>
         </div>
@@ -2556,12 +2740,14 @@ function openPersonnelModal(id) {
     document.getElementById('pfDob').value     = rec.dob      || '';
     document.getElementById('pfRank').value    = rec.rank     || '';
     document.getElementById('pfIsdBadge').value= rec.isdBadge || '';
+    document.getElementById('pfSteamId').value  = rec.steamId  || '';
   } else {
     document.getElementById('pfName').value     = '';
     document.getElementById('pfNick').value     = '';
     document.getElementById('pfDob').value      = '';
     document.getElementById('pfRank').value     = '';
     document.getElementById('pfIsdBadge').value = '';
+    document.getElementById('pfSteamId').value   = '';
   }
 
   document.getElementById('pfModal').style.display = 'flex';
@@ -2601,6 +2787,7 @@ async function savePersonnelRecord() {
       rec.dob       = document.getElementById('pfDob').value;
       rec.rank      = rank;
       rec.isdBadge  = document.getElementById('pfIsdBadge').value.trim();
+      rec.steamId   = document.getElementById('pfSteamId').value.trim();
       rec.updatedBy = currentUser.id;
       rec.updated   = Date.now();
       try { await personnelSet(editId, rec); } catch(err) { alert('SAVE ERROR: ' + err.message); }
@@ -2613,6 +2800,7 @@ async function savePersonnelRecord() {
       dob:       document.getElementById('pfDob').value,
       rank:      rank,
       isdBadge:  document.getElementById('pfIsdBadge').value.trim(),
+      steamId:   document.getElementById('pfSteamId').value.trim(),
       status:    'Active',
       rankHistory: [],
       notes:     [],
@@ -2665,6 +2853,24 @@ document.addEventListener('click', function(ev) {
     case 'rec-approve-final': recApproveFinal(el.dataset.id); break;
     case 'add-rec-comment':   addRecComment(el.dataset.id); break;
     case 'toggle-rec-archive':toggleRecArchive(); break;
+    // Ethics Orders
+    case 'del-ethics-order-comment': deleteEthicsOrderComment(el.dataset.orderid, el.dataset.commentid); break;
+    // Ethics Recruit
+    case 'toggle-ethics-rec-archive': toggleEthicsRecArchive(); break;
+    case 'open-ethics-app-modal':   openEthicsAppModal(el.dataset.id||null); break;
+    case 'close-ethics-app-modal':  closeEthicsAppModal(); break;
+    case 'save-ethics-app':         saveEthicsApp(); break;
+    case 'open-ethics-deny-modal':  openEthicsDenyModal(el.dataset.id); break;
+    case 'close-ethics-deny-modal': closeEthicsDenyModal(); break;
+    case 'save-ethics-deny':        saveEthicsDeny(); break;
+    case 'ethics-app-tag':          ethicsAppTag(el.dataset.id, el.dataset.tag); break;
+    case 'ethics-rec-vote':         ethicsRecVote(el.dataset.id, el.dataset.vote); break;
+    case 'ethics-rec-advance':      ethicsRecAdvance(el.dataset.id); break;
+    case 'ethics-rec-pass':         ethicsRecPass(el.dataset.id); break;
+    case 'add-ethics-app-comment':  addEthicsAppComment(el.dataset.id); break;
+    case 'add-ethics-int-comment':  addEthicsIntComment(el.dataset.id); break;
+    case 'del-ethics-app-comment':  deleteEthicsAppComment(el.dataset.recid, parseInt(el.dataset.created)); break;
+    case 'del-ethics-int-comment':  deleteEthicsIntComment(el.dataset.recid, parseInt(el.dataset.created)); break;
     case 'poi-back':         renderPoiList(); break;
     case 'open-poi-file':        renderPoiFile(el.dataset.type, el.dataset.id); break;
     case 'edit-poi':             openPoiModal(el.dataset.id, el.dataset.poitype); break;
@@ -2677,6 +2883,11 @@ document.addEventListener('click', function(ev) {
     case 'add-poi-note':     addPoiNote(el.dataset.id, el.dataset.poitype); break;
     case 'close-poi-modal':  closePoiModal(); break;
     case 'save-poi':         savePoi(); break;
+    case 'del-order-comment':deleteOrderComment(el.dataset.orderid, el.dataset.commentid); break;
+    case 'del-pf-note':      deletePfNote(el.dataset.pfid, parseInt(el.dataset.created)); break;
+    case 'del-ef-note':      deleteEfNote(el.dataset.efid, parseInt(el.dataset.created)); break;
+    case 'del-poi-note':     deletePoiNote(el.dataset.recid, el.dataset.poitype, parseInt(el.dataset.created)); break;
+    case 'del-rec-comment':  deleteRecComment(el.dataset.recid, el.dataset.stage, parseInt(el.dataset.created)); break;
     case 'edit-pf':          ev.stopPropagation(); openPersonnelModal(id); break;
     case 'delete-pf':        ev.stopPropagation(); deletePersonnelRecord(id); break;
     case 'add-pf-note':      ev.stopPropagation(); addPersonnelNote(id); break;
@@ -2713,6 +2924,7 @@ document.addEventListener('click', function(ev) {
     case 'admin-approve':      adminApprove(el.dataset.uid); break;
     case 'admin-deny':         adminDeny(el.dataset.uid); break;
     case 'admin-set-cl':       adminSetClearance(el.dataset.uid); break;
+    case 'admin-revoke':       adminRevoke(el.dataset.uid); break;
     case 'close-award-modal':    closeAwardModal(); break;
     case 'save-award':           saveAward(); break;
     case 'close-tag-modal':      closeTagModal(); break;
@@ -2878,6 +3090,62 @@ async function removeTag(pfId, tagType) {
 //  Expired or overturned strikes disappear from the roster
 //  but remain on the personnel file for documentation.
 // ================================================================
+
+// ── Comment / Note deletion (CL5 only) ──
+function canDeleteComment() { return currentUser && parseInt(currentUser.clearance) >= 5; }
+
+async function deleteOrderComment(orderId, commentId) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS COMMENT?')) return;
+  try {
+    if (firebaseReady) await fbDelete('/comments/' + orderId + '/' + commentId);
+    else { var k = 'comments/'+orderId+'/'+commentId; lsDel(k); }
+    toggleComments(orderId); // refresh
+  } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+async function deletePfNote(pfId, noteCreated) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS NOTE FROM THE RECORD?')) return;
+  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  rec.notes = (rec.notes||[]).filter(function(n){ return n.created !== noteCreated; });
+  rec.updated = Date.now();
+  try { await personnelSet(pfId, rec); renderPersonnelFiles(); } catch(e) { alert('ERROR: '+e.message); }
+}
+
+async function deleteEfNote(efId, noteCreated) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS NOTE FROM THE RECORD?')) return;
+  var rec = allEthicsPersonnel.find(function(p){ return p.id === efId; });
+  if (!rec) return;
+  rec.notes = (rec.notes||[]).filter(function(n){ return n.created !== noteCreated; });
+  rec.updated = Date.now();
+  try { await ethicsPersonnelSet(efId, rec); renderEthicsFiles(); } catch(e) { alert('ERROR: '+e.message); }
+}
+
+async function deletePoiNote(id, type, noteCreated) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS NOTE?')) return;
+  var list = type==='poi' ? allPOI : allTargets;
+  var rec  = list.find(function(x){ return x.id === id; });
+  if (!rec) return;
+  rec.notes = (rec.notes||[]).filter(function(n){ return n.created !== noteCreated; });
+  try {
+    if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
+    renderPoiFile(type, id);
+  } catch(e) { alert('ERROR: '+e.message); }
+}
+
+async function deleteRecComment(recId, stage, noteCreated) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS COMMENT?')) return;
+  var rec = allRecruitment.find(function(x){ return x.id === recId; });
+  if (!rec) return;
+  var key = stage+'Comments';
+  rec[key] = (rec[key]||[]).filter(function(c){ return c.created !== noteCreated; });
+  try { await recruitSet(recId, rec); renderRecruitment(); } catch(e) { alert('ERROR: '+e.message); }
+}
 
 function canIssueStrike() {
   return currentUser && parseInt(currentUser.clearance) >= 5;
@@ -3297,7 +3565,7 @@ function buildRecCard(r, canEdit) {
 
   var commHtml = comments.length ? comments.map(function(c){
     var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
-    return `<div class="rec-comment"><div class="rec-comment-meta">EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</div>${e(c.text)}</div>`;
+    return `<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-rec-comment" data-recid="${e(r.id)}" data-stage="${e(r.stage)}" data-created="${c.created}" title="Delete">×</button>`:''}</div>${e(c.text)}</div>`;
   }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:2px 0;">[ NO COMMENTS ]</div>';
 
   var commentForm = currentUser
@@ -3516,6 +3784,445 @@ function handleRecNoteKey(ev, el) {
     var id = el.id.replace('recnote_','');
     addRecComment(id);
   }
+}
+
+// ================================================================
+//  ETHICS ORDERS SYSTEM
+//  Mirrors Omega-1 orders but uses /ethics-orders/ and /ethics-comments/
+// ================================================================
+var allEthicsOrders = [];
+
+async function ethicsOrdersGetAll() {
+  if (firebaseReady) { var r=await fbGetAll('/ethics-orders'); return r?Object.values(r):[];}
+  return Object.values(lsAll('ethics-orders/'));
+}
+async function ethicsOrderSet(id,d)  { if(firebaseReady)await fbSet('/ethics-orders/'+id,d);  else lsSet('ethics-orders/'+id,d); }
+async function ethicsOrderDel(id)    { if(firebaseReady)await fbDelete('/ethics-orders/'+id);  else lsDel('ethics-orders/'+id); }
+async function ethicsCommentSet(oid,cid,d){ if(firebaseReady)await fbSet('/ethics-comments/'+oid+'/'+cid,d); else lsSet('ethics-comments/'+oid+'/'+cid,d); }
+async function ethicsCommentDel(oid,cid)  { if(firebaseReady)await fbDelete('/ethics-comments/'+oid+'/'+cid); else lsDel('ethics-comments/'+oid+'/'+cid); }
+async function ethicsCommentsGetAll(oid){ if(firebaseReady){var r=await fbGetAll('/ethics-comments/'+oid);return r?Object.values(r):[]; } return Object.values(lsAll('ethics-comments/'+oid+'/')); }
+
+async function loadEthicsOrders() {
+  try {
+    var raw = await ethicsOrdersGetAll();
+    allEthicsOrders = raw.filter(function(o){return o&&o.id;}).sort(function(a,b){return b.created-a.created;});
+  } catch(e){ allEthicsOrders=[]; }
+  renderEthicsOrders();
+  updateEthicsOrderBadge();
+}
+
+async function submitEthicsOrder() {
+  if (!currentUser) return;
+  var title = document.getElementById('ethicsOrderTitle').value.trim();
+  var body  = document.getElementById('ethicsOrderBody').value.trim();
+  if (!title) return;
+  var id = 'eord_'+Date.now()+'_'+Math.random().toString(36).slice(2,4);
+  var order = { id, title, body,
+    priority: document.getElementById('ethicsOrderPriority').value,
+    status:   document.getElementById('ethicsOrderStatus').value,
+    author:   currentUser.id, clearance: currentUser.clearance, created: Date.now() };
+  try {
+    await ethicsOrderSet(id, order);
+    allEthicsOrders.unshift(order);
+    document.getElementById('ethicsOrderTitle').value = '';
+    document.getElementById('ethicsOrderBody').value  = '';
+    renderEthicsOrders();
+    updateEthicsOrderBadge();
+  } catch(e){ alert('ERROR: '+e.message); }
+}
+
+async function updateEthicsOrderStatus(id, status) {
+  var o = allEthicsOrders.find(function(x){return x.id===id;});
+  if (!o) return;
+  o.status = status; o.updatedBy = currentUser.id; o.updated = Date.now();
+  try { await ethicsOrderSet(id, o); renderEthicsOrders(); updateEthicsOrderBadge(); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+async function deleteEthicsOrder(id) {
+  if (!await pfConfirm('DELETE THIS ETHICS ORDER?')) return;
+  allEthicsOrders = allEthicsOrders.filter(function(o){return o.id!==id;});
+  try { await ethicsOrderDel(id); renderEthicsOrders(); updateEthicsOrderBadge(); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+async function postEthicsComment(orderId) {
+  if (!currentUser) return;
+  var inp = document.getElementById('ethicsComment_'+orderId);
+  if (!inp || !inp.value.trim()) return;
+  var cid = 'ec_'+Date.now();
+  var comment = { id: cid, text: inp.value.trim(), author: currentUser.id, clearance: currentUser.clearance, created: Date.now() };
+  try {
+    await ethicsCommentSet(orderId, cid, comment);
+    inp.value = '';
+    toggleEthicsComments(orderId);
+  } catch(e){ alert('ERROR: '+e.message); }
+}
+
+async function toggleEthicsComments(orderId) {
+  var box = document.getElementById('ethicsCommentBox_'+orderId);
+  if (!box) return;
+  if (box.style.display !== 'none' && box.innerHTML !== '') { box.style.display='none'; return; }
+  box.style.display='block';
+  box.innerHTML = '<div style="font-size:.6rem;color:var(--text-faint);">Loading...</div>';
+  try {
+    var comments = await ethicsCommentsGetAll(orderId);
+    comments.sort(function(a,b){return a.created-b.created;});
+    var isCL5 = currentUser && parseInt(currentUser.clearance)>=5;
+    box.innerHTML = (comments.length ? comments.map(function(c){
+      var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+      return '<div class="comment-card"><div class="comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·'+e(c.author)+' [L'+e(c.clearance)+'] · '+ct+' UTC</span>'+(isCL5?'<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ethics-order-comment" data-orderid="'+e(orderId)+'" data-commentid="'+e(c.id)+'" title="Delete">×</button>':'')+'</div><div class="comment-text">'+e(c.text)+'</div></div>';
+    }).join('') : '<div style="font-size:.62rem;color:var(--text-faint);">[ NO COMMENTS ]</div>')
+    + (currentUser ? '<div style="display:flex;gap:.4rem;margin-top:.4rem;"><input class="order-input" id="ethicsComment_'+orderId+'" placeholder="Add comment..." style="flex:1;" onkeydown="if(event.key===\'Enter\'&&(event.ctrlKey||event.metaKey))postEthicsComment(\''+orderId+'\')"/><button class="order-btn" onclick="postEthicsComment(\''+orderId+'\')">[ REPLY ]</button></div>' : '');
+  } catch(e){ box.innerHTML='<div style="color:var(--red);">ERROR: '+e.message+'</div>'; }
+}
+
+async function deleteEthicsOrderComment(orderId, commentId) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS COMMENT?')) return;
+  try { await ethicsCommentDel(orderId, commentId); toggleEthicsComments(orderId); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+function renderEthicsOrders() {
+  var el = document.getElementById('ethicsOrdersList');
+  if (!el) return;
+  var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
+  var PRIORITY_BADGE = { ELEVATED:'b-cyan', URGENT:'b-amber', CRITICAL:'b-red' };
+  var STATUS_BADGE   = { PENDING:'b-amber', ACTIVE:'b-green', COMPLETE:'b-dim', CANCELLED:'b-dim' };
+  if (!allEthicsOrders.length) { el.innerHTML='<div class="poi-empty">[ NO ETHICS ORDERS ISSUED ]</div>'; return; }
+  el.innerHTML = allEthicsOrders.map(function(o) {
+    var ts = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
+    return '<div class="order-card">'
+      + '<div class="order-header"><div>'
+      + '<span class="badge '+( PRIORITY_BADGE[o.priority]||'b-dim')+'">'+e(o.priority)+'</span> '
+      + '<span class="badge '+(STATUS_BADGE[o.status]||'b-dim')+'">'+e(o.status)+'</span> '
+      + '<span class="order-title">'+e(o.title)+'</span>'
+      + '<div class="order-meta">'+ts+' UTC · EC·'+e(o.author)+' [L'+e(o.clearance)+']</div>'
+      + '</div>'
+      + (canEdit ? '<div class="order-actions">'
+        + '<select class="order-select" onchange="updateEthicsOrderStatus(\''+o.id+'\',this.value)">'
+        + ['PENDING','ACTIVE','COMPLETE','CANCELLED'].map(function(s){ return '<option'+(o.status===s?' selected':'')+'>'+s+'</option>'; }).join('')
+        + '</select>'
+        + '<button class="order-btn danger" onclick="deleteEthicsOrder(\''+o.id+'\')">✕</button>'
+        + '</div>' : '')
+      + '</div>'
+      + '<div class="order-body">'+e(o.body||'')+'</div>'
+      + '<button class="order-toggle" onclick="toggleEthicsComments(\''+o.id+'\')">[ COMMENTS ]</button>'
+      + '<div id="ethicsCommentBox_'+o.id+'" class="comment-box" style="display:none;"></div>'
+      + '</div>';
+  }).join('');
+}
+
+// ================================================================
+//  ETHICS RECRUIT SYSTEM
+// ================================================================
+var allEthicsRecruit   = [];
+var ethicsRecArchiveOpen = false;
+
+async function ethicsRecruitGetAll() {
+  if (firebaseReady){ var r=await fbGetAll('/ethics-recruitment'); return r?Object.values(r).filter(function(x){return x&&x.id;}):[];}
+  return Object.values(lsAll('ethics-recruitment/')).filter(function(x){return x&&x.id;});
+}
+async function ethicsRecruitSet(id,data){ if(firebaseReady)await fbSet('/ethics-recruitment/'+id,data); else lsSet('ethics-recruitment/'+id,data); }
+
+async function loadEthicsRecruit() {
+  try { allEthicsRecruit=(await ethicsRecruitGetAll()).sort(function(a,b){return b.created-a.created;}); }
+  catch(e){ allEthicsRecruit=[]; }
+  var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
+  var btn = document.getElementById('newEthicsAppBtn');
+  if (btn) btn.style.display = canEdit ? 'inline-block' : 'none';
+  renderEthicsRecruit();
+  updateEthicsRecruitBadge();
+}
+
+var ETHICS_APP_TAGS = ['In Progress','Taken to interview','Accepted','Denied'];
+var ETHICS_TAG_CLS  = { 'In Progress':'b-cyan','Taken to interview':'b-amber','Accepted':'b-green','Denied':'b-red' };
+
+function ethicsRecYes(r) { return Object.values(r.votes||{}).filter(function(v){return v==='yes';}).length; }
+function ethicsRecNo(r)  { return Object.values(r.votes||{}).filter(function(v){return v==='no';}).length; }
+function ethicsRecMajYes(r){ var y=ethicsRecYes(r),n=ethicsRecNo(r); return (y+n)>0&&y>n; }
+
+function renderEthicsRecruit() {
+  var apps       = allEthicsRecruit.filter(function(r){return r.stage==='application';});
+  var interviews = allEthicsRecruit.filter(function(r){return r.stage==='interview';});
+  var archived   = allEthicsRecruit.filter(function(r){return r.stage==='archived';});
+  var canEdit    = currentUser && parseInt(currentUser.clearance) >= 4;
+  var isCL5      = currentUser && parseInt(currentUser.clearance) >= 5;
+  var empty      = '<div class="poi-empty">[ NONE ]</div>';
+
+  var appEl = document.getElementById('ethicsAppList');
+  if (appEl) appEl.innerHTML = apps.length ? apps.map(function(r){ return buildEthicsAppCard(r, canEdit, isCL5); }).join('') : empty;
+
+  var intEl = document.getElementById('ethicsInterviewList');
+  if (intEl) intEl.innerHTML = interviews.length ? interviews.map(function(r){ return buildEthicsInterviewCard(r, isCL5); }).join('') : empty;
+
+  var cnt = document.getElementById('ethicsRecArchiveCount');
+  if (cnt) cnt.textContent = archived.length;
+  if (ethicsRecArchiveOpen) renderEthicsRecArchive();
+  updateEthicsRecruitBadge();
+}
+
+function buildEthicsAppCard(r, canEdit, isCL5) {
+  var tag     = r.tag || 'In Progress';
+  var tagCls  = ETHICS_TAG_CLS[tag] || 'b-dim';
+  var myVote  = currentUser ? (r.votes||{})[currentUser.id] : null;
+  var y=ethicsRecYes(r), n=ethicsRecNo(r), maj=ethicsRecMajYes(r);
+  var comments = Array.isArray(r.applicationComments) ? r.applicationComments : [];
+
+  var commHtml = comments.map(function(c){
+    var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+    return `<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ethics-app-comment" data-recid="${e(r.id)}" data-created="${c.created}">×</button>`:''}</div>${e(c.text)}</div>`;
+  }).join('') || '<div style="font-size:.6rem;color:var(--text-faint);">[ NO COMMENTS ]</div>';
+
+  var commentForm = canEdit ? `<div class="poi-note-form" style="margin-top:.35rem;"><textarea class="poi-note-input" id="ethicsappnote_${e(r.id)}" placeholder="Add comment... (Ctrl+Enter)" rows="2" onkeydown="handleEthicsAppNoteKey(event,this)"></textarea><button class="rec-btn" data-action="add-ethics-app-comment" data-id="${e(r.id)}">[ ADD ]</button></div>` : '';
+
+  var tagBar = canEdit ? `<div style="margin:.4rem 0;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;"><span style="font-size:.58rem;color:var(--text-dim);">TAG:</span>${ETHICS_APP_TAGS.map(function(t){ return `<button class="rec-btn${tag===t?' approve':''}" data-action="ethics-app-tag" data-id="${e(r.id)}" data-tag="${t}" style="font-size:.55rem;padding:1px 6px;">${t}</button>`; }).join('')}</div>` : `<div style="margin:.3rem 0;"><span class="badge ${tagCls}">${e(tag)}</span></div>`;
+
+  var voteBar = canEdit ? `<div class="rec-vote-bar">
+    <span>VOTES:</span><span style="color:#44dd88;">✓ ${y} YES</span><span style="color:#dd4444;">✗ ${n} NO</span>
+    ${maj ? '<span class="rec-majority">⚑ MAJORITY YES</span>' : ''}
+    <button class="rec-vote-btn yes${myVote==='yes'?' voted':''}" data-action="ethics-rec-vote" data-id="${e(r.id)}" data-vote="yes">✓ YES</button>
+    <button class="rec-vote-btn no${myVote==='no'?' voted':''}"  data-action="ethics-rec-vote" data-id="${e(r.id)}" data-vote="no">✗ NO</button>
+  </div>` : '';
+
+  var actionBtns = `<div class="rec-btns">
+    ${isCL5 && maj ? `<button class="rec-btn approve" data-action="ethics-rec-advance" data-id="${e(r.id)}">→ INTERVIEW</button>` : ''}
+    ${isCL5 ? `<button class="rec-btn deny" data-action="open-ethics-deny-modal" data-id="${e(r.id)}">✗ DENY</button>` : ''}
+    ${canEdit ? `<button class="rec-btn" data-action="open-ethics-app-modal" data-id="${e(r.id)}" style="font-size:.55rem;">EDIT</button>` : ''}
+  </div>`;
+
+  return `<div class="rec-card">
+    <div class="rec-card-header"><div>
+      <div class="rec-name">${e(r.name||'—')}</div>
+      <div class="rec-meta">SteamID: ${e(r.steamId||'—')} · Dept: ${e(r.department||'—')} · Rank: ${e(r.rank||'—')}</div>
+      ${r.applicationLink ? `<div class="rec-meta"><a href="${e(r.applicationLink)}" target="_blank" style="color:var(--cyan);">📄 Application Link</a></div>` : ''}
+    </div></div>
+    ${tagBar}${voteBar}
+    <div style="border-top:1px solid var(--border);margin:.4rem 0 .3rem;"></div>
+    ${commHtml}${commentForm}${actionBtns}
+  </div>`;
+}
+
+function buildEthicsInterviewCard(r, isCL5) {
+  var comments = Array.isArray(r.interviewComments) ? r.interviewComments : [];
+  var commHtml = comments.map(function(c){
+    var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+    return `<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ethics-int-comment" data-recid="${e(r.id)}" data-created="${c.created}">×</button>`:''}</div>${e(c.text)}</div>`;
+  }).join('') || '<div style="font-size:.6rem;color:var(--text-faint);">[ NO INTERVIEW NOTES ]</div>';
+
+  var commentForm = isCL5 ? `<div class="poi-note-form" style="margin-top:.35rem;"><textarea class="poi-note-input" id="ethicsinterviewnote_${e(r.id)}" placeholder="Interview notes (CL5 only)..." rows="2" onkeydown="handleEthicsIntNoteKey(event,this)"></textarea><button class="rec-btn" data-action="add-ethics-int-comment" data-id="${e(r.id)}">[ ADD ]</button></div>` : '<div style="font-size:.6rem;color:var(--text-faint);margin-top:.3rem;">[ CL5 ONLY — INTERVIEW NOTES ]</div>';
+
+  var actionBtns = isCL5 ? `<div class="rec-btns">
+    <button class="rec-btn approve" data-action="ethics-rec-pass" data-id="${e(r.id)}">✓ PASS INTERVIEW & CREATE FILE</button>
+    <button class="rec-btn deny"    data-action="open-ethics-deny-modal" data-id="${e(r.id)}">✗ FAIL INTERVIEW</button>
+  </div>` : '';
+
+  return `<div class="rec-card">
+    <div class="rec-card-header"><div>
+      <div class="rec-name">${e(r.name||'—')}</div>
+      <div class="rec-meta">SteamID: ${e(r.steamId||'—')} · Dept: ${e(r.department||'—')} · Rank: ${e(r.rank||'—')}</div>
+      <span class="badge b-amber">TAKEN TO INTERVIEW</span>
+    </div></div>
+    <div style="border-top:1px solid var(--border);margin:.4rem 0 .3rem;"></div>
+    ${commHtml}${commentForm}${actionBtns}
+  </div>`;
+}
+
+function renderEthicsRecArchive() {
+  var el = document.getElementById('ethicsRecArchivedList');
+  if (!el) return;
+  var archived = allEthicsRecruit.filter(function(r){return r.stage==='archived';}).sort(function(a,b){return (b.archivedAt||0)-(a.archivedAt||0);});
+  el.innerHTML = archived.length ? archived.map(function(r){
+    var cls = r.archiveStatus==='approved' ? 'b-green' : 'b-red';
+    var lbl = r.archiveStatus==='approved' ? 'APPROVED' : 'DENIED';
+    return `<div class="rec-card" style="opacity:.75;">
+      <div class="rec-name">${e(r.name||'—')}</div>
+      <div class="rec-meta">SteamID: ${e(r.steamId||'—')} · ${e(r.department||'—')}</div>
+      <span class="badge ${cls}">${lbl}</span>
+      ${r.archiveReason ? `<div style="font-size:.6rem;color:var(--text-dim);margin-top:3px;"><em>${e(r.archiveReason)}</em></div>` : ''}
+    </div>`;
+  }).join('') : '<div class="poi-empty">[ NO ARCHIVED APPLICATIONS ]</div>';
+}
+
+function toggleEthicsRecArchive() {
+  ethicsRecArchiveOpen = !ethicsRecArchiveOpen;
+  var el    = document.getElementById('ethicsRecArchivedList');
+  var arrow = document.getElementById('ethicsRecArchiveArrow');
+  if (arrow) arrow.textContent = ethicsRecArchiveOpen ? '▾' : '▸';
+  if (el)    el.style.display  = ethicsRecArchiveOpen ? 'block' : 'none';
+  if (ethicsRecArchiveOpen) renderEthicsRecArchive();
+}
+
+// ── Application modal ──
+function openEthicsAppModal(editId) {
+  if (!currentUser || parseInt(currentUser.clearance) < 4) return;
+  document.getElementById('ethicsAppEditId').value = editId || '';
+  document.getElementById('ethicsAppErr').textContent = '';
+  document.getElementById('ethicsAppModalTitle').textContent = editId ? 'EDIT APPLICATION' : 'NEW ETHICS APPLICATION';
+  if (editId) {
+    var r = allEthicsRecruit.find(function(x){return x.id===editId;});
+    if (r) {
+      document.getElementById('ethicsAppName').value    = r.name||'';
+      document.getElementById('ethicsAppSteamId').value = r.steamId||'';
+      document.getElementById('ethicsAppDept').value    = r.department||'';
+      document.getElementById('ethicsAppRank').value    = r.rank||'';
+      document.getElementById('ethicsAppLink').value    = r.applicationLink||'';
+    }
+  } else {
+    ['ethicsAppName','ethicsAppSteamId','ethicsAppDept','ethicsAppRank','ethicsAppLink'].forEach(function(id){ document.getElementById(id).value=''; });
+  }
+  document.getElementById('ethicsAppModal').classList.add('open');
+}
+function closeEthicsAppModal() { document.getElementById('ethicsAppModal').classList.remove('open'); }
+
+async function saveEthicsApp() {
+  var editId = document.getElementById('ethicsAppEditId').value;
+  var name   = document.getElementById('ethicsAppName').value.trim();
+  var steam  = document.getElementById('ethicsAppSteamId').value.trim();
+  var dept   = document.getElementById('ethicsAppDept').value;
+  var rank   = document.getElementById('ethicsAppRank').value.trim();
+  var link   = document.getElementById('ethicsAppLink').value.trim();
+  if (!name)  { document.getElementById('ethicsAppErr').textContent='> NAME REQUIRED';       return; }
+  if (!steam) { document.getElementById('ethicsAppErr').textContent='> STEAM ID REQUIRED';   return; }
+  if (!dept)  { document.getElementById('ethicsAppErr').textContent='> DEPARTMENT REQUIRED'; return; }
+  if (editId) {
+    var r = allEthicsRecruit.find(function(x){return x.id===editId;});
+    if (!r) return;
+    r.name=name; r.steamId=steam; r.department=dept; r.rank=rank; r.applicationLink=link;
+    r.updatedBy=currentUser.id; r.updated=Date.now();
+    try { await ethicsRecruitSet(editId, r); } catch(err){ document.getElementById('ethicsAppErr').textContent='> ERROR: '+err.message; return; }
+  } else {
+    var newR = { id:'erec_'+Date.now()+'_'+Math.random().toString(36).slice(2,4),
+      stage:'application', archiveStatus:null, archiveReason:null, tag:'In Progress',
+      name, steamId:steam, department:dept, rank, applicationLink:link,
+      applicationComments:[], interviewComments:[], votes:{},
+      createdBy:currentUser.id, created:Date.now(), transitions:[] };
+    try { await ethicsRecruitSet(newR.id, newR); allEthicsRecruit.unshift(newR); }
+    catch(err){ document.getElementById('ethicsAppErr').textContent='> ERROR: '+err.message; return; }
+  }
+  closeEthicsAppModal();
+  renderEthicsRecruit();
+}
+
+// ── Tag update ──
+async function ethicsAppTag(id, tag) {
+  var r = allEthicsRecruit.find(function(x){return x.id===id;});
+  if (!r) return;
+  r.tag = tag; r.updated = Date.now();
+  try { await ethicsRecruitSet(id, r); renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+// ── Voting ──
+async function ethicsRecVote(id, vote) {
+  var r = allEthicsRecruit.find(function(x){return x.id===id;});
+  if (!r||!currentUser||parseInt(currentUser.clearance)<4) return;
+  if (!r.votes) r.votes={};
+  r.votes[currentUser.id] = vote;
+  try { await ethicsRecruitSet(id, r); renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+// ── Advance to interview (CL5, majority yes required) ──
+async function ethicsRecAdvance(id) {
+  var r = allEthicsRecruit.find(function(x){return x.id===id;});
+  if (!r||!currentUser||parseInt(currentUser.clearance)<5) return;
+  if (!await pfConfirm('ADVANCE '+e(r.name)+' TO INTERVIEW STAGE?')) return;
+  r.stage='interview'; r.tag='Taken to interview';
+  r.transitions=r.transitions||[];
+  r.transitions.push({from:'application',to:'interview',by:currentUser.id,at:Date.now()});
+  try { await ethicsRecruitSet(id, r); renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+// ── Deny modal ──
+function openEthicsDenyModal(id) {
+  if (!currentUser||parseInt(currentUser.clearance)<5) return;
+  document.getElementById('ethicsDenyId').value = id;
+  document.getElementById('ethicsDenyReason').value = '';
+  document.getElementById('ethicsDenyErr').textContent = '';
+  document.getElementById('ethicsDenyModal').classList.add('open');
+}
+function closeEthicsDenyModal() { document.getElementById('ethicsDenyModal').classList.remove('open'); }
+async function saveEthicsDeny() {
+  var id     = document.getElementById('ethicsDenyId').value;
+  var reason = document.getElementById('ethicsDenyReason').value.trim();
+  if (!reason){ document.getElementById('ethicsDenyErr').textContent='> REASON REQUIRED'; return; }
+  var r = allEthicsRecruit.find(function(x){return x.id===id;});
+  if (!r) return;
+  r.stage='archived'; r.archiveStatus='denied'; r.archiveReason=reason; r.tag='Denied';
+  r.archivedAt=Date.now();
+  r.transitions=r.transitions||[];
+  r.transitions.push({from:r.stage,to:'archived',by:currentUser.id,at:Date.now(),reason});
+  try { await ethicsRecruitSet(id, r); closeEthicsDenyModal(); renderEthicsRecruit(); } catch(e){ document.getElementById('ethicsDenyErr').textContent='> ERROR: '+e.message; }
+}
+
+// ── Pass interview → create Ethics file ──
+async function ethicsRecPass(id) {
+  var r = allEthicsRecruit.find(function(x){return x.id===id;});
+  if (!r||!currentUser||parseInt(currentUser.clearance)<5) return;
+  if (!await pfConfirm('PASS INTERVIEW FOR '+e(r.name)+' AND CREATE ETHICS ASSISTANT FILE?')) return;
+  window._pendingEthicsRecApproval = { recId: id, rec: r };
+  openEthicsModal(null);
+  setTimeout(function(){
+    var nEl = document.getElementById('efName');
+    var rEl = document.getElementById('efRole');
+    if (nEl) nEl.value = r.name||'';
+    if (rEl) rEl.value = 'Assistant';
+  }, 60);
+}
+
+async function finaliseEthicsRecApproval(newEfId) {
+  if (!window._pendingEthicsRecApproval) return;
+  var rec = window._pendingEthicsRecApproval.rec;
+  rec.stage='archived'; rec.archiveStatus='approved'; rec.tag='Accepted';
+  rec.archivedAt=Date.now(); rec.personnelFileId=newEfId;
+  rec.transitions=rec.transitions||[];
+  rec.transitions.push({from:'interview',to:'archived',by:currentUser.id,at:Date.now(),reason:'approved'});
+  try { await ethicsRecruitSet(rec.id, rec); renderEthicsRecruit(); } catch(e){ console.error(e); }
+  window._pendingEthicsRecApproval=null;
+}
+
+// ── Comments ──
+async function addEthicsAppComment(id) {
+  if (!currentUser||parseInt(currentUser.clearance)<4) return;
+  var inp = document.getElementById('ethicsappnote_'+id);
+  if (!inp||!inp.value.trim()) return;
+  var r = allEthicsRecruit.find(function(x){return x.id===id;});
+  if (!r) return;
+  if (!Array.isArray(r.applicationComments)) r.applicationComments=[];
+  r.applicationComments.push({author:currentUser.id,clearance:currentUser.clearance,text:inp.value.trim(),created:Date.now()});
+  try { await ethicsRecruitSet(id, r); inp.value=''; renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
+}
+function handleEthicsAppNoteKey(ev, el) {
+  if (ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey)){ ev.preventDefault(); addEthicsAppComment(el.id.replace('ethicsappnote_','')); }
+}
+
+async function addEthicsIntComment(id) {
+  if (!currentUser||parseInt(currentUser.clearance)<5) { alert('CL5 ONLY FOR INTERVIEW COMMENTS'); return; }
+  var inp = document.getElementById('ethicsinterviewnote_'+id);
+  if (!inp||!inp.value.trim()) return;
+  var r = allEthicsRecruit.find(function(x){return x.id===id;});
+  if (!r) return;
+  if (!Array.isArray(r.interviewComments)) r.interviewComments=[];
+  r.interviewComments.push({author:currentUser.id,clearance:currentUser.clearance,text:inp.value.trim(),created:Date.now()});
+  try { await ethicsRecruitSet(id, r); inp.value=''; renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
+}
+function handleEthicsIntNoteKey(ev, el) {
+  if (ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey)){ ev.preventDefault(); addEthicsIntComment(el.id.replace('ethicsinterviewnote_','')); }
+}
+
+async function deleteEthicsAppComment(recId, noteCreated) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS COMMENT?')) return;
+  var r = allEthicsRecruit.find(function(x){return x.id===recId;});
+  if (!r) return;
+  r.applicationComments=(r.applicationComments||[]).filter(function(c){return c.created!==noteCreated;});
+  try { await ethicsRecruitSet(recId, r); renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
+}
+
+async function deleteEthicsIntComment(recId, noteCreated) {
+  if (!canDeleteComment()) return;
+  if (!await pfConfirm('DELETE THIS COMMENT?')) return;
+  var r = allEthicsRecruit.find(function(x){return x.id===recId;});
+  if (!r) return;
+  r.interviewComments=(r.interviewComments||[]).filter(function(c){return c.created!==noteCreated;});
+  try { await ethicsRecruitSet(recId, r); renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
 }
 
 // ================================================================
@@ -3752,7 +4459,7 @@ function renderPoiFile(type, id) {
 
   var notesHtml = notes.length ? notes.map(function(n){
     var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
-    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta">EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ef-note" data-efid="${e(p.id)}" data-created="${n.created}" title="Delete note">×</button>`:''}</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
   }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
 
   var noteForm = currentUser
@@ -4136,7 +4843,7 @@ function buildEthicsCard(p) {
   // Notes
   var notesHtml = notes.length ? notes.map(n => {
     var nts = new Date(n.created).toISOString().slice(0,16).replace('T',' ');
-    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta">EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
+    return `<div class="pf-note"><div class="pf-note-gutter"></div><div class="pf-note-body"><div class="pf-note-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(n.author)} [L${e(n.clearance)}] · ${nts} UTC</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-poi-note" data-recid="${e(id)}" data-poitype="${type}" data-created="${n.created}" title="Delete note">×</button>`:''}</div><div class="pf-note-text">${e(n.text)}</div></div></div>`;
   }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO NOTES ]</div>';
   var noteForm = currentUser ? `<div class="pf-note-form"><textarea class="pf-note-input" id="efnote_${e(p.id)}" placeholder="Add note..." rows="2" onkeydown="handleNoteKey(event,this)"></textarea><button class="pf-btn" data-action="add-ef-note" data-id="${e(p.id)}">[ ADD ]</button></div>` : '';
 
@@ -4305,6 +5012,7 @@ async function saveEthicsRecord() {
     };
     await ethicsPersonnelSet(newId, record);
     allEthicsPersonnel.push(record);
+    if (window._pendingEthicsRecApproval) finaliseEthicsRecApproval(newId);
   }
 
   btn.disabled = false; btn.textContent = '[ SAVE RECORD ]';
