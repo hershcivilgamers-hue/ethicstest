@@ -25,6 +25,19 @@
   --bg:#040a06;--bg2:#060e08;--border:#0a2a14;--border2:#0d3a1a;
   --text:#88bb99;--text-dim:#3a6a4a;--text-faint:#1a3a26;
 }
+[data-theme="light"]{
+  --green:#006633;--green-dim:#008844;--green-trace:#e0f0e6;
+  --amber:#7a4800;--red:#bb0000;--cyan:#005f5f;
+  --bg:#f2f7f4;--bg2:#e6ede8;--border:#b8d4be;--border2:#9abfa2;
+  --text:#1a4428;--text-dim:#4a7a58;--text-faint:#90b09a;
+}
+[data-theme="light"] body,[data-theme="light"] .shell{background:var(--bg);}
+[data-theme="light"] .pf-card,[data-theme="light"] .rec-card,
+[data-theme="light"] .order-card,[data-theme="light"] #tab-poi{background:var(--bg2);}
+[data-theme="light"] .poi-list-item{background:var(--bg2);}
+[data-theme="light"] .scanlines{display:none;}
+[data-theme="light"] .order-form,[data-theme="light"] .comment-form input,
+[data-theme="light"] .comment-input{background:var(--bg);}
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;width:100%;min-height:100vh;overflow-x:hidden;}
 
@@ -599,6 +612,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <button id="adminBtn" onclick="openAdminPanel()" style="display:none;font-family:'Share Tech Mono',monospace;font-size:.58rem;background:rgba(255,100,100,.06);border:1px solid #4a1414;color:#dd6666;padding:3px 9px;cursor:pointer;margin-right:.5rem;position:relative;" title="Manage pending registrations">
         ADMIN <span id="adminBadge" style="display:none;background:#4a1414;color:#ff8888;border-radius:2px;padding:0 4px;margin-left:4px;font-size:.55rem;">0</span>
       </button>
+      <button id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="font-family:'Share Tech Mono',monospace;font-size:.7rem;background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:2px 8px;cursor:pointer;margin-right:.5rem;transition:all .2s;">☀</button>
       <div id="userPill" class="user-pill" onclick="logout()" title="Click to sign out" style="display:none;"></div>
       <div class="header-meta">
         <div><span class="status-dot"></span><span style="color:var(--green);">ONLINE</span></div>
@@ -1831,7 +1845,11 @@ function onLogin() {
   if (currentUser) {
     var pill = document.getElementById('userPill');
     pill.style.display = 'inline-block';
-    pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']  ✕ logout';
+    // Fetch current user record to get unit tag
+    userGet(currentUser.id).then(function(rec) {
+      var unitTag = rec && rec.unit ? ' · ' + (rec.unit === 'omega1' ? 'Ω-1' : 'EC') : '';
+      pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']' + unitTag + '  ✕ logout';
+    }).catch(function(){ pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']  ✕ logout'; });
     document.getElementById('ordersAuthNotice').style.display = 'none';
     document.getElementById('ordersForm').style.display = 'block';
     var eof = document.getElementById('ethicsOrdersForm');
@@ -2215,6 +2233,32 @@ function buildOrderDeniedCard(o, cardId) {
   '</div>';
 }
 
+// ================================================================
+//  THEME SYSTEM (dark ↔ light)
+// ================================================================
+(function initTheme() {
+  var saved = localStorage.getItem('cairoTheme') || 'dark';
+  applyTheme(saved);
+})();
+
+function applyTheme(t) {
+  if (t === 'light') {
+    document.documentElement.setAttribute('data-theme','light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) { btn.textContent = '🌙'; btn.title = 'Switch to dark mode'; }
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    var btn = document.getElementById('themeToggle');
+    if (btn) { btn.textContent = '☀'; btn.title = 'Switch to light mode'; }
+  }
+  localStorage.setItem('cairoTheme', t);
+}
+
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'light' ? 'dark' : 'light');
+}
+
 function updateOrderBadge() {
   var pend  = allOrders.filter(function(o){ return o.status==='PENDING'; }).length;
   var badge = document.getElementById('orderBadge');
@@ -2456,6 +2500,7 @@ function renderAdminPanel() {
           <span style="font-family:'VT323',monospace;color:var(--green);">EC·${uid}</span>
           <span style="color:var(--text-dim);margin-left:.5rem;">CL${e(u.clearance||'3')}</span>
           <span class="badge ${scls}" style="margin-left:.4rem;">${slbl}</span>
+          ${u.unit ? `<span class="badge b-cyan" style="margin-left:.3rem;font-size:.52rem;">${u.unit==='omega1'?'OMEGA-1':'ETHICS'}</span>` : ''}
         </div>
         <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
           <label style="font-size:.56rem;color:var(--text-dim);">SET CL:</label>
@@ -2464,7 +2509,13 @@ function renderAdminPanel() {
             <option value="4"${u.clearance==='4'?' selected':''}>CL4</option>
             <option value="5"${u.clearance==='5'?' selected':''}>CL5</option>
           </select>
-          <button class="rec-btn" data-action="admin-set-cl" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE</button>
+          <button class="rec-btn" data-action="admin-set-cl" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE CL</button>
+          <select id="setUnit_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:1px 3px;">
+            <option value=""${!u.unit?' selected':''}>— NO UNIT —</option>
+            <option value="omega1"${u.unit==='omega1'?' selected':''}>OMEGA-1</option>
+            <option value="ethics"${u.unit==='ethics'?' selected':''}>ETHICS COMMITTEE</option>
+          </select>
+          <button class="rec-btn" data-action="admin-set-unit" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE UNIT</button>
           ${status==='denied' ? `<button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">RESTORE</button>` : ''}
           ${status!=='denied' && (u.clearance==='3'||u.clearance==='4') ? `<button class="rec-btn deny" data-action="admin-revoke" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Revoke access — user cannot log in">REVOKE</button>` : ''}
         </div>
@@ -2507,6 +2558,22 @@ async function adminSetClearance(uid) {
   if (!await pfConfirm('Set EC·' + uid + ' to Clearance Level ' + cl + '?')) return;
   var rec = allUsers[uid] || {};
   rec.clearance = cl; rec.clChangedBy = currentUser.id; rec.clChangedAt = Date.now();
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+async function adminSetUnit(uid) {
+  var sel = document.getElementById('setUnit_' + uid);
+  if (!sel) return;
+  var unit = sel.value; // '' | 'omega1' | 'ethics'
+  var label = unit === 'omega1' ? 'OMEGA-1' : unit === 'ethics' ? 'ETHICS COMMITTEE' : 'No Unit';
+  if (!await pfConfirm('Set EC·' + uid + ' unit to: ' + label + '?')) return;
+  var rec = allUsers[uid] || {};
+  rec.unit = unit || null;
+  rec.unitSetBy = currentUser.id; rec.unitSetAt = Date.now();
   try {
     await userSet(uid, rec);
     allUsers[uid] = rec;
@@ -2975,6 +3042,8 @@ document.addEventListener('click', function(ev) {
     case 'rec-archive':       recArchive(el.dataset.id, el.dataset.reason); break;
     case 'rec-vote':          recVote(el.dataset.id, el.dataset.vote); break;
     case 'rec-approve-final': recApproveFinal(el.dataset.id); break;
+    case 'rec-add-strike':    recAddStrike(el.dataset.id, el.dataset.amount); break;
+    case 'rec-remove-strike': recRemoveStrike(el.dataset.id); break;
     case 'add-rec-comment':   addRecComment(el.dataset.id); break;
     case 'toggle-rec-archive':toggleRecArchive(); break;
     // Ethics Orders
@@ -3040,6 +3109,7 @@ document.addEventListener('click', function(ev) {
     // Ethics card
     case 'toggle-ef':        ev.stopPropagation(); toggleEfCard(id); break;
     case 'toggle-ef-section':ev.stopPropagation(); toggleEfSection(id, el.dataset.section); break;
+    case 'toggle-ethics-tag': toggleEthicsTag(el.dataset.efid, el.dataset.tag); break;
     case 'edit-ef':          ev.stopPropagation(); openEthicsModal(id); break;
     case 'delete-ef':        ev.stopPropagation(); deleteEthicsRecord(id); break;
     case 'add-ef-note':      ev.stopPropagation(); addEthicsNote(id); break;
@@ -3052,6 +3122,7 @@ document.addEventListener('click', function(ev) {
     case 'admin-approve':      adminApprove(el.dataset.uid); break;
     case 'admin-deny':         adminDeny(el.dataset.uid); break;
     case 'admin-set-cl':       adminSetClearance(el.dataset.uid); break;
+    case 'admin-set-unit':     adminSetUnit(el.dataset.uid); break;
     case 'admin-revoke':       adminRevoke(el.dataset.uid); break;
     case 'close-award-modal':    closeAwardModal(); break;
     case 'save-award':           saveAward(); break;
@@ -3742,8 +3813,27 @@ function buildRecCard(r, canEdit) {
       btns += `<button class="rec-btn deny" data-action="rec-archive" data-id="${e(r.id)}" data-reason="denied">✗ DENY</button>`;
     }
     if (r.stage==='tryout') {
-      btns += `<button class="rec-btn approve" data-action="rec-approve-final" data-id="${e(r.id)}">✓ APPROVE & CREATE FILE</button>`;
-      btns += `<button class="rec-btn deny"    data-action="rec-archive"       data-id="${e(r.id)}" data-reason="denied">✗ DENY</button>`;
+      var strikes    = (r.tryoutStrikes !== undefined) ? r.tryoutStrikes : 0;
+      var strikeLbl  = strikes === 0 ? '<span style="color:var(--green-dim);">○ ○  0 / 1</span>'
+                     : strikes === 0.5 ? '<span style="color:var(--amber);">◑ ○  0.5 / 1</span>'
+                     : '<span style="color:#dd4444;">● ●  1 / 1 — DISQUALIFIED</span>';
+      btns += '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;flex-wrap:wrap;border:1px solid var(--border2);padding:.3rem .5rem;">'
+            + '<span style="font-size:.58rem;color:var(--text-dim);letter-spacing:.08em;">STRIKES:</span>'
+            + strikeLbl;
+      if (canEdit && strikes < 1) {
+        if (strikes < 0.5) {
+          btns += `<button class="rec-btn" data-action="rec-add-strike" data-id="${e(r.id)}" data-amount="0.5" style="font-size:.55rem;padding:1px 7px;border-color:var(--amber);color:var(--amber);">+ ½ STRIKE</button>`;
+        }
+        btns += `<button class="rec-btn deny" data-action="rec-add-strike" data-id="${e(r.id)}" data-amount="1" style="font-size:.55rem;padding:1px 7px;">+ FULL STRIKE</button>`;
+      }
+      if (canEdit && strikes > 0 && strikes < 1) {
+        btns += `<button class="rec-btn" data-action="rec-remove-strike" data-id="${e(r.id)}" style="font-size:.55rem;padding:1px 6px;opacity:.65;">↩ CLEAR</button>`;
+      }
+      btns += '</div>';
+      if (strikes < 1) {
+        btns += `<button class="rec-btn approve" data-action="rec-approve-final" data-id="${e(r.id)}">✓ APPROVE & CREATE FILE</button>`;
+      }
+      btns += `<button class="rec-btn deny" data-action="rec-archive" data-id="${e(r.id)}" data-reason="denied">✗ DENY</button>`;
     }
   }
   btns += '</div>';
@@ -3841,7 +3931,7 @@ async function saveScout() {
       stage:            'scouting', archiveStatus: null,
       name: name, steamId: steam, department: dept, rank: rank,
       scoutingComments: [], greenlitComments: [], tryoutComments: [],
-      votes: {}, personnelFileId: null,
+      votes: {}, tryoutStrikes: 0, personnelFileId: null,
       createdBy: currentUser.id, created: Date.now(), transitions: []
     };
     try { await recruitSet(newR.id, newR); allRecruitment.unshift(newR); }
@@ -3879,6 +3969,42 @@ async function recVote(id, vote) {
   if (!r.votes) r.votes = {};
   r.votes[currentUser.id] = vote;
   try { await recruitSet(id, r); renderRecruitment(); } catch(err) { alert('ERROR: '+err.message); }
+}
+
+// ── Tryout strike management ──
+async function recAddStrike(id, amount) {
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r || !currentUser || parseInt(currentUser.clearance) < 4) return;
+  var current = r.tryoutStrikes || 0;
+  var newVal  = Math.min(1, current + parseFloat(amount));
+  var label   = amount === '0.5' ? '½ strike' : 'full strike';
+  if (!await pfConfirm('Issue ' + label + ' to ' + e(r.name) + '?\n\n'
+    + 'Current: ' + current + ' → New: ' + newVal + '/1\n'
+    + (newVal >= 1 ? '⚠ This will result in INSTANT DENIAL.' : ''))) return;
+  r.tryoutStrikes = newVal;
+  r.strikeLog = r.strikeLog || [];
+  r.strikeLog.push({ amount: parseFloat(amount), by: currentUser.id, at: Date.now() });
+  try {
+    await recruitSet(id, r);
+    // Auto-deny if full strike reached
+    if (r.tryoutStrikes >= 1) {
+      r.stage = 'archived'; r.archiveStatus = 'denied';
+      r.archiveReason = 'Disqualified — full strike issued during tryout';
+      r.archivedAt = Date.now();
+      r.transitions = r.transitions || [];
+      r.transitions.push({ from:'tryout', to:'archived', by:currentUser.id, at:Date.now(), reason:'full strike' });
+      await recruitSet(id, r);
+    }
+    renderRecruitment();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+async function recRemoveStrike(id) {
+  var r = allRecruitment.find(function(x){return x.id===id;});
+  if (!r || !currentUser || parseInt(currentUser.clearance) < 4) return;
+  if (!await pfConfirm('CLEAR strikes for ' + e(r.name) + '?')) return;
+  r.tryoutStrikes = 0;
+  try { await recruitSet(id, r); renderRecruitment(); } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 async function recApproveFinal(id) {
@@ -5063,6 +5189,22 @@ function renderEthicsFiles() {
   });
 }
 
+// ── Ethics liaison tag definitions ──
+var ETHICS_LIAISON_TAGS = ['ISD Liaison', 'Ethics Assistant Liaison', 'Omega-1 Liaison'];
+var ETHICS_TAG_CLS_MAP  = { 'ISD Liaison':'b-amber', 'Ethics Assistant Liaison':'b-cyan', 'Omega-1 Liaison':'b-green' };
+
+async function toggleEthicsTag(efId, tag) {
+  if (!canEditPersonnel()) return;
+  var rec = allEthicsPersonnel.find(function(p){ return p.id === efId; });
+  if (!rec) return;
+  var tags = Array.isArray(rec.tags) ? rec.tags.slice() : [];
+  var idx  = tags.indexOf(tag);
+  if (idx > -1) tags.splice(idx, 1); else tags.push(tag);
+  rec.tags = tags;
+  try { await ethicsPersonnelSet(efId, rec); renderEthicsFiles(); }
+  catch(err) { alert('ERROR: ' + err.message); }
+}
+
 function buildEthicsCard(p) {
   var isOpen  = efExpanded.has(p.id);
   var canEdit = canEditPersonnel();
@@ -5127,7 +5269,7 @@ function buildEthicsCard(p) {
     <div class="pf-card-header" data-action="toggle-ef" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='rgba(0,255,136,.02)'" onmouseout="this.style.background=''">
       <div>
         <div class="pf-name">${e(p.name||'UNNAMED')}${p.nickname?` <span style="color:var(--text-dim);font-size:.6rem;">"${e(p.nickname)}"</span>`:''}</div>
-        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}</div>
+        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${(Array.isArray(p.tags)&&p.tags.length?p.tags.map(t=>`<span class="badge ${ETHICS_TAG_CLS_MAP[t]||'b-dim'}" style="font-size:.5rem;">${e(t)}</span>`).join(''):'')}</div>
       </div>
       <span style="font-size:.62rem;color:var(--text-dim);">▾</span>
     </div>
@@ -5139,6 +5281,20 @@ function buildEthicsCard(p) {
         <div class="pf-field"><span class="pf-fl">Role</span><br><span class="pf-fv">${e(p.role||'—')}</span></div>
         <div class="pf-field"><span class="pf-fl">Status</span><br><span class="pf-fv"><span class="badge ${pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span></span></div>
         <div class="pf-field"><span class="pf-fl">Created</span><br><span class="pf-fv">${new Date(p.created).toISOString().slice(0,10)} · EC·${e(p.createdBy||'—')}</span></div>
+      </div>
+       <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="tags">
+        <span>▸ LIAISON TAGS (${(Array.isArray(p.tags)?p.tags:[]).length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':tags')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':tags')?'none':'block'};padding:.3rem .1rem .4rem;">
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;">
+          ${ETHICS_LIAISON_TAGS.map(function(tag){
+            var active = Array.isArray(p.tags) && p.tags.includes(tag);
+            var cls    = ETHICS_TAG_CLS_MAP[tag] || 'b-dim';
+            if (active) return `<span class="badge ${cls}" style="padding:2px 8px;cursor:${canEdit?'pointer':'default'};" ${canEdit?`data-action="toggle-ethics-tag" data-efid="${e(p.id)}" data-tag="${e(tag)}" title="Click to remove tag"`:''}>${e(tag)} ${canEdit?'×':''}</span>`;
+            return canEdit ? `<button class="pf-section-btn" data-action="toggle-ethics-tag" data-efid="${e(p.id)}" data-tag="${e(tag)}" style="opacity:.7;">+ ${e(tag)}</button>` : '';
+          }).join('')}
+          ${!(Array.isArray(p.tags) && p.tags.length) && !canEdit ? '<span style="font-size:.6rem;color:var(--text-faint);">[ NO LIAISON TAGS ]</span>' : ''}
+        </div>
       </div>
        <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="ranks">
         <span>▸ ROLE CHANGE LOG (${history.length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':ranks')?'-90':'0'}deg)">▾</span>
