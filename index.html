@@ -3314,11 +3314,14 @@ async function savePersonnelRecord() {
       allPersonnel.push(newRec);
       if (window._pendingRecruitApproval) finaliseRecruitApproval(id);
 if (window._awaitingPfLink) {
-    var userRec = await userGet(currentUser.id);
-    userRec.linkedPfId = id;
-    await userSet(currentUser.id, userRec);
+    var linkUserRec = await userGet(currentUser.id);
+    if (linkUserRec) {
+      linkUserRec.linkedPfId = id;
+      await userSet(currentUser.id, linkUserRec);
+      currentUser.linkedPfId = id;
+    }
     window._awaitingPfLink = false;
-    onLogin(); // Re-trigger login flow to get full access
+    onLogin();
 }
     } catch(err) { alert('SAVE ERROR: ' + err.message); }
   }
@@ -5913,11 +5916,14 @@ async function saveEthicsRecord() {
     allEthicsPersonnel.push(record);
     if (window._pendingEthicsRecApproval) finaliseEthicsRecApproval(newId);
 if (window._awaitingEfLink) {
-    var userRec = await userGet(currentUser.id);
-    userRec.linkedEfId = newId;
-    await userSet(currentUser.id, userRec);
+    var linkUserRecEf = await userGet(currentUser.id);
+    if (linkUserRecEf) {
+      linkUserRecEf.linkedEfId = newId;
+      await userSet(currentUser.id, linkUserRecEf);
+      currentUser.linkedEfId = newId;
+    }
     window._awaitingEfLink = false;
-    onLogin(); // Re-trigger login flow
+    onLogin();
 }
   }
 
@@ -6377,42 +6383,58 @@ function closeLinkPersonnelModal() {
   document.getElementById('linkPersonnelModal').style.display = 'none';
 }
 
-async function handleLinkAction(action) {
-  var userRec = await userGet(currentUser.id);
-  if (!userRec) return;
-
-  if (action === 'create_omega') {
-    closeLinkPersonnelModal();
-    openPersonnelModal(null);
-    window._awaitingPfLink = true;
-  } else if (action === 'create_ethics') {
-    closeLinkPersonnelModal();
-    openEthicsModal(null);
-    window._awaitingEfLink = true;
-  } else if (action === 'link_existing') {
-    var selected = document.getElementById('linkExistingSelect').value;
-    if (!selected) {
-      var errEl = document.getElementById('linkPersonnelErr');
-      if (errEl) errEl.textContent = '> PLEASE SELECT A FILE';
+// Called directly from button onclick attributes in the modal HTML below.
+// Create-file actions do NOT need a userGet — they just open the correct form
+// and set a flag so savePersonnelRecord / saveEthicsRecord links it on save.
+function linkAction_createOmega() {
+  closeLinkPersonnelModal();
+  window._awaitingPfLink = true;
+  openPersonnelModal(null);
+}
+function linkAction_createEthics() {
+  closeLinkPersonnelModal();
+  window._awaitingEfLink = true;
+  openEthicsModal(null);
+}
+function linkAction_skip() {
+  closeLinkPersonnelModal();
+}
+async function linkAction_linkExisting() {
+  var errEl   = document.getElementById('linkPersonnelErr');
+  var selected = document.getElementById('linkExistingSelect').value;
+  if (!selected) {
+    if (errEl) errEl.textContent = '> PLEASE SELECT A FILE FIRST';
+    return;
+  }
+  if (errEl) errEl.textContent = '';
+  // IDs can contain underscores (e.g. pf_1749845_ab) so we cannot split on '_'.
+  // The prefix is always exactly 'pf' or 'ef' followed by one underscore.
+  var type   = selected.slice(0, 2);   // 'pf' or 'ef'
+  var fileId = selected.slice(3);       // everything after 'pf_' / 'ef_'
+  try {
+    var userRec = await userGet(currentUser.id);
+    if (!userRec) {
+      if (errEl) errEl.textContent = '> ERROR: Could not fetch account. Please refresh.';
       return;
     }
-    // IDs contain underscores (e.g. pf_1749845_ab), so don't split on '_'
-    // Prefix is always exactly 2 chars ('pf' or 'ef') followed by '_'
-    var type   = selected.slice(0, 2);   // 'pf' or 'ef'
-    var fileId = selected.slice(3);       // everything after 'pf_' or 'ef_'
-
-    if (type === 'pf') {
-      userRec.linkedPfId = fileId;
-    } else {
-      userRec.linkedEfId = fileId;
-    }
+    if (type === 'pf') { userRec.linkedPfId = fileId; }
+    else               { userRec.linkedEfId = fileId; }
     await userSet(currentUser.id, userRec);
-    currentUser.linkedPfId = userRec.linkedPfId;
-    currentUser.linkedEfId = userRec.linkedEfId;
-    currentUser.clearance = deriveClearance(userRec);
+    currentUser.linkedPfId = userRec.linkedPfId || null;
+    currentUser.linkedEfId = userRec.linkedEfId || null;
+    currentUser.clearance  = deriveClearance(userRec);
     closeLinkPersonnelModal();
     onLogin();
+  } catch(err) {
+    if (errEl) errEl.textContent = '> ERROR: ' + err.message;
   }
+}
+
+// Legacy alias kept in case any other code calls handleLinkAction
+async function handleLinkAction(action) {
+  if (action === 'create_omega')  { linkAction_createOmega();  }
+  else if (action === 'create_ethics') { linkAction_createEthics(); }
+  else if (action === 'link_existing') { await linkAction_linkExisting(); }
 }
 
 </script>
@@ -6426,19 +6448,15 @@ async function handleLinkAction(action) {
       Without a linked file, you will remain in read-only mode.
     </div>
     <div style="display:flex;flex-direction:column;gap:.5rem;">
-      <button class="modal-save" id="linkCreateOmega1"
-        onclick="handleLinkAction('create_omega')">[ CREATE NEW OMEGA-1 FILE ]</button>
-      <button class="modal-save" id="linkCreateEthics"
-        onclick="handleLinkAction('create_ethics')">[ CREATE NEW ETHICS COMMITTEE FILE ]</button>
-      <div style="font-size:.58rem;color:var(--text-dim);text-align:center;margin:.3rem 0;">— OR —</div>
-      <select id="linkExistingSelect" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:4px 8px;">
+      <button class="modal-save" onclick="linkAction_createOmega()">[ CREATE NEW OMEGA-1 FILE ]</button>
+      <button class="modal-save" onclick="linkAction_createEthics()">[ CREATE NEW ETHICS COMMITTEE FILE ]</button>
+      <div style="font-size:.58rem;color:var(--text-dim);text-align:center;margin:.3rem 0;">— OR SELECT EXISTING —</div>
+      <select id="linkExistingSelect" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:5px 8px;cursor:pointer;">
         <option value="">— SELECT EXISTING UNLINKED FILE —</option>
       </select>
-      <button class="modal-save" id="linkExistingBtn"
-        onclick="handleLinkAction('link_existing')">[ LINK SELECTED FILE ]</button>
-      <div class="modal-err" id="linkPersonnelErr"></div>
-      <button class="modal-cancel" id="linkSkipBtn"
-        onclick="closeLinkPersonnelModal()">[ SKIP — REMAIN READ-ONLY ]</button>
+      <button class="modal-save" onclick="linkAction_linkExisting()">[ LINK SELECTED FILE ]</button>
+      <div class="modal-err" id="linkPersonnelErr" style="min-height:.9rem;"></div>
+      <button class="modal-cancel" onclick="linkAction_skip()">[ SKIP — REMAIN READ-ONLY ]</button>
     </div>
   </div>
 </div>
