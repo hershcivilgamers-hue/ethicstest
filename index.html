@@ -2864,8 +2864,13 @@ function formatDob(s) {
 
 function deriveClearance(userRec) {
   if (!userRec) return '3';
-  // If no linked personnel file, default to CL3 read-only
-  if (!userRec.linkedPfId && !userRec.linkedEfId) return '3';
+
+  // If no linked personnel file, fall back to the stored clearance.
+  // This is critical for the bootstrap admin (first account) who has no file yet
+  // but was granted CL5 at registration. Without this they'd be stuck at CL3.
+  if (!userRec.linkedPfId && !userRec.linkedEfId) {
+    return userRec.clearance || '3';
+  }
 
   // Ethics Committee roles
   if (userRec.linkedEfId) {
@@ -2874,7 +2879,7 @@ function deriveClearance(userRec) {
       if (ef.role === 'Chairman' || ef.role === 'Member') return '5';
       if (ef.role === 'Assistant') return '4';
     }
-    return '3'; // Default if file not found
+    return userRec.clearance || '3';
   }
 
   // Omega-1 ranks
@@ -2882,13 +2887,13 @@ function deriveClearance(userRec) {
     var pf = allPersonnel.find(function(p){ return p.id === userRec.linkedPfId; });
     if (pf) {
       var rank = pf.rank;
-      if (['Commander', 'Lieutenant Commander', 'Major'].includes(rank)) return '4'; // Senior CL4
-      if (['Captain', 'Lieutenant'].includes(rank)) return '4'; // Junior CL4
+      if (['Commander', 'Lieutenant Commander', 'Major'].includes(rank)) return '4';
+      if (['Captain', 'Lieutenant'].includes(rank)) return '4';
       if (['Command Sergeant', 'Sergeant', 'Corporal', 'Lance Corporal', 'Specialist', 'Private'].includes(rank)) return '3';
     }
-    return '3'; // Default if file not found
+    return userRec.clearance || '3';
   }
-  return '3'; // Fallback
+  return userRec.clearance || '3';
 }
 
 var allPersonnel   = [];    // array of personnel record objects
@@ -3228,7 +3233,8 @@ function renderRoster() {
 var pfModalMode = 'new'; // 'new' | 'edit'
 
 function openPersonnelModal(id) {
-  if (!canEditPersonnel()) return;
+  // Allow opening when triggered from the link-file flow, even if clearance is low
+  if (!window._awaitingPfLink && !canEditPersonnel()) return;
   pfModalMode = id ? 'edit' : 'new';
   var titleEl = document.getElementById('pfModalTitle') || document.querySelector('#pfModal .modal-title');
   if (titleEl) titleEl.textContent = id ? 'EDIT PERSONNEL RECORD' : 'NEW PERSONNEL RECORD';
@@ -5838,7 +5844,8 @@ function renderEthicsRoster() {
 
 // Open ethics modal (null = new, id = edit)
 function openEthicsModal(id) {
-  if (!canEditPersonnel()) return;
+  // Allow opening when triggered from the link-file flow, even if clearance is low
+  if (!window._awaitingEfLink && !canEditPersonnel()) return;
   document.getElementById('efErr').textContent = '';
   if (id) {
     var p = allEthicsPersonnel.find(function(x){ return x.id === id; });
