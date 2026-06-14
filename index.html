@@ -38,7 +38,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
 /* ── Layout ── */
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
-.shell{position:relative;max-width:1600px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+.shell{position:relative;max-width:880px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
 
 /* ── Header ── */
 .header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}
@@ -533,6 +533,22 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .strike-btn.del{border-color:#4a1414;color:#dd4444;}
 .strike-btn.del:hover{background:#0a0202;}
 .roster-strike{display:inline-block;padding:0 5px;font-size:.54rem;border-radius:2px;background:#1a0404;color:#ff6666;border:1px solid #4a1414;margin-left:4px;vertical-align:middle;animation:pulse 2s ease-in-out infinite;}
+/* ── Leave of Absence / Reduction of Activity ── */
+.leave-card{border:1px solid #1a3a5a;background:#030e14;padding:.6rem .8rem;margin-bottom:.4rem;font-size:.63rem;border-radius:2px;}
+.leave-card.roa{border-color:#2a2a00;background:#0a0a00;}
+.leave-card.ended{border-color:var(--border2);background:#030806;opacity:.65;}
+.leave-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-bottom:.3rem;}
+.leave-meta{font-size:.58rem;color:var(--text-dim);margin-top:2px;}
+.leave-reason{color:var(--text);line-height:1.6;margin:.3rem 0;}
+.leave-btns{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.4rem;}
+.leave-btn{font-family:'Share Tech Mono',monospace;font-size:.57rem;padding:2px 7px;cursor:pointer;border:1px solid;background:transparent;transition:all .15s;}
+.leave-btn.end{border-color:#1a3a5a;color:#4488cc;}
+.leave-btn.end:hover{background:#030e14;}
+.leave-btn.del{border-color:#4a1414;color:#dd4444;}
+.leave-btn.del:hover{background:#0a0202;}
+.roster-leave{display:inline-block;padding:0 5px;font-size:.54rem;border-radius:2px;margin-left:4px;vertical-align:middle;}
+.roster-loa{background:#030e14;color:#4488cc;border:1px solid #1a3a5a;}
+.roster-roa{background:#0a0a00;color:#aaaa44;border:1px solid #2a2a00;}
 </style>
 </head>
 <body>
@@ -979,7 +995,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         </div>
         <input class="order-input" id="ethicsOrderTitle" placeholder="Order designation..." style="width:100%;margin-bottom:.5rem;"/>
         <textarea class="order-textarea" id="ethicsOrderBody" placeholder="Full order text..." rows="3"></textarea>
-        <button class="order-btn" onclick="submitEthicsOrder()">[ ISSUE ORDER ]</button>
+        <button class="order-submit" onclick="submitEthicsOrder()">[ ISSUE ORDER ]</button>
       </div>
       <!-- Stats + filters -->
       <div class="order-stats" id="ethicsOrderStats" style="margin-top:.75rem;">
@@ -1523,6 +1539,41 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="modal-actions">
       <button class="modal-cancel" data-action="close-poi-modal">[ CANCEL ]</button>
       <button class="modal-save"   data-action="save-poi">[ SAVE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOA / ROA MODAL -->
+<div class="modal-overlay-2" id="leaveModal">
+  <div class="modal-box-2" style="width:460px;">
+    <h3 id="leaveModalTitle">ISSUE LEAVE OF ABSENCE</h3>
+    <input type="hidden" id="leaveTargetPfId"/>
+    <input type="hidden" id="leaveTargetDivision"/>
+    <div class="modal-group">
+      <label>LEAVE TYPE</label>
+      <select id="leaveType">
+        <option value="LoA">Leave of Absence (LoA)</option>
+        <option value="RoA">Reduction of Activity (RoA)</option>
+      </select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-group">
+        <label>START DATE</label>
+        <input type="date" id="leaveStartDate"/>
+      </div>
+      <div class="modal-group">
+        <label>END DATE <span style="color:var(--text-dim);font-size:.58rem;">(leave blank if open)</span></label>
+        <input type="date" id="leaveEndDate"/>
+      </div>
+    </div>
+    <div class="modal-group">
+      <label>REASON</label>
+      <textarea id="leaveReason" placeholder="State the reason for this leave..."></textarea>
+    </div>
+    <div class="modal-err" id="leaveErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-leave-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-leave">[ CONFIRM ]</button>
     </div>
   </div>
 </div>
@@ -2713,13 +2764,16 @@ function renderPersonnelFiles() {
         </div>
 
         ${(()=>{
+           var leaves  = Array.isArray(p.leaves) ? p.leaves : [];
+          var activeLv = leaves.filter(isLeaveActive);
           var sections = [
             { key:'tags',      label:'MANAGEMENT TAGS',      count:'',                    body: tagsSection },
             { key:'awards',    label:'AWARDS & DECORATIONS', count: ' ('+awards.length+')', body: awardsHtml },
             { key:'strikes',   label:'STRIKES',              count: ' ('+strikes.length+')', body: strikesHeader + strikesHtml },
+            { key:'leave',     label:'LEAVE (LOA / ROA)',    count: ' ('+activeLv.length+' active)', body: buildLeaveSection(p, 'pf') },
             { key:'ranks',     label:'RANK CHANGE LOG',      count: ' ('+history.length+')',body: histHtml },
             { key:'squadrons', label:'SQUADRON ASSIGNMENTS',  count:'',
-              body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'') },
+              body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'`) },
             { key:'notes',     label:'NOTES ON FILE',        count: ' ('+notes.length+')', body: notesHtml + noteForm },
           ];
           return sections.map(sec => {
@@ -2775,11 +2829,13 @@ function renderRoster() {
       rows += '<tr class="roster-rank-divider"><td colspan="5">▸ ' + e(p.rank || '—').toUpperCase() + '</td></tr>';
       lastRank = p.rank;
     }
+    var activeLeavePf = getActiveLeave(p);
     rows +=
       '<tr>' +
         '<td class="roster-num">' + counter++ + '</td>' +
         '<td class="roster-name">' + e(p.name || '—') +
           ((p.strikes||[]).some(isStrikeActive) ? ' <span class="roster-strike">⚠ ACTIVE STRIKE</span>' : '') +
+          (activeLeavePf ? ' <span class="roster-leave roster-' + activeLeavePf.type.toLowerCase() + '">' + activeLeavePf.type.toUpperCase() + '</span>' : '') +
         '</td>' +
         '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
         '<td><span class="badge ' + rankBadgeClass(p.rank) + '">' + e(p.rank || '—') + '</span></td>' +
@@ -3003,6 +3059,12 @@ document.addEventListener('click', function(ev) {
     case 'save-tag':             saveTag(); break;
     case 'close-squadron-modal': closeSquadronModal(); break;
     case 'save-squadron':        saveSquadron(); break;
+    // Leave / LoA / RoA
+    case 'open-leave-modal': ev.stopPropagation(); openLeaveModal(el.dataset.id, el.dataset.division); break;
+    case 'end-leave':        ev.stopPropagation(); endLeave(el.dataset.id, el.dataset.leaveid, el.dataset.division); break;
+    case 'del-leave':        ev.stopPropagation(); deleteLeave(el.dataset.id, el.dataset.leaveid, el.dataset.division); break;
+    case 'close-leave-modal': closeLeaveModal(); break;
+    case 'save-leave':        saveLeave(); break;
   }
 });
 
@@ -5077,10 +5139,14 @@ function buildEthicsCard(p) {
         <div class="pf-field"><span class="pf-fl">Status</span><br><span class="pf-fv"><span class="badge ${pStatus==='Active'?'b-green':pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span></span></div>
         <div class="pf-field"><span class="pf-fl">Created</span><br><span class="pf-fv">${new Date(p.created).toISOString().slice(0,10)} · EC·${e(p.createdBy||'—')}</span></div>
       </div>
-      <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="ranks">
+       <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="ranks">
         <span>▸ ROLE CHANGE LOG (${history.length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':ranks')?'-90':'0'}deg)">▾</span>
       </div>
       <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':ranks')?'none':'block'};padding:0 .1rem .4rem;">${histHtml}</div>
+      <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="leave">
+        <span>▸ LEAVE (LOA / ROA) (${(p.leaves||[]).filter(isLeaveActive).length} active)</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':leave')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':leave')?'none':'block'};padding:0 .1rem .4rem;">${buildLeaveSection(p,'ef')}</div>
       <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="squadrons">
         <span>▸ SQUADRON ASSIGNMENTS</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':squadrons')?'-90':'0'}deg)">▾</span>
       </div>
@@ -5113,12 +5179,13 @@ function renderEthicsRoster() {
       rows += '<tr style="background:var(--green-trace);"><td colspan="5" style="color:var(--amber);font-size:.58rem;letter-spacing:.15em;padding:.25rem .7rem;">▸ ' + e((p.role||'UNKNOWN').toUpperCase()) + '</td></tr>';
       lastRole = p.role;
     }
+    var activeLvEf = getActiveLeave(p);
     rows += '<tr>' +
       '<td class="roster-num">' + counter++ + '</td>' +
-      '<td class="roster-name">' + e(p.name||'—') + '</td>' +
+      '<td class="roster-name">' + e(p.name||'—') +
+        (activeLvEf ? ' <span class="roster-leave roster-' + activeLvEf.type.toLowerCase() + '">' + activeLvEf.type.toUpperCase() + '</span>' : '') +
+      '</td>' +
       '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
-      '<td><span class="badge ' + (p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan') + '">' + e(p.role||'—') + '</span></td>' +
-      '<td style="color:var(--text-dim);font-size:.6rem;">' + (formatDob ? formatDob(p.dob) : (p.dob||'—')) + '</td>' +
     '</tr>';
   });
   tbody.innerHTML = rows;
@@ -5426,6 +5493,147 @@ function openEthicsOrderEdit(id) {
   o.editedBy = currentUser.id;
   o.editedAt = Date.now();
   ethicsOrderSet(o.id, o).then(function(){ renderEthicsOrders(); });
+}
+
+// ================================================================
+//  LEAVE OF ABSENCE / REDUCTION OF ACTIVITY SYSTEM
+//  CL4+ can issue LoA / RoA on any Omega-1 or Ethics personnel file.
+//  Stored as p.leaves = [{id, type, startDate, endDate, reason, issuedBy, issuedAt, ended}]
+// ================================================================
+
+function canIssueLeave() { return currentUser && parseInt(currentUser.clearance) >= 4; }
+
+function isLeaveActive(lv) {
+  if (lv.ended) return false;
+  if (lv.endDate && new Date(lv.endDate + 'T23:59:59') < new Date()) return false;
+  return true;
+}
+
+function getActiveLeave(p) {
+  return (p.leaves || []).find(isLeaveActive) || null;
+}
+
+function openLeaveModal(pfId, division) {
+  if (!canIssueLeave()) { alert('CLEARANCE LEVEL 4 REQUIRED TO ISSUE LEAVE'); return; }
+  document.getElementById('leaveTargetPfId').value     = pfId;
+  document.getElementById('leaveTargetDivision').value = division || 'pf';
+  document.getElementById('leaveType').value           = 'LoA';
+  document.getElementById('leaveStartDate').value      = new Date().toISOString().slice(0,10);
+  document.getElementById('leaveEndDate').value        = '';
+  document.getElementById('leaveReason').value         = '';
+  document.getElementById('leaveErr').textContent      = '';
+  document.getElementById('leaveModalTitle').textContent = 'ISSUE LEAVE OF ABSENCE / RoA';
+  document.getElementById('leaveModal').classList.add('open');
+}
+function closeLeaveModal() { document.getElementById('leaveModal').classList.remove('open'); }
+
+async function saveLeave() {
+  var pfId     = document.getElementById('leaveTargetPfId').value;
+  var division = document.getElementById('leaveTargetDivision').value;
+  var type     = document.getElementById('leaveType').value;
+  var start    = document.getElementById('leaveStartDate').value;
+  var end      = document.getElementById('leaveEndDate').value;
+  var reason   = document.getElementById('leaveReason').value.trim();
+  if (!start)  { document.getElementById('leaveErr').textContent = '> START DATE REQUIRED'; return; }
+  if (!reason) { document.getElementById('leaveErr').textContent = '> REASON REQUIRED'; return; }
+
+  var isEthics = division === 'ef';
+  var list     = isEthics ? allEthicsPersonnel : allPersonnel;
+  var setFn    = isEthics ? ethicsPersonnelSet : personnelSet;
+
+  var rec = list.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  if (!Array.isArray(rec.leaves)) rec.leaves = [];
+
+  rec.leaves.push({
+    id:        'lv_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    type:      type,
+    startDate: start,
+    endDate:   end || null,
+    reason:    reason,
+    issuedBy:  currentUser.id,
+    issuedAt:  Date.now(),
+    ended:     false
+  });
+  rec.updated = Date.now();
+
+  try {
+    await setFn(pfId, rec);
+    closeLeaveModal();
+    if (isEthics) { renderEthicsFiles(); renderEthicsRoster(); }
+    else          { renderPersonnelFiles(); renderRoster(); }
+  } catch(err) { document.getElementById('leaveErr').textContent = '> SAVE ERROR: ' + err.message; }
+}
+
+async function endLeave(pfId, leaveId, division) {
+  if (!canIssueLeave()) return;
+  if (!await pfConfirm('MARK THIS LEAVE AS ENDED?')) return;
+  var isEthics = division === 'ef';
+  var list     = isEthics ? allEthicsPersonnel : allPersonnel;
+  var setFn    = isEthics ? ethicsPersonnelSet : personnelSet;
+  var rec = list.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  var lv = (rec.leaves||[]).find(function(x){ return x.id === leaveId; });
+  if (!lv) return;
+  lv.ended = true; lv.endedBy = currentUser.id; lv.endedAt = Date.now();
+  rec.updated = Date.now();
+  try {
+    await setFn(pfId, rec);
+    if (isEthics) { renderEthicsFiles(); renderEthicsRoster(); }
+    else          { renderPersonnelFiles(); renderRoster(); }
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+async function deleteLeave(pfId, leaveId, division) {
+  if (!canIssueLeave()) return;
+  if (!await pfConfirm('PERMANENTLY REMOVE THIS LEAVE RECORD?')) return;
+  var isEthics = division === 'ef';
+  var list     = isEthics ? allEthicsPersonnel : allPersonnel;
+  var setFn    = isEthics ? ethicsPersonnelSet : personnelSet;
+  var rec = list.find(function(p){ return p.id === pfId; });
+  if (!rec) return;
+  rec.leaves = (rec.leaves||[]).filter(function(x){ return x.id !== leaveId; });
+  rec.updated = Date.now();
+  try {
+    await setFn(pfId, rec);
+    if (isEthics) { renderEthicsFiles(); renderEthicsRoster(); }
+    else          { renderPersonnelFiles(); renderRoster(); }
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+function buildLeaveSection(p, division) {
+  var canEdit = canIssueLeave();
+  var leaves  = Array.isArray(p.leaves) ? p.leaves.slice().sort(function(a,b){ return b.issuedAt - a.issuedAt; }) : [];
+
+  var leavesHtml = leaves.length ? leaves.map(function(lv) {
+    var active = isLeaveActive(lv);
+    var cls    = !active ? 'ended' : lv.type === 'RoA' ? 'roa' : '';
+    var badge  = lv.type === 'LoA'
+      ? '<span class="badge b-cyan">LOA</span>'
+      : '<span class="badge b-amber">ROA</span>';
+    var dateStr = lv.startDate + (lv.endDate ? ' → ' + lv.endDate : ' → ongoing');
+    var btns = '<div class="leave-btns">';
+    if (canEdit && active) {
+      btns += '<button class="leave-btn end" data-action="end-leave" data-id="' + e(p.id) + '" data-leaveid="' + e(lv.id) + '" data-division="' + e(division) + '">[ MARK ENDED ]</button>';
+    }
+    if (canEdit) {
+      btns += '<button class="leave-btn del" data-action="del-leave" data-id="' + e(p.id) + '" data-leaveid="' + e(lv.id) + '" data-division="' + e(division) + '">✕ REMOVE</button>';
+    }
+    btns += '</div>';
+    return '<div class="leave-card ' + cls + '">' +
+      '<div class="leave-header"><div>' + badge +
+        '<div class="leave-meta">Issued by EC·' + e(lv.issuedBy) + ' · ' + new Date(lv.issuedAt).toISOString().slice(0,10) + ' · ' + e(dateStr) + (!active ? ' · <span style="color:var(--text-faint);">ENDED</span>' : '') + '</div>' +
+      '</div></div>' +
+      '<div class="leave-reason">' + e(lv.reason) + '</div>' +
+      btns +
+    '</div>';
+  }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO LEAVE RECORDS ]</div>';
+
+  var issueBtn = canEdit
+    ? '<button class="pf-section-btn" data-action="open-leave-modal" data-id="' + e(p.id) + '" data-division="' + e(division) + '" style="float:right;margin-top:-2px;">[ + ISSUE LOA/ROA ]</button>'
+    : '';
+
+  return issueBtn + leavesHtml;
 }
 
 </script>
