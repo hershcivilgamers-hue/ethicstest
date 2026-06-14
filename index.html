@@ -2757,29 +2757,64 @@ function renderAdminPanel() {
       var status = u.status || 'active';
       var scls   = status==='denied' ? 'b-red' : 'b-green';
       var slbl   = status==='denied' ? 'DENIED' : 'ACTIVE';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);padding:.35rem .65rem;margin-bottom:2px;font-size:.62rem;flex-wrap:wrap;gap:.3rem;">
-        <div>
-          <span style="font-family:'VT323',monospace;color:var(--green);">EC·${uid}</span>
-          <span style="color:var(--text-dim);margin-left:.5rem;">CL${e(u.clearance||'3')}</span>
-          <span class="badge ${scls}" style="margin-left:.4rem;">${slbl}</span>
-          ${u.unit ? `<span class="badge b-cyan" style="margin-left:.3rem;font-size:.52rem;">${u.unit==='omega1'?'OMEGA-1':'ETHICS'}</span>` : ''}
+      return `<div style="border:1px solid var(--border);padding:.4rem .65rem;margin-bottom:2px;font-size:.62rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.3rem;">
+          <div>
+            <span style="font-family:'VT323',monospace;color:var(--green);">EC·${uid}</span>
+            <span style="color:var(--text-dim);margin-left:.5rem;">CL${e(u.clearance||'3')}</span>
+            <span class="badge ${scls}" style="margin-left:.4rem;">${slbl}</span>
+            ${u.unit ? `<span class="badge b-cyan" style="margin-left:.3rem;font-size:.52rem;">${u.unit==='omega1'?'OMEGA-1':'ETHICS'}</span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+            <label style="font-size:.56rem;color:var(--text-dim);">SET CL:</label>
+            <select id="setCl_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:1px 3px;">
+              <option value="3"${u.clearance==='3'?' selected':''}>CL3</option>
+              <option value="4"${u.clearance==='4'?' selected':''}>CL4</option>
+              <option value="5"${u.clearance==='5'?' selected':''}>CL5</option>
+            </select>
+            <button class="rec-btn" data-action="admin-set-cl" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE CL</button>
+            <select id="setUnit_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:1px 3px;">
+              <option value=""${!u.unit?' selected':''}>— NO UNIT —</option>
+              <option value="omega1"${u.unit==='omega1'?' selected':''}>OMEGA-1</option>
+              <option value="ethics"${u.unit==='ethics'?' selected':''}>ETHICS COMMITTEE</option>
+            </select>
+            <button class="rec-btn" data-action="admin-set-unit" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE UNIT</button>
+            ${status==='denied' ? `<button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">RESTORE</button>` : ''}
+            ${status!=='denied' && (u.clearance==='3'||u.clearance==='4') ? `<button class="rec-btn deny" data-action="admin-revoke" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Revoke access">REVOKE</button>` : ''}
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
-          <label style="font-size:.56rem;color:var(--text-dim);">SET CL:</label>
-          <select id="setCl_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:1px 3px;">
-            <option value="3"${u.clearance==='3'?' selected':''}>CL3</option>
-            <option value="4"${u.clearance==='4'?' selected':''}>CL4</option>
-            <option value="5"${u.clearance==='5'?' selected':''}>CL5</option>
-          </select>
-          <button class="rec-btn" data-action="admin-set-cl" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE CL</button>
-          <select id="setUnit_${uid}" style="background:#030806;border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:1px 3px;">
-            <option value=""${!u.unit?' selected':''}>— NO UNIT —</option>
-            <option value="omega1"${u.unit==='omega1'?' selected':''}>OMEGA-1</option>
-            <option value="ethics"${u.unit==='ethics'?' selected':''}>ETHICS COMMITTEE</option>
-          </select>
-          <button class="rec-btn" data-action="admin-set-unit" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE UNIT</button>
-          ${status==='denied' ? `<button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">RESTORE</button>` : ''}
-          ${status!=='denied' && (u.clearance==='3'||u.clearance==='4') ? `<button class="rec-btn deny" data-action="admin-revoke" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Revoke access — user cannot log in">REVOKE</button>` : ''}
+        <div style="margin-top:.35rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:.35rem;">
+          <span style="font-size:.55rem;color:var(--text-dim);letter-spacing:.08em;">FILE:</span>
+          ${(function(){
+            if (u.linkedPfId) {
+              var pf = allPersonnel.find(function(p){ return p.id === u.linkedPfId; });
+              return pf
+                ? `<span class="badge b-cyan" style="font-size:.52rem;">Ω-1: ${e(pf.name)} [${e(pf.rank)}]</span>`
+                : `<span style="font-size:.56rem;color:var(--red);">Ω-1 ID:${e(u.linkedPfId)} (not found)</span>`;
+            }
+            if (u.linkedEfId) {
+              var ef = allEthicsPersonnel.find(function(p){ return p.id === u.linkedEfId; });
+              return ef
+                ? `<span class="badge b-amber" style="font-size:.52rem;">EC: ${e(ef.name)} [${e(ef.role)}]</span>`
+                : `<span style="font-size:.56rem;color:var(--red);">EC ID:${e(u.linkedEfId)} (not found)</span>`;
+            }
+            return '<span style="font-size:.55rem;color:var(--text-faint);">[ NO FILE LINKED ]</span>';
+          })()}
+          ${(function(){
+            // Build dropdown of available (unlinked) personnel files
+            var usedPf = new Set(Object.values(allUsers).filter(function(x){ return x.linkedPfId && x.displayId !== u.displayId; }).map(function(x){ return x.linkedPfId; }));
+            var usedEf = new Set(Object.values(allUsers).filter(function(x){ return x.linkedEfId && x.displayId !== u.displayId; }).map(function(x){ return x.linkedEfId; }));
+            var opts = '<option value="">— SELECT FILE —</option>';
+            allPersonnel.forEach(function(p) {
+              if (!usedPf.has(p.id)) opts += '<option value="pf_'+e(p.id)+'"'+(u.linkedPfId===p.id?' selected':'')+'>Ω-1: '+e(p.name)+' ['+e(p.rank)+']</option>';
+            });
+            allEthicsPersonnel.forEach(function(p) {
+              if (!usedEf.has(p.id)) opts += '<option value="ef_'+e(p.id)+'"'+(u.linkedEfId===p.id?' selected':'')+'>EC: '+e(p.name)+' ['+e(p.role)+']</option>';
+            });
+            return '<select id="linkFile_'+uid+'" style="background:#030806;border:1px solid var(--border2);color:var(--text);font-family:\'Share Tech Mono\',monospace;font-size:.56rem;padding:1px 4px;max-width:220px;">'+opts+'</select>';
+          })()}
+          <button class="rec-btn" data-action="admin-link-file" data-uid="${uid}" style="font-size:.55rem;padding:1px 6px;">LINK</button>
+          ${(u.linkedPfId||u.linkedEfId) ? `<button class="rec-btn deny" data-action="admin-unlink-file" data-uid="${uid}" style="font-size:.55rem;padding:1px 5px;opacity:.8;">UNLINK</button>` : ''}
         </div>
       </div>`;
     }).join('') : '<div style="font-size:.63rem;color:var(--text-faint);">[ NO ACTIVE ACCOUNTS ]</div>';
@@ -2827,6 +2862,36 @@ async function adminSetClearance(uid) {
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
+async function adminLinkFile(uid) {
+  var sel = document.getElementById('linkFile_' + uid);
+  if (!sel || !sel.value) { alert('SELECT A FILE FIRST'); return; }
+  var type   = sel.value.slice(0, 2);   // 'pf' or 'ef'
+  var fileId = sel.value.slice(3);
+  var label  = sel.options[sel.selectedIndex].textContent;
+  if (!await pfConfirm('Link EC·' + uid + ' to:\n' + label + '\n\nThis will update their clearance to match the file rank.')) return;
+  var rec = allUsers[uid] || {};
+  if (type === 'pf') { rec.linkedPfId = fileId; rec.linkedEfId = null; }
+  else               { rec.linkedEfId = fileId; rec.linkedPfId = null; }
+  rec.clearance = deriveClearance(rec);
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+async function adminUnlinkFile(uid) {
+  if (!await pfConfirm('Unlink EC·' + uid + ' from their personnel file?\n\nTheir clearance will revert to their stored level.')) return;
+  var rec = allUsers[uid] || {};
+  rec.linkedPfId = null;
+  rec.linkedEfId = null;
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
 async function adminSetUnit(uid) {
   var sel = document.getElementById('setUnit_' + uid);
   if (!sel) return;
@@ -2864,36 +2929,38 @@ function formatDob(s) {
 
 function deriveClearance(userRec) {
   if (!userRec) return '3';
+  var stored = parseInt(userRec.clearance || '3');
 
   // If no linked personnel file, fall back to the stored clearance.
   // This is critical for the bootstrap admin (first account) who has no file yet
   // but was granted CL5 at registration. Without this they'd be stuck at CL3.
   if (!userRec.linkedPfId && !userRec.linkedEfId) {
-    return userRec.clearance || '3';
+    return String(stored);
   }
+
+  var fileCl = 3; // default if file/rank not found
 
   // Ethics Committee roles
   if (userRec.linkedEfId) {
     var ef = allEthicsPersonnel.find(function(p){ return p.id === userRec.linkedEfId; });
     if (ef) {
-      if (ef.role === 'Chairman' || ef.role === 'Member') return '5';
-      if (ef.role === 'Assistant') return '4';
+      if (ef.role === 'Chairman' || ef.role === 'Member') fileCl = 5;
+      else if (ef.role === 'Assistant') fileCl = 4;
     }
-    return userRec.clearance || '3';
   }
-
   // Omega-1 ranks
-  if (userRec.linkedPfId) {
+  else if (userRec.linkedPfId) {
     var pf = allPersonnel.find(function(p){ return p.id === userRec.linkedPfId; });
     if (pf) {
       var rank = pf.rank;
-      if (['Commander', 'Lieutenant Commander', 'Major'].includes(rank)) return '4';
-      if (['Captain', 'Lieutenant'].includes(rank)) return '4';
-      if (['Command Sergeant', 'Sergeant', 'Corporal', 'Lance Corporal', 'Specialist', 'Private'].includes(rank)) return '3';
+      if (['Commander','Lieutenant Commander','Major','Captain','Lieutenant'].includes(rank)) fileCl = 4;
+      else fileCl = 3;
     }
-    return userRec.clearance || '3';
   }
-  return userRec.clearance || '3';
+
+  // Cap at the stored approved clearance — prevents a user choosing a rank/role
+  // higher than what was actually granted to them.
+  return String(Math.min(fileCl, stored));
 }
 
 var allPersonnel   = [];    // array of personnel record objects
@@ -3236,6 +3303,25 @@ function openPersonnelModal(id) {
   // Allow opening when triggered from the link-file flow, even if clearance is low
   if (!window._awaitingPfLink && !canEditPersonnel()) return;
   pfModalMode = id ? 'edit' : 'new';
+
+  // During first-time link flow, restrict rank options to those that match the
+  // user's approved stored clearance — prevents self-promotion via rank selection.
+  var rankSel = document.getElementById('pfRank');
+  if (rankSel && window._awaitingPfLink && currentUser) {
+    var storedCl = parseInt(currentUser.clearance || '3');
+    // CL4+ ranks: Commander, Lieutenant Commander, Major, Captain, Lieutenant
+    var cl4Ranks = ['Commander','Lieutenant Commander','Major','Captain','Lieutenant'];
+    Array.from(rankSel.options).forEach(function(opt) {
+      if (!opt.value) return; // keep the placeholder
+      opt.disabled = (cl4Ranks.includes(opt.value) && storedCl < 4);
+      opt.style.display = opt.disabled ? 'none' : '';
+    });
+  } else if (rankSel) {
+    // Normal edit — show all ranks
+    Array.from(rankSel.options).forEach(function(opt) {
+      opt.disabled = false; opt.style.display = '';
+    });
+  }
   var titleEl = document.getElementById('pfModalTitle') || document.querySelector('#pfModal .modal-title');
   if (titleEl) titleEl.textContent = id ? 'EDIT PERSONNEL RECORD' : 'NEW PERSONNEL RECORD';
   document.getElementById('pfEditId').value = id || '';
@@ -3455,6 +3541,8 @@ document.addEventListener('click', function(ev) {
     case 'admin-deny':         adminDeny(el.dataset.uid); break;
     case 'admin-set-cl':       adminSetClearance(el.dataset.uid); break;
     case 'admin-set-unit':     adminSetUnit(el.dataset.uid); break;
+    case 'admin-link-file':    adminLinkFile(el.dataset.uid); break;
+    case 'admin-unlink-file':  adminUnlinkFile(el.dataset.uid); break;
     case 'admin-revoke':       adminRevoke(el.dataset.uid); break;
     case 'close-award-modal':    closeAwardModal(); break;
     case 'save-award':           saveAward(); break;
@@ -5849,6 +5937,24 @@ function renderEthicsRoster() {
 function openEthicsModal(id) {
   // Allow opening when triggered from the link-file flow, even if clearance is low
   if (!window._awaitingEfLink && !canEditPersonnel()) return;
+
+  // During first-time link flow, restrict role options to those that match the
+  // user's approved stored clearance — prevents self-promotion via role selection.
+  var roleSel = document.getElementById('efRole');
+  if (roleSel && window._awaitingEfLink && currentUser) {
+    var storedCl = parseInt(currentUser.clearance || '3');
+    // Chairman and Member both grant CL5 — only CL5 approved users may select them
+    Array.from(roleSel.options).forEach(function(opt) {
+      if (!opt.value) return;
+      var needsCl5 = (opt.value === 'Chairman' || opt.value === 'Member');
+      opt.disabled = (needsCl5 && storedCl < 5);
+      opt.style.display = opt.disabled ? 'none' : '';
+    });
+  } else if (roleSel) {
+    Array.from(roleSel.options).forEach(function(opt) {
+      opt.disabled = false; opt.style.display = '';
+    });
+  }
   document.getElementById('efErr').textContent = '';
   if (id) {
     var p = allEthicsPersonnel.find(function(x){ return x.id === id; });
