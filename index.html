@@ -38,11 +38,12 @@
 [data-theme="light"] .footer       { background:var(--bg2); border-color:var(--border); }
 [data-theme="light"] .scanlines    { display:none; }
 /* Nav */
-[data-theme="light"] .nav          { background:var(--bg2); }
-[data-theme="light"] .nav-group-label { background:var(--bg2); color:var(--text-dim); }
+[data-theme="light"] .nav          { background:var(--bg2); border-color:var(--border2); }
+[data-theme="light"] .nav-group    { border-color:var(--border2); }
+[data-theme="light"] .nav-group-label { background:rgba(0,100,50,.06); color:var(--green-dim); border-color:var(--border2); }
 [data-theme="light"] .nav-tab      { color:var(--text-dim); border-color:var(--border); }
 [data-theme="light"] .nav-tab:hover{ background:var(--green-trace); color:var(--green); }
-[data-theme="light"] .nav-tab.active{ background:var(--bg); color:var(--green); border-bottom-color:var(--green); }
+[data-theme="light"] .nav-tab.active{ background:rgba(0,80,40,.07); color:var(--green); border-bottom-color:var(--green); }
 [data-theme="light"] .panel        { background:var(--bg); }
 /* Cards */
 [data-theme="light"] .pf-card,
@@ -131,25 +132,19 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s ease-in-out infinite;vertical-align:middle;margin-right:4px;}
 
 /* ── Nav ── */
-.nav{display:flex;flex-direction:row;flex-wrap:wrap;border:1px solid var(--border2);border-top:none;border-bottom:none;background:#030806;}
-.nav-tab{padding:.45rem 1rem;font-size:.65rem;letter-spacing:.08em;color:var(--text-dim);cursor:pointer;border-right:1px solid var(--border);transition:all .15s;user-select:none;border-bottom:2px solid transparent;}
-.nav-tab:hover{color:var(--text);background:rgba(0,255,136,.03);}
-.nav-tab.active{color:var(--green);border-bottom:2px solid var(--green);background:rgba(0,255,136,.05);}
-.nav-group{display:flex;flex-direction:column;border-right:1px solid var(--border2);}
-.nav-group:last-child{border-right:none;}
-.nav-group-label{font-size:.48rem;letter-spacing:.22em;color:var(--text-faint);padding:3px 10px 0;text-align:center;background:#030806;white-space:nowrap;}
-.nav-group-tabs{display:flex;flex:1;}
-.nav-group .nav-tab{border-right:1px solid var(--border);border-bottom:2px solid transparent;}
-.nav-group .nav-tab:last-child{border-right:none;}
-.nav-standalone{display:flex;flex-direction:column;}
-
-/* ── Nav group collapse ── */
-.nav-group-label{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;gap:4px;transition:color .15s;}
-.nav-group-label:hover{color:var(--text-dim);}
-.ng-arrow{font-size:.45rem;transition:transform .2s;display:inline-block;}
+/* ── Nav accordion (vertical collapsible) ── */
+.nav{display:flex;flex-direction:column;background:var(--bg);border-bottom:2px solid var(--border2);}
+.nav-group{border-bottom:1px solid var(--border2);}
+.nav-group:last-child{border-bottom:none;}
+.nav-group-label{font-size:.58rem;letter-spacing:.18em;color:var(--green-dim);padding:8px 14px;background:rgba(0,255,136,.04);cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:6px;font-weight:700;transition:color .15s,background .15s;}
+.nav-group-label:hover{background:rgba(0,255,136,.07);color:var(--green);}
+.ng-arrow{font-size:.5rem;transition:transform .2s;display:inline-block;}
 .ng-arrow.closed{transform:rotate(-90deg);}
-.nav-group-tabs{display:flex;flex:1;overflow:hidden;transition:max-height .2s ease,opacity .15s ease;max-height:60px;opacity:1;}
-.nav-group-tabs.collapsed{max-height:0;opacity:0;pointer-events:none;}
+.nav-group-tabs{display:flex;flex-wrap:wrap;overflow:hidden;transition:max-height .25s ease,opacity .2s ease,padding .2s ease;max-height:120px;opacity:1;padding:2px 0;}
+.nav-group-tabs.collapsed{max-height:0;opacity:0;padding:0;pointer-events:none;}
+.nav-tab{padding:.45rem .85rem;font-size:.6rem;letter-spacing:.06em;color:var(--text-dim);cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;user-select:none;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.nav-tab:hover{color:var(--text);background:rgba(0,255,136,.04);}
+.nav-tab.active{color:var(--green);border-bottom-color:var(--green);background:rgba(0,255,136,.06);}
 
 /* ── POI / Target ── */
 .poi-list-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem;}
@@ -1370,6 +1365,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <h3 id="strikeModalTitle">ISSUE STRIKE</h3>
     <input type="hidden" id="strikeTargetPfId"/>
     <input type="hidden" id="strikeTargetStrikeId"/>
+    <input type="hidden" id="strikeSystem" value="pf"/>  <!-- pf = omega-1, ef = ethics -->
     <div class="modal-group">
       <label>REASON FOR STRIKE</label>
       <textarea id="strikeReason" placeholder="State clearly the reason for this strike..."></textarea>
@@ -1392,6 +1388,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <h3>SUBMIT APPEAL</h3>
     <input type="hidden" id="appealTargetPfId"/>
     <input type="hidden" id="appealTargetStrikeId"/>
+    <input type="hidden" id="appealSystem" value="pf"/>
     <div class="modal-group">
       <label>GROUNDS FOR APPEAL</label>
       <textarea id="appealReason" placeholder="State your grounds for appeal clearly and factually..."></textarea>
@@ -3348,12 +3345,12 @@ document.addEventListener('click', function(ev) {
     case 'del-award':        ev.stopPropagation(); removeAward(id, el.dataset.awardid); break;
     case 'open-tag-modal':   ev.stopPropagation(); openTagModal(id); break;
     case 'remove-tag':       ev.stopPropagation(); removeTag(id, el.dataset.tagtype); break;
-    case 'issue-strike':     ev.stopPropagation(); openStrikeModal(id, null); break;
-    case 'edit-strike':      ev.stopPropagation(); openStrikeModal(id, el.dataset.strikeid); break;
-    case 'delete-strike':    ev.stopPropagation(); deleteStrike(id, el.dataset.strikeid); break;
-    case 'appeal-strike':    ev.stopPropagation(); openAppealModal(id, el.dataset.strikeid); break;
-    case 'uphold-strike':    ev.stopPropagation(); resolveStrikeAppeal(id, el.dataset.strikeid, 'Upheld'); break;
-    case 'overturn-strike':  ev.stopPropagation(); resolveStrikeAppeal(id, el.dataset.strikeid, 'Overturned'); break;
+    case 'issue-strike':     ev.stopPropagation(); openStrikeModal(id, null, el.dataset.sys||'pf'); break;
+    case 'edit-strike':      ev.stopPropagation(); openStrikeModal(id, el.dataset.strikeid, el.dataset.sys||'pf'); break;
+    case 'delete-strike':    ev.stopPropagation(); deleteStrike(id, el.dataset.strikeid, el.dataset.sys||'pf'); break;
+    case 'appeal-strike':    ev.stopPropagation(); openAppealModal(id, el.dataset.strikeid, el.dataset.sys||'pf'); break;
+    case 'uphold-strike':    ev.stopPropagation(); resolveStrikeAppeal(id, el.dataset.strikeid, 'Upheld',     el.dataset.sys||'pf'); break;
+    case 'overturn-strike':  ev.stopPropagation(); resolveStrikeAppeal(id, el.dataset.strikeid, 'Overturned', el.dataset.sys||'pf'); break;
     case 'close-strike-modal':   closeStrikeModal(); break;
     case 'save-strike':          saveStrike(); break;
     case 'close-appeal-modal':   closeAppealModal(); break;
@@ -3625,10 +3622,12 @@ function strikeDisplayStatus(s) {
 }
 
 // ── Modal: Issue / Edit strike ──
-function openStrikeModal(pfId, strikeId) {
+function openStrikeModal(pfId, strikeId, system) {
   if (!canIssueStrike()) { alert('CLEARANCE LEVEL 5 REQUIRED TO ISSUE STRIKES'); return; }
+  system = system || 'pf';
   document.getElementById('strikeTargetPfId').value    = pfId;
   document.getElementById('strikeTargetStrikeId').value= strikeId || '';
+  document.getElementById('strikeSystem').value        = system;
   document.getElementById('strikeErr').textContent     = '';
   if (strikeId) {
     var rec = allPersonnel.find(function(p){ return p.id === pfId; });
@@ -3649,17 +3648,31 @@ function closeStrikeModal() { document.getElementById('strikeModal').classList.r
 async function saveStrike() {
   var pfId     = document.getElementById('strikeTargetPfId').value;
   var strikeId = document.getElementById('strikeTargetStrikeId').value;
+  var system   = document.getElementById('strikeSystem').value || 'pf';
   var reason   = document.getElementById('strikeReason').value.trim();
   var expiry   = document.getElementById('strikeExpiry').value;
   if (!reason) { document.getElementById('strikeErr').textContent = '> REASON REQUIRED'; return; }
 
-  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  // Resolve which personnel list and save function to use
+  var srcList = system === 'ef' ? allEthicsPersonnel : allPersonnel;
+  var saveFn  = system === 'ef'
+    ? function(id, data){ return ethicsPersonnelSet(id, data); }
+    : function(id, data){ return personnelSet(id, data); };
+  var renderFn = system === 'ef' ? function(){ renderEthicsFiles(); } : function(){ renderPersonnelFiles(); renderRoster(); };
+
+  var rec = srcList.find(function(p){ return p.id === pfId; });
   if (!rec) {
     // allPersonnel may be stale — try a fresh fetch
     try {
-      var fresh = await personnelGetAll();
-      allPersonnel = fresh.filter(function(p){ return p && p.id; });
-      rec = allPersonnel.find(function(p){ return p.id === pfId; });
+      if (system === 'ef') {
+        allEthicsPersonnel = (await ethicsPersonnelGetAll()).filter(function(p){ return p && p.id; });
+        srcList = allEthicsPersonnel;
+      } else {
+        var fresh = await personnelGetAll();
+        allPersonnel = fresh.filter(function(p){ return p && p.id; });
+        srcList = allPersonnel;
+      }
+      rec = srcList.find(function(p){ return p.id === pfId; });
     } catch(_) {}
     if (!rec) {
       document.getElementById('strikeErr').textContent = '> ERROR: Personnel record not found. Please refresh the page.';
@@ -3688,34 +3701,34 @@ async function saveStrike() {
   }
   rec.updated = Date.now();
   try {
-    await personnelSet(pfId, rec);
+    await saveFn(pfId, rec);
     closeStrikeModal();
-    renderPersonnelFiles();
-    renderRoster();
+    renderFn();
   } catch(e) { document.getElementById('strikeErr').textContent = '> SAVE ERROR: ' + e.message; }
 }
 
-async function deleteStrike(pfId, strikeId) {
+
+async function deleteStrike(pfId, strikeId, system) {
   if (!canIssueStrike()) return;
   if (!await pfConfirm('CONFIRM: PERMANENTLY REMOVE THIS STRIKE FROM THE RECORD?')) return;
-  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  system = system || 'pf';
+  var srcList = system === 'ef' ? allEthicsPersonnel : allPersonnel;
+  var rec = srcList.find(function(p){ return p.id === pfId; });
   if (!rec) return;
   rec.strikes = (rec.strikes||[]).filter(function(s){ return s.id !== strikeId; });
   rec.updated = Date.now();
   try {
-    await personnelSet(pfId, rec);
-    // Keep strikes section open so CL5 can immediately issue a new strike
-    pfCollapsed.delete(pfId + ':strikes');
-    renderPersonnelFiles();
-    renderRoster();
+    if (system === 'ef') { await ethicsPersonnelSet(pfId, rec); efCollapsed.delete(pfId + ':strikes'); renderEthicsFiles(); }
+    else { await personnelSet(pfId, rec); pfCollapsed.delete(pfId + ':strikes'); renderPersonnelFiles(); renderRoster(); }
   } catch(e) { alert('ERROR: ' + e.message); }
 }
 
 // ── Modal: Appeal ──
-function openAppealModal(pfId, strikeId) {
+function openAppealModal(pfId, strikeId, system) {
   if (!currentUser) { alert('AUTHENTICATE TO SUBMIT AN APPEAL'); return; }
   document.getElementById('appealTargetPfId').value    = pfId;
   document.getElementById('appealTargetStrikeId').value= strikeId;
+  document.getElementById('appealSystem').value        = system || 'pf';
   document.getElementById('appealReason').value        = '';
   document.getElementById('appealErr').textContent     = '';
   document.getElementById('appealModal').classList.add('open');
@@ -3725,39 +3738,34 @@ function closeAppealModal() { document.getElementById('appealModal').classList.r
 async function saveAppeal() {
   var pfId     = document.getElementById('appealTargetPfId').value;
   var strikeId = document.getElementById('appealTargetStrikeId').value;
+  var system   = document.getElementById('appealSystem').value || 'pf';
   var reason   = document.getElementById('appealReason').value.trim();
   if (!reason) { document.getElementById('appealErr').textContent = '> GROUNDS FOR APPEAL REQUIRED'; return; }
 
-  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  var srcList = system === 'ef' ? allEthicsPersonnel : allPersonnel;
+  var rec = srcList.find(function(p){ return p.id === pfId; });
   if (!rec) return;
   var s = (rec.strikes||[]).find(function(x){ return x.id === strikeId; });
   if (!s) return;
 
   s.status = 'Appealed';
-  s.appeal = {
-    reason:      reason,
-    submittedBy: currentUser.id,
-    submittedAt: Date.now(),
-    resolution:  null,
-    resolvedBy:  null,
-    resolvedAt:  null
-  };
+  s.appeal = { reason: reason, submittedBy: currentUser.id, submittedAt: Date.now(),
+               resolution: null, resolvedBy: null, resolvedAt: null };
   rec.updated = Date.now();
   try {
-    await personnelSet(pfId, rec);
-    closeAppealModal();
-    renderPersonnelFiles();
-    renderRoster();
+    if (system === 'ef') { await ethicsPersonnelSet(pfId, rec); closeAppealModal(); renderEthicsFiles(); }
+    else { await personnelSet(pfId, rec); closeAppealModal(); renderPersonnelFiles(); renderRoster(); }
   } catch(e) { document.getElementById('appealErr').textContent = '> SAVE ERROR: ' + e.message; }
 }
 
 // ── Resolve appeal (CL5 only) ──
-async function resolveStrikeAppeal(pfId, strikeId, resolution) {
+async function resolveStrikeAppeal(pfId, strikeId, resolution, system) {
   if (!canIssueStrike()) return;
   var label = resolution === 'Overturned' ? 'OVERTURN (remove strike)' : 'UPHOLD (keep strike active)';
   if (!await pfConfirm('CONFIRM: ' + label + '?')) return;
-
-  var rec = allPersonnel.find(function(p){ return p.id === pfId; });
+  system = system || 'pf';
+  var srcList = system === 'ef' ? allEthicsPersonnel : allPersonnel;
+  var rec = srcList.find(function(p){ return p.id === pfId; });
   if (!rec) return;
   var s = (rec.strikes||[]).find(function(x){ return x.id === strikeId; });
   if (!s || !s.appeal) return;
@@ -3767,7 +3775,17 @@ async function resolveStrikeAppeal(pfId, strikeId, resolution) {
   s.appeal.resolvedBy = currentUser.id;
   s.appeal.resolvedAt = Date.now();
   rec.updated = Date.now();
-  try { await personnelSet(pfId, rec); renderPersonnelFiles(); renderRoster(); } catch(e) { alert('ERROR: ' + e.message); }
+  try {
+    if (system === 'ef') {
+      await ethicsPersonnelSet(pfId, rec);
+      efCollapsed.delete(pfId + ':strikes');
+      renderEthicsFiles();
+    } else {
+      await personnelSet(pfId, rec);
+      pfCollapsed.delete(pfId + ':strikes');
+      renderPersonnelFiles(); renderRoster();
+    }
+  } catch(e) { alert('ERROR: ' + e.message); }
 }
 // ================================================================
 var allSquadrons = [];
@@ -4044,15 +4062,46 @@ function buildRecCard(r, canEdit) {
   var myVote   = currentUser ? (r.votes||{})[currentUser.id] : null;
   var y = recYes(r), n = recNo(r), maj = recMajYes(r);
 
-  // Comments for current stage
-  var stageComments = {scouting:'scoutingComments', greenlit:'greenlitComments', tryout:'tryoutComments'};
-  var commKey  = stageComments[r.stage] || 'scoutingComments';
-  var comments = Array.isArray(r[commKey]) ? r[commKey] : [];
+  // Show comments from ALL stages up to and including current, so history persists
+  var stageOrder = ['scouting','greenlit','tryout'];
+  var stageKeys  = {scouting:'scoutingComments', greenlit:'greenlitComments', tryout:'tryoutComments'};
+  var stageLabels= {scouting:'SCOUTING', greenlit:'GREENLIT', tryout:'TRYOUT'};
+  var currentStageIdx = stageOrder.indexOf(r.stage);
+  var commKey  = stageKeys[r.stage] || 'scoutingComments';
 
-  var commHtml = comments.length ? comments.map(function(c){
-    var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
-    return `<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-rec-comment" data-recid="${e(r.id)}" data-stage="${e(r.stage)}" data-created="${c.created}" title="Delete">×</button>`:''}</div>${e(c.text)}</div>`;
-  }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:2px 0;">[ NO COMMENTS ]</div>';
+  // Build comment HTML showing prior stages as read-only history, current stage with add-form
+  function buildStageCommentBlock(stageKey, stageLabel, isCurrent) {
+    var arr = Array.isArray(r[stageKey]) ? r[stageKey] : [];
+    if (!arr.length && !isCurrent) return '';
+    var header = isCurrent ? '' :
+      '<div style="font-size:.54rem;letter-spacing:.12em;color:var(--text-faint);margin:.4rem 0 .2rem;border-top:1px dashed var(--border);padding-top:.4rem;">▸ FROM ' + stageLabel + ' STAGE</div>';
+    var rows = arr.length ? arr.map(function(c) {
+      var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+      return '<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·'+e(c.author)+' [L'+e(c.clearance)+'] · '+ct+'</span>'
+        + (canDeleteComment() ? '<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-rec-comment" data-recid="'+e(r.id)+'" data-stage="'+stageKey.replace('Comments','')+'" data-created="'+c.created+'" title="Delete">×</button>' : '')
+        + '</div>'+e(c.text)+'</div>';
+    }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);">[ NO COMMENTS ]</div>';
+    return header + rows;
+  }
+
+  var commHtml = '';
+  if (currentStageIdx > 0) {
+    // Show history from prior stages
+    for (var si = 0; si < currentStageIdx; si++) {
+      commHtml += buildStageCommentBlock(stageKeys[stageOrder[si]], stageLabels[stageOrder[si]], false);
+    }
+    if (commHtml) commHtml += '<div style="font-size:.54rem;letter-spacing:.12em;color:var(--text-dim);margin:.4rem 0 .2rem;border-top:1px dashed var(--border);padding-top:.4rem;">▸ CURRENT STAGE COMMENTS</div>';
+  }
+  // Current stage comments
+  var currComments = Array.isArray(r[commKey]) ? r[commKey] : [];
+  commHtml += currComments.length
+    ? currComments.map(function(c) {
+        var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+        return '<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·'+e(c.author)+' [L'+e(c.clearance)+'] · '+ct+'</span>'
+          + (canDeleteComment() ? '<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-rec-comment" data-recid="'+e(r.id)+'" data-stage="'+e(r.stage)+'" data-created="'+c.created+'" title="Delete">×</button>' : '')
+          + '</div>'+e(c.text)+'</div>';
+      }).join('')
+    : '<div style="font-size:.6rem;color:var(--text-faint);">[ NO COMMENTS ]</div>';
 
   var commentForm = currentUser
     ? `<div class="poi-note-form" style="margin-top:.35rem;">
@@ -4676,11 +4725,24 @@ function buildEthicsAppCard(r, canEdit, isCL5) {
 }
 
 function buildEthicsInterviewCard(r, isCL5) {
-  var comments = Array.isArray(r.interviewComments) ? r.interviewComments : [];
-  var commHtml = comments.map(function(c){
-    var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
-    return `<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ethics-int-comment" data-recid="${e(r.id)}" data-created="${c.created}">×</button>`:''}</div>${e(c.text)}</div>`;
-  }).join('') || '<div style="font-size:.6rem;color:var(--text-faint);">[ NO INTERVIEW NOTES ]</div>';
+  // Show application comments as history, then interview comments
+  var appComments = Array.isArray(r.applicationComments) ? r.applicationComments : [];
+  var comments    = Array.isArray(r.interviewComments)   ? r.interviewComments   : [];
+
+  var historyHtml = appComments.length
+    ? '<div style="font-size:.54rem;letter-spacing:.12em;color:var(--text-faint);margin-bottom:.3rem;border-bottom:1px dashed var(--border);padding-bottom:.3rem;">▸ FROM APPLICATION STAGE</div>'
+      + appComments.map(function(c){
+          var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+          return '<div class="rec-comment" style="opacity:.75;"><div class="rec-comment-meta">EC·'+e(c.author)+' [L'+e(c.clearance)+'] · '+ct+'</div>'+e(c.text)+'</div>';
+        }).join('')
+      + '<div style="font-size:.54rem;letter-spacing:.12em;color:var(--text-dim);margin:.4rem 0 .2rem;border-top:1px dashed var(--border);padding-top:.4rem;">▸ INTERVIEW NOTES (CL5 ONLY)</div>'
+    : '';
+  var commHtml = historyHtml + (comments.length
+    ? comments.map(function(c){
+        var ct = new Date(c.created).toISOString().slice(0,16).replace('T',' ');
+        return `<div class="rec-comment"><div class="rec-comment-meta" style="display:flex;justify-content:space-between;align-items:center;"><span>EC·${e(c.author)} [L${e(c.clearance)}] · ${ct}</span>${canDeleteComment()?`<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;" data-action="del-ethics-int-comment" data-recid="${e(r.id)}" data-created="${c.created}">×</button>`:''}</div>${e(c.text)}</div>`;
+      }).join('')
+    : '<div style="font-size:.6rem;color:var(--text-faint);">[ NO INTERVIEW NOTES ]</div>');
 
   var commentForm = isCL5 ? `<div class="poi-note-form" style="margin-top:.35rem;"><textarea class="poi-note-input" id="ethicsinterviewnote_${e(r.id)}" placeholder="Interview notes (CL5 only)..." rows="2" onkeydown="handleEthicsIntNoteKey(event,this)"></textarea><button class="rec-btn" data-action="add-ethics-int-comment" data-id="${e(r.id)}">[ ADD ]</button></div>` : '<div style="font-size:.6rem;color:var(--text-faint);margin-top:.3rem;">[ CL5 ONLY — INTERVIEW NOTES ]</div>';
 
@@ -5606,6 +5668,53 @@ function buildEthicsCard(p) {
       <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':squadrons')?'none':'block'};padding:0 .1rem .4rem;">
         ${efSqdHtml}
         ${canEdit?`<button class="pf-section-btn" data-action="create-ef-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:''}
+      </div>
+      <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="strikes">
+        <span style="display:flex;align-items:center;justify-content:space-between;flex:1;gap:.5rem;">
+          <span>▸ STRIKES (${(Array.isArray(p.strikes)?p.strikes:[]).length})</span>
+          ${canIssueStrike()?`<button class="pf-section-btn" data-action="issue-strike" data-id="${e(p.id)}" data-sys="ef" style="font-size:.55rem;">[ + ISSUE STRIKE ]</button>`:''}
+        </span>
+        <span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':strikes')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':strikes')?'none':'block'};padding:0 .1rem .4rem;">
+        ${(function(){
+          var strikes = Array.isArray(p.strikes) ? p.strikes : [];
+          if (!strikes.length) return '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO STRIKES ON RECORD ]</div>';
+          return strikes.map(function(s) {
+            var ds  = strikeDisplayStatus(s);
+            var exp = s.expiresAt ? new Date(s.expiresAt).toLocaleDateString('en-GB') : 'Permanent';
+            var iDate = new Date(s.issuedAt).toISOString().slice(0,10);
+            var appealBlock = '';
+            if (s.appeal) {
+              var aDate = new Date(s.appeal.submittedAt).toISOString().slice(0,10);
+              appealBlock = '<div class="strike-appeal-block' + (s.appeal.resolution?' resolved':'') + '">'
+                + '<div style="font-size:.57rem;color:var(--amber);letter-spacing:.08em;margin-bottom:2px;">▸ APPEAL' + (s.appeal.resolution?' — '+s.appeal.resolution.toUpperCase():' — PENDING REVIEW') + '</div>'
+                + '<div style="color:var(--text);line-height:1.6;">' + e(s.appeal.reason) + '</div>'
+                + '<div style="font-size:.57rem;color:var(--text-dim);margin-top:2px;">Submitted by EC·' + e(s.appeal.submittedBy) + ' · ' + aDate + (s.appeal.resolvedBy?' · Resolved by EC·'+e(s.appeal.resolvedBy):'') + '</div>'
+                + '</div>';
+            }
+            var btns = '<div class="strike-btns">';
+            if (canIssueStrike()) {
+              btns += '<button class="strike-btn edit" data-action="edit-strike" data-id="'+e(p.id)+'" data-strikeid="'+e(s.id)+'" data-sys="ef">EDIT</button>';
+              if (s.status === 'Appealed' && s.appeal && !s.appeal.resolution) {
+                btns += '<button class="strike-btn overturn" data-action="overturn-strike" data-id="'+e(p.id)+'" data-strikeid="'+e(s.id)+'" data-sys="ef">OVERTURN</button>';
+                btns += '<button class="strike-btn uphold"   data-action="uphold-strike"   data-id="'+e(p.id)+'" data-strikeid="'+e(s.id)+'" data-sys="ef">UPHOLD</button>';
+              }
+              btns += '<button class="strike-btn del" data-action="delete-strike" data-id="'+e(p.id)+'" data-strikeid="'+e(s.id)+'" data-sys="ef">✕ REMOVE</button>';
+            }
+            if (currentUser && s.status === 'Active') {
+              btns += '<button class="strike-btn appeal" data-action="appeal-strike" data-id="'+e(p.id)+'" data-strikeid="'+e(s.id)+'" data-sys="ef">APPEAL</button>';
+            }
+            btns += '</div>';
+            return '<div class="strike-card '+ds.cardCls+'">'
+              + '<div class="strike-header"><div>'
+              + '<span class="badge '+ds.cls+'">'+ds.label+'</span>'
+              + '<div class="strike-meta">Issued by EC·'+e(s.issuedBy)+' · '+iDate+' · Expires: '+e(exp)+'</div>'
+              + '</div></div>'
+              + '<div class="strike-reason">'+e(s.reason)+'</div>'
+              + appealBlock + btns + '</div>';
+          }).join('');
+        })()}
       </div>
       <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="notes">
         <span>▸ NOTES (${notes.length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':notes')?'-90':'0'}deg)">▾</span>
