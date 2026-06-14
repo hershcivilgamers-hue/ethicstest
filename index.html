@@ -3267,7 +3267,7 @@ function closePersonnelModal() {
 }
 
 async function savePersonnelRecord() {
-  if (!canEditPersonnel()) return;
+  if (!window._awaitingPfLink && !canEditPersonnel()) return;
   var name = document.getElementById('pfName').value.trim();
   var rank = document.getElementById('pfRank').value;
   if (!name) { alert('FULL NAME REQUIRED'); return; }
