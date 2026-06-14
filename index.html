@@ -38,7 +38,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
 /* ── Layout ── */
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
-.shell{position:relative;max-width:1600px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+.shell{position:relative;max-width:1200px;margin:0 auto;padding:1.25rem 1rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
 
 /* ── Header ── */
 .header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}
@@ -979,9 +979,24 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
             <option value="5">VISIBLE: CL5 ONLY</option>
           </select>
         </div>
-        <input class="order-input" id="ethicsOrderTitle" placeholder="Order designation..."/>
+        <input class="order-input" id="ethicsOrderTitle" placeholder="Order designation..." style="width:100%;margin-bottom:.5rem;"/>
         <textarea class="order-textarea" id="ethicsOrderBody" placeholder="Full order text..." rows="3"></textarea>
         <button class="order-btn" onclick="submitEthicsOrder()">[ ISSUE ORDER ]</button>
+      </div>
+      <!-- Stats + filters -->
+      <div class="order-stats" id="ethicsOrderStats" style="margin-top:.75rem;">
+        <span>TOTAL: <span class="sv" id="eoStatTotal">—</span></span>
+        <span>PENDING: <span class="sv" style="color:var(--amber);" id="eoStatPend">—</span></span>
+        <span>ACTIVE: <span class="sv" style="color:var(--cyan);" id="eoStatActive">—</span></span>
+        <span>COMPLETE: <span class="sv" id="eoStatDone">—</span></span>
+      </div>
+      <div class="order-filters" id="ethicsOrderFilters">
+        <span style="font-size:.58rem;color:var(--text-dim);">FILTER:</span>
+        <button class="filter-btn active" onclick="setEthicsFilter('ALL',this)">ALL</button>
+        <button class="filter-btn" onclick="setEthicsFilter('PENDING',this)">PENDING</button>
+        <button class="filter-btn" onclick="setEthicsFilter('ACTIVE',this)">ACTIVE</button>
+        <button class="filter-btn" onclick="setEthicsFilter('COMPLETE',this)">COMPLETE</button>
+        <button class="filter-btn" onclick="setEthicsFilter('CANCELLED',this)">CANCELLED</button>
       </div>
       <div id="ethicsOrdersList"></div>
     </div>
@@ -1972,7 +1987,9 @@ function renderOrders() {
     var cached   = commentCache[o.id] || [];
     var cCount   = cached.length;
 
-    var statusCtrl = isOwner
+    var canEditOrder = isOwner || (currentUser && parseInt(currentUser.clearance) >= 5);
+    var isCL5order   = currentUser && parseInt(currentUser.clearance) >= 5;
+    var statusCtrl = canEditOrder
       ? '<select class="status-select" onchange="updateOrderStatus(\'' + o.id + '\',this.value)">' +
         ['PENDING','IN PROGRESS','COMPLETED','FLAGGED'].map(function(s) {
           return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
@@ -2036,12 +2053,14 @@ function renderOrders() {
         '</div>' +
         '<div class="order-card-actions">' +
           statusCtrl +
+          (isCL5order ? '<button class="order-action-btn" onclick="openOrderEdit(\'' + o.id + '\')" title="Edit order" style="font-size:.6rem;">✎</button>' : '') +
           (isOwner
             ? '<button class="order-action-btn del-btn" onclick="deleteOrder(\'' + o.id + '\')">✕</button>'
             : '') +
         '</div>' +
       '</div>' +
       (o.desc ? '<div class="order-card-desc">' + e(o.desc) + '</div>' : '') +
+      (o.editedBy ? '<div style="font-size:.56rem;color:var(--text-faint);margin-top:3px;">✎ last edited by EC·' + e(o.editedBy) + ' · ' + new Date(o.editedAt).toISOString().slice(0,16).replace('T',' ') + ' UTC</div>' : '') +
       '<div class="comment-toggle" onclick="toggleComments(\'' + o.id + '\')">' +
         toggleLabel +
       '</div>' +
@@ -3855,6 +3874,14 @@ function handleRecNoteKey(ev, el) {
 //  Mirrors Omega-1 orders but uses /ethics-orders/ and /ethics-comments/
 // ================================================================
 var allEthicsOrders = [];
+var activeEthicsFilter = 'ALL';
+
+function setEthicsFilter(f, btn) {
+  activeEthicsFilter = f;
+  document.querySelectorAll('#ethicsOrderFilters .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderEthicsOrders();
+}
 
 async function ethicsOrdersGetAll() {
   if (firebaseReady) { var r=await fbGetAll('/ethics-orders'); return r?Object.values(r):[];}
@@ -3980,13 +4007,28 @@ function renderEthicsOrders() {
   var el = document.getElementById('ethicsOrdersList');
   if (!el) return;
   var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
-  var PBADGE = { ELEVATED:'b-cyan', URGENT:'b-amber', CRITICAL:'b-red' };
-  var SBADGE = { PENDING:'b-amber', ACTIVE:'b-green', COMPLETE:'b-dim', CANCELLED:'b-dim' };
-  if (!allEthicsOrders.length) {
-    el.innerHTML = '<div class="order-empty">[ NO ETHICS ORDERS ISSUED ]</div>';
+  var isCL5   = currentUser && parseInt(currentUser.clearance) >= 5;
+  var PBADGE  = { ELEVATED:'b-cyan', URGENT:'b-amber', CRITICAL:'b-red' };
+  var SBADGE  = { PENDING:'b-amber', ACTIVE:'b-green', COMPLETE:'b-dim', CANCELLED:'b-dim' };
+
+  // Update stats
+  var pend   = allEthicsOrders.filter(function(o){return o.status==='PENDING';}).length;
+  var active = allEthicsOrders.filter(function(o){return o.status==='ACTIVE';}).length;
+  var done   = allEthicsOrders.filter(function(o){return o.status==='COMPLETE';}).length;
+  var tot = document.getElementById('eoStatTotal');  if(tot)  tot.textContent  = allEthicsOrders.length;
+  var ep  = document.getElementById('eoStatPend');   if(ep)   ep.textContent   = pend;
+  var ea  = document.getElementById('eoStatActive'); if(ea)   ea.textContent   = active;
+  var ed  = document.getElementById('eoStatDone');   if(ed)   ed.textContent   = done;
+
+  var filtered = activeEthicsFilter === 'ALL'
+    ? allEthicsOrders
+    : allEthicsOrders.filter(function(o){ return o.status === activeEthicsFilter; });
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="order-empty">[ NO ETHICS ORDERS MATCH CURRENT FILTER ]</div>';
     return;
   }
-  el.innerHTML = allEthicsOrders.map(function(o) {
+  el.innerHTML = filtered.map(function(o) {
     var ts       = new Date(o.created).toISOString().slice(0,16).replace('T',' ');
     var expanded = ethicsExpandedOrders.has(o.id);
     var cached   = ethicsCommentCache[o.id] || [];
@@ -3995,8 +4037,9 @@ function renderEthicsOrders() {
     var statusOpts = ['PENDING','ACTIVE','COMPLETE','CANCELLED'].map(function(s) {
       return '<option value="' + s + '"' + (o.status===s?' selected':'') + '>' + s + '</option>';
     }).join('');
+    // Use onchange inline (not data-action) to prevent re-render from destroying the select mid-interaction
     var statusCtrl = canEdit
-      ? '<select class="order-select" data-action="eo-status" data-id="' + e(o.id) + '">' + statusOpts + '</select>'
+      ? '<select class="status-select" onchange="updateEthicsOrderStatus(\'' + e(o.id) + '\',this.value)">' + statusOpts + '</select>'
       : '<span class="badge ' + (SBADGE[o.status]||'b-dim') + '">' + e(o.status) + '</span>';
 
     var commentsHtml = '';
@@ -4047,10 +4090,11 @@ function renderEthicsOrders() {
         '</div>' +
         '<div class="order-card-actions">' +
           statusCtrl +
+          (isCL5 ? '<button class="order-action-btn" onclick="openEthicsOrderEdit(\'' + e(o.id) + '\')" title="Edit order" style="font-size:.6rem;">✎</button>' : '') +
           (canEdit ? '<button class="order-action-btn del-btn" data-action="del-eo" data-id="' + e(o.id) + '">✕</button>' : '') +
         '</div>' +
-      '</div>' +
       (o.body ? '<div class="order-card-desc">' + e(o.body) + '</div>' : '') +
+      (o.editedBy ? '<div style="font-size:.56rem;color:var(--text-faint);margin-top:3px;">✎ last edited by EC·' + e(o.editedBy) + ' · ' + new Date(o.editedAt).toISOString().slice(0,16).replace('T',' ') + ' UTC</div>' : '') +
       '<div class="comment-toggle" data-action="toggle-eo-comments" data-id="' + e(o.id) + '">' + toggleLabel + '</div>' +
       commentsHtml +
     '</div>';
@@ -5353,6 +5397,8 @@ if (_termInput) _termInput.addEventListener('keydown', function(ev) {
         showTyping(false);
         appendMsg('cairo', 'Unexpected substrate fault.\n\nRef: ' + err.message);
       });
+	 function openOrderEdit()
+	 function openEthicsOrderEdit()
   }
 });
 </script>
