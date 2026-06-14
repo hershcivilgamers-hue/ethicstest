@@ -3325,6 +3325,9 @@ if (window._awaitingPfLink) {
       linkUserRec.linkedPfId = id;
       await userSet(currentUser.id, linkUserRec);
       currentUser.linkedPfId = id;
+      // allPersonnel already has newRec (pushed above), so deriveClearance
+      // can find the rank right now and give the correct clearance level
+      currentUser.clearance = deriveClearance(linkUserRec);
     }
     window._awaitingPfLink = false;
     onLogin();
@@ -5928,6 +5931,8 @@ if (window._awaitingEfLink) {
       linkUserRecEf.linkedEfId = newId;
       await userSet(currentUser.id, linkUserRecEf);
       currentUser.linkedEfId = newId;
+      // allEthicsPersonnel already has record (pushed above)
+      currentUser.clearance = deriveClearance(linkUserRecEf);
     }
     window._awaitingEfLink = false;
     onLogin();
