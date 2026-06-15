@@ -3408,6 +3408,54 @@ var RANKS = [
 ];
 
 function rankIndex(r) { return RANKS.indexOf(r); }
+
+// ── Promotion/demotion permission rules ──
+// Returns the rank index of the current user's own Omega-1 file (lower index = higher rank),
+// or -1 if they have no Omega-1 file. CL5 admins are treated as outranking everyone.
+function getOwnPfRankIndex() {
+  if (!currentUser || !currentUser.linkedPfId) return -1;
+  var pf = allPersonnel.find(function(p){ return p.id === currentUser.linkedPfId; });
+  return pf ? rankIndex(pf.rank) : -1;
+}
+// Can the current user set an Omega-1 file to the given target rank?
+// Rules: must be junior CL4 or above; may only assign ranks strictly below their own
+// (higher index than their own rank). CL5 may assign any rank.
+function canAssignPfRank(targetRank, existingRank) {
+  if (!currentUser) return false;
+  var cl = parseInt(currentUser.clearance || '3');
+  if (cl >= 5) return true; // CL5 admins unrestricted
+  if (cl < 4) return false;  // below CL4 cannot promote at all
+  var ownIdx = getOwnPfRankIndex();
+  if (ownIdx < 0) return false; // no Omega-1 rank of their own
+  var tgtIdx = rankIndex(targetRank);
+  if (tgtIdx < 0) return false;
+  // Target must be strictly below the user's own rank (index strictly greater)
+  if (tgtIdx <= ownIdx) return false;
+  // Also can't modify someone currently at or above your rank
+  if (existingRank) {
+    var exIdx = rankIndex(existingRank);
+    if (exIdx >= 0 && exIdx <= ownIdx) return false;
+  }
+  return true;
+}
+// Cross-unit rule: only CL5 may edit a file from the unit they don't belong to.
+function canEditUnitFile(unit) { // unit: 'pf' (Omega-1) or 'ef' (Ethics)
+  if (!currentUser) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  if (unit === 'pf') return !!currentUser.linkedPfId; // must be an Omega-1 member
+  if (unit === 'ef') return !!currentUser.linkedEfId; // must be an Ethics member
+  return false;
+}
+
+// Ethics role hierarchy (higher = more senior). Only CL5 can change EC roles
+// since Chairman/Member are CL5 and Assistant is CL4 — promotion within EC is a
+// command-level decision.
+var EF_ROLE_ORDER = ['Assistant','Member','Chairman']; // index 0 = junior
+function canAssignEfRole(targetRole, existingRole) {
+  if (!currentUser) return false;
+  // Only CL5 command may alter Ethics Committee roles
+  return parseInt(currentUser.clearance) >= 5;
+}
 // ================================================================
 //  ADMIN PANEL (CL5 only)
 //  Manage pending registrations and active accounts.
@@ -3931,10 +3979,11 @@ function renderPersonnelFiles() {
   // Access control: hide files of ranks above the current user's level.
   // Users always see their own file regardless of rank.
   var readLevel = getUserReadLevel();
+  var pfRedactedIds = new Set();
   if (readLevel < 6) {
-    filtered = filtered.filter(function(p) {
+    filtered.forEach(function(p) {
       var isSelf = currentUser && currentUser.linkedPfId === p.id;
-      return isSelf || getPfReadLevel(p) <= readLevel;
+      if (!isSelf && getPfReadLevel(p) > readLevel) pfRedactedIds.add(p.id);
     });
   }
 
@@ -3960,6 +4009,17 @@ function renderPersonnelFiles() {
   }
 
 list.innerHTML = filtered.map(function(p) {
+    // Redacted entry: file is above the viewer's clearance — show codename only
+    if (pfRedactedIds.has(p.id)) {
+      var cn = p.nickname ? e(p.nickname) : '[ REDACTED ]';
+      return '<div class="pf-card redacted" style="opacity:.6;border:1px dashed var(--border2);padding:.6rem .9rem;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">'
+        + '<div style="display:flex;align-items:center;gap:.6rem;">'
+        + '<span style="font-family:\'VT323\',monospace;color:var(--text-dim);letter-spacing:.1em;">▨ ' + cn + '</span>'
+        + '<span class="badge b-dim" style="font-size:.5rem;">CLASSIFIED</span>'
+        + '</div>'
+        + '<span style="font-size:.55rem;color:var(--text-faint);letter-spacing:.08em;">CLEARANCE INSUFFICIENT</span>'
+        + '</div>';
+    }
     var isOpen  = pfExpanded.has(p.id);
     var canEdit = canEditPersonnel();
     var isSelf = currentUser && currentUser.linkedPfId === p.id;
@@ -4185,10 +4245,11 @@ function renderRoster() {
 
   // Access control: hide personnel above the current user's read level (own file always shown)
   var rosterReadLevel = getUserReadLevel();
+  var rosterRedacted = new Set();
   if (rosterReadLevel < 6) {
-    active = active.filter(function(p) {
+    active.forEach(function(p) {
       var isSelf = currentUser && currentUser.linkedPfId === p.id;
-      return isSelf || getPfReadLevel(p) <= rosterReadLevel;
+      if (!isSelf && getPfReadLevel(p) > rosterReadLevel) rosterRedacted.add(p.id);
     });
   }
 
@@ -4211,6 +4272,18 @@ function renderRoster() {
     if (p.rank !== lastRank) {
       rows += '<tr class="roster-rank-divider"><td colspan="5">▸ ' + e(p.rank || '—').toUpperCase() + '</td></tr>';
       lastRank = p.rank;
+    }
+    // Redacted personnel: show codename only, dashes elsewhere
+    if (rosterRedacted.has(p.id)) {
+      rows +=
+        '<tr style="opacity:.55;">' +
+          '<td class="roster-num">' + counter++ + '</td>' +
+          '<td class="roster-name" style="font-family:\'VT323\',monospace;letter-spacing:.08em;">▨ ' + (p.nickname ? e(p.nickname) : '[ REDACTED ]') + '</td>' +
+          '<td class="roster-nick" style="color:var(--text-faint);">— CLASSIFIED —</td>' +
+          '<td><span class="badge b-dim" style="font-size:.5rem;">●●●</span></td>' +
+          '<td style="font-size:.62rem;color:var(--text-faint);">——</td>' +
+        '</tr>';
+      return;
     }
     var activeLeavePf = getActiveLeave(p);
     rows +=
@@ -4250,9 +4323,14 @@ function openPersonnelModal(id) {
       opt.style.display = opt.disabled ? 'none' : '';
     });
   } else if (rankSel) {
-    // Normal edit — show all ranks
+    // Normal edit mode: restrict to ranks the user is allowed to assign
+    // (one below their own and lower), unless CL5.
+    var isCL5edit = currentUser && parseInt(currentUser.clearance) >= 5;
     Array.from(rankSel.options).forEach(function(opt) {
-      opt.disabled = false; opt.style.display = '';
+      if (!opt.value) { opt.disabled = false; opt.style.display = ''; return; }
+      var allowed = isCL5edit || canAssignPfRank(opt.value, null);
+      opt.disabled = !allowed;
+      opt.style.display = allowed ? '' : 'none';
     });
   }
   var titleEl = document.getElementById('pfModalTitle') || document.querySelector('#pfModal .modal-title');
@@ -4300,6 +4378,18 @@ async function savePersonnelRecord() {
   if (editId) {
     var rec = allPersonnel.find(function(p){ return p.id === editId; });
     if (rec) {
+      // Cross-unit rule: Ethics-only members (no Omega-1 file) can't edit Omega-1 files unless CL5
+      if (!window._awaitingPfLink && !canEditUnitFile('pf')) {
+        alert('CROSS-UNIT EDIT DENIED\n\nOnly Omega-1 personnel (or CL5 command) may modify Omega-1 files.');
+        return;
+      }
+      // Rank-change rule: enforce promotion limits when rank actually changes
+      if (rec.rank && rec.rank !== rank && !window._awaitingPfLink) {
+        if (!canAssignPfRank(rank, rec.rank)) {
+          alert('PROMOTION DENIED\n\nYou may only assign ranks below your own, and may not modify personnel at or above your rank. CL5 command may override.');
+          return;
+        }
+      }
       // Log rank change if rank has changed
       if (rec.rank && rec.rank !== rank) {
         if (!rec.rankHistory) rec.rankHistory = [];
@@ -4320,6 +4410,12 @@ async function savePersonnelRecord() {
       try { await personnelSet(editId, rec); } catch(err) { alert('SAVE ERROR: ' + err.message); }
     }
   } else {
+    // New record: enforce the same rank-assignment limit (CL5 unrestricted).
+    // The link flow handles its own restriction separately.
+    if (!window._awaitingPfLink && !canAssignPfRank(rank, null)) {
+      alert('RANK NOT PERMITTED\n\nYou may only create files ranked below your own. CL5 command may override.');
+      return;
+    }
     var id = 'per_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
     var newRec = {
       id: id, name: name,
@@ -6674,10 +6770,11 @@ function renderEthicsFiles() {
   // Access control: hide files of roles above the current user's level.
   // Users always see their own linked EC file.
   var readLevel = getUserReadLevel();
+  window._efRedactedIds = new Set();
   if (readLevel < 6) {
-    filtered = filtered.filter(function(p) {
+    filtered.forEach(function(p) {
       var isSelf = currentUser && currentUser.linkedEfId === p.id;
-      return isSelf || getEfReadLevel(p) <= readLevel;
+      if (!isSelf && getEfReadLevel(p) > readLevel) window._efRedactedIds.add(p.id);
     });
   }
 
@@ -6718,6 +6815,17 @@ async function toggleEthicsTag(efId, tag) {
 }
 
 function buildEthicsCard(p) {
+  // Redacted entry: EC file above the viewer's clearance — show codename only
+  if (window._efRedactedIds && window._efRedactedIds.has(p.id)) {
+    var cn = p.nickname ? e(p.nickname) : '[ REDACTED ]';
+    return '<div class="ef-card redacted" style="opacity:.6;border:1px dashed var(--border2);padding:.6rem .9rem;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">'
+      + '<div style="display:flex;align-items:center;gap:.6rem;">'
+      + '<span style="font-family:\'VT323\',monospace;color:var(--text-dim);letter-spacing:.1em;">▨ ' + cn + '</span>'
+      + '<span class="badge b-dim" style="font-size:.5rem;">CLASSIFIED</span>'
+      + '</div>'
+      + '<span style="font-size:.55rem;color:var(--text-faint);letter-spacing:.08em;">CLEARANCE INSUFFICIENT</span>'
+      + '</div>';
+  }
   var isOpen  = efExpanded.has(p.id);
   var canEdit = canEditPersonnel();
   var pStatus = p.status || 'Active';
@@ -6886,10 +6994,11 @@ function renderEthicsRoster() {
 
   // Access control: hide ethics personnel above the user's read level (own file always shown)
   var efRosterReadLevel = getUserReadLevel();
+  var efRosterRedacted = new Set();
   if (efRosterReadLevel < 6) {
-    activeEthics = activeEthics.filter(function(p) {
+    activeEthics.forEach(function(p) {
       var isSelf = currentUser && currentUser.linkedEfId === p.id;
-      return isSelf || getEfReadLevel(p) <= efRosterReadLevel;
+      if (!isSelf && getEfReadLevel(p) > efRosterReadLevel) efRosterRedacted.add(p.id);
     });
   }
 
@@ -6905,6 +7014,16 @@ function renderEthicsRoster() {
       lastRole = p.role;
     }
     var activeLvEf = getActiveLeave(p);
+    if (efRosterRedacted.has(p.id)) {
+      rows += '<tr style="opacity:.55;">' +
+        '<td class="roster-num">' + counter++ + '</td>' +
+        '<td class="roster-name" style="font-family:\'VT323\',monospace;letter-spacing:.08em;">▨ ' + (p.nickname ? e(p.nickname) : '[ REDACTED ]') + '</td>' +
+        '<td class="roster-nick" style="color:var(--text-faint);">— CLASSIFIED —</td>' +
+        '<td><span class="badge b-dim" style="font-size:.5rem;">●●●</span></td>' +
+        '<td style="font-size:.62rem;color:var(--text-faint);">——</td>' +
+      '</tr>';
+      return;
+    }
     rows += '<tr>' +
   '<td class="roster-num">' + counter++ + '</td>' +
   '<td class="roster-name">' + e(p.name||'—') +
@@ -6981,6 +7100,20 @@ async function saveEthicsRecord() {
   if (editId) {
     var existing = allEthicsPersonnel.find(function(x){ return x.id === editId; });
     if (!existing) { btn.disabled = false; btn.textContent = '[ SAVE RECORD ]'; return; }
+    // Cross-unit rule: Omega-1-only members can't edit Ethics files unless CL5
+    if (!window._awaitingEfLink && !canEditUnitFile('ef')) {
+      btn.disabled = false; btn.textContent = '[ SAVE RECORD ]';
+      alert('CROSS-UNIT EDIT DENIED\n\nOnly Ethics Committee personnel (or CL5 command) may modify Ethics files.');
+      return;
+    }
+    // Role-change rule: only CL5 may change EC roles
+    if (existing.role && existing.role !== role && !window._awaitingEfLink) {
+      if (!canAssignEfRole(role, existing.role)) {
+        btn.disabled = false; btn.textContent = '[ SAVE RECORD ]';
+        alert('ROLE CHANGE DENIED\n\nOnly CL5 command may change Ethics Committee roles.');
+        return;
+      }
+    }
     // Log role change if role has changed
     if (existing.role && existing.role !== role) {
       if (!existing.rankHistory) existing.rankHistory = [];
