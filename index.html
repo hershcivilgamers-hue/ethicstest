@@ -7087,6 +7087,7 @@ function closeEthicsModal() {
 
 async function saveEthicsRecord() {
   if (!window._awaitingEfLink && !canEditPersonnel()) return;
+  var name = document.getElementById('efName').value.trim();
   var role = document.getElementById('efRole').value;
   if (!name) { document.getElementById('efErr').textContent = '> NAME REQUIRED'; return; }
   if (!role) { document.getElementById('efErr').textContent = '> ROLE REQUIRED'; return; }
