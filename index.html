@@ -39,11 +39,16 @@
 [data-theme="light"] .scanlines    { display:none; }
 /* Nav */
 [data-theme="light"] .nav          { background:var(--bg2); border-color:var(--border2); }
-[data-theme="light"] .nav-group    { border-color:var(--border2); }
-[data-theme="light"] .nav-group-label { background:rgba(0,100,50,.06); color:var(--green-dim); border-color:var(--border2); }
-[data-theme="light"] .nav-tab      { color:var(--text-dim); border-color:var(--border); }
-[data-theme="light"] .nav-tab:hover{ background:var(--green-trace); color:var(--green); }
-[data-theme="light"] .nav-tab.active{ background:rgba(0,80,40,.07); color:var(--green); border-bottom-color:var(--green); }
+[data-theme="light"] .nav-dd       { border-color:var(--border2); }
+[data-theme="light"] .nav-dd-trigger { color:var(--green-dim); }
+[data-theme="light"] .nav-dd-trigger:hover { background:var(--green-trace); color:var(--green); }
+[data-theme="light"] .nav-dd.open .nav-dd-trigger { background:rgba(0,80,40,.07); color:var(--green); }
+[data-theme="light"] .nav-standalone-tab { color:var(--green-dim); border-color:var(--border2); }
+[data-theme="light"] .nav-standalone-tab:hover { background:var(--green-trace); color:var(--green); }
+[data-theme="light"] .nav-standalone-tab.active { background:rgba(0,80,40,.07); color:var(--green); border-bottom-color:var(--green); }
+[data-theme="light"] .nav-dd-menu .nav-tab { color:var(--text-dim); border-color:var(--border); }
+[data-theme="light"] .nav-dd-menu .nav-tab:hover { background:var(--green-trace); color:var(--green); }
+[data-theme="light"] .nav-dd-menu .nav-tab.active { background:rgba(0,80,40,.07); color:var(--green); border-left-color:var(--green); }
 [data-theme="light"] .panel        { background:var(--bg); }
 /* Cards */
 [data-theme="light"] .pf-card,
@@ -132,17 +137,56 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s ease-in-out infinite;vertical-align:middle;margin-right:4px;}
 
 /* ── Nav ── */
-/* ── Nav accordion ── */
-.nav{display:flex;flex-direction:row;flex-wrap:wrap;background:var(--bg);border-bottom:2px solid var(--border2);}
-.nav-group{display:flex;flex-direction:column;border-right:2px solid var(--border2);min-width:0;}
-.nav-group:last-child{border-right:none;flex:1;}
-.nav-group-label{font-size:.55rem;letter-spacing:.18em;color:var(--green-dim);padding:5px 12px 4px;background:rgba(0,255,136,.04);border-bottom:1px solid var(--border2);white-space:nowrap;font-weight:700;}
-.nav-group-tabs{display:flex;flex-wrap:wrap;}
-.nav-tab{padding:.5rem .9rem;font-size:.62rem;letter-spacing:.06em;color:var(--text-dim);cursor:pointer;border-right:1px solid var(--border);border-bottom:3px solid transparent;transition:all .15s;user-select:none;display:flex;align-items:center;gap:4px;white-space:nowrap;}
-.nav-tab:last-child{border-right:none;}
-.nav-tab:hover{color:var(--text);background:rgba(0,255,136,.04);}
-.nav-tab.active{color:var(--green);border-bottom-color:var(--green);background:rgba(0,255,136,.06);}
-.nav-standalone{display:flex;flex-direction:column;}
+/* ── Blacklist ── */
+.bl-dept{border:1px solid var(--border2);margin-bottom:.5rem;}
+.bl-dept-hdr{display:flex;align-items:center;justify-content:space-between;padding:.4rem .75rem;cursor:pointer;background:rgba(0,255,136,.03);user-select:none;}
+.bl-dept-hdr:hover{background:rgba(0,255,136,.06);}
+.bl-dept-body{padding:.4rem .65rem .6rem;}
+.bl-sheet-status{font-size:.54rem;letter-spacing:.08em;padding:1px 7px;border-radius:2px;}
+.bl-status-ok{background:rgba(0,80,30,.3);color:var(--green);}
+.bl-status-loading{background:rgba(40,60,10,.3);color:var(--text-dim);}
+.bl-status-error{background:rgba(80,10,10,.3);color:#ff8888;}
+.bl-status-empty{background:rgba(30,30,10,.3);color:var(--text-dim);}
+.bl-table{width:100%;border-collapse:collapse;font-size:.58rem;margin:.3rem 0 .5rem;}
+.bl-table th{text-align:left;color:var(--text-dim);border-bottom:1px solid var(--border2);padding:3px 6px;letter-spacing:.06em;font-size:.55rem;}
+.bl-table td{padding:3px 6px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;}
+.bl-table tr:last-child td{border-bottom:none;}
+.bl-table tr:hover td{background:rgba(0,255,136,.02);}
+.bl-section-label{font-size:.54rem;letter-spacing:.14em;color:var(--text-dim);margin:.5rem 0 .2rem;padding-left:2px;}
+.bl-entry{display:flex;align-items:flex-start;gap:.4rem;padding:.25rem 0;border-bottom:1px solid var(--border);font-size:.6rem;}
+.bl-entry:last-child{border-bottom:none;}
+.bl-entry-meta{flex:1;min-width:0;}
+.bl-entry-name{color:var(--text);font-size:.62rem;}
+.bl-entry-steam{color:var(--amber);font-size:.56rem;}
+.bl-entry-reason{color:var(--text-dim);font-size:.58rem;margin-top:1px;}
+.bl-entry-added{color:var(--text-faint);font-size:.53rem;}
+[data-theme="light"] .bl-dept{border-color:var(--border2);}
+[data-theme="light"] .bl-dept-hdr{background:rgba(0,80,40,.04);}
+[data-theme="light"] .bl-table th{border-color:var(--border2);}
+[data-theme="light"] .bl-table td{border-color:var(--border);}
+[data-theme="light"] .bl-entry{border-color:var(--border);}
+[data-theme="light"] .bl-status-ok{background:rgba(0,100,40,.15);}
+[data-theme="light"] .bl-status-error{background:rgba(180,0,0,.12);}
+[data-theme="light"] .bl-status-loading,[data-theme="light"] .bl-status-empty{background:rgba(0,0,0,.06);}
+.nav{display:flex;flex-direction:row;flex-wrap:wrap;background:var(--bg);border-bottom:2px solid var(--border2);position:relative;z-index:50;}
+.nav-dd{position:relative;border-right:2px solid var(--border2);}
+.nav-dd-trigger{display:flex;align-items:center;gap:6px;padding:.6rem 1.1rem;font-size:.64rem;letter-spacing:.12em;font-weight:700;color:var(--green-dim);cursor:pointer;user-select:none;white-space:nowrap;transition:all .15s;border-bottom:3px solid transparent;}
+.nav-dd-trigger:hover{background:rgba(0,255,136,.05);color:var(--green);}
+.nav-dd.open .nav-dd-trigger{background:rgba(0,255,136,.07);color:var(--green);border-bottom-color:var(--green);}
+.nav-dd.has-active .nav-dd-trigger{color:var(--green);}
+.nav-dd-menu{display:none;position:absolute;top:100%;left:0;min-width:170px;background:var(--bg2);border:1px solid var(--border2);border-top:none;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:60;flex-direction:column;}
+.nav-dd.open .nav-dd-menu{display:flex;}
+.nav-dd-menu .nav-tab{padding:.55rem .9rem;font-size:.62rem;letter-spacing:.06em;color:var(--text-dim);cursor:pointer;border-bottom:1px solid var(--border);border-left:3px solid transparent;transition:all .15s;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:6px;white-space:nowrap;}
+.nav-dd-menu .nav-tab:last-child{border-bottom:none;}
+.nav-dd-menu .nav-tab:hover{background:rgba(0,255,136,.05);color:var(--text);}
+.nav-dd-menu .nav-tab.active{color:var(--green);border-left-color:var(--green);background:rgba(0,255,136,.07);}
+.nav-standalone-tab{padding:.6rem 1.1rem;font-size:.64rem;letter-spacing:.12em;font-weight:700;color:var(--green-dim);cursor:pointer;border-right:2px solid var(--border2);border-bottom:3px solid transparent;transition:all .15s;user-select:none;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.nav-standalone-tab:hover{background:rgba(0,255,136,.05);color:var(--green);}
+.nav-standalone-tab.active{color:var(--green);border-bottom-color:var(--green);background:rgba(0,255,136,.07);}
+.ng-arrow{font-size:.5rem;transition:transform .2s;display:inline-block;}
+.nav-dd.open .ng-arrow{transform:rotate(180deg);}
+.nav-dd-badge{background:var(--amber);color:#000;border-radius:7px;min-width:14px;height:14px;font-size:.5rem;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;font-weight:700;}
+[data-theme="light"] .nav-dd-menu{background:var(--bg2);box-shadow:0 6px 18px rgba(0,0,0,.15);}
 
 /* ── Nav group collapse ── */
 .nav-group-label{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;gap:4px;transition:color .15s;}
@@ -682,7 +726,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       </button>
       <button id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="font-family:'Share Tech Mono',monospace;font-size:.7rem;background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:2px 8px;cursor:pointer;margin-right:.5rem;transition:all .2s;">☀</button>
       <span id="syncIndicator" style="font-size:.52rem;letter-spacing:.06em;margin-right:.6rem;transition:color .3s;"></span>
-      <div id="userPill" class="user-pill" onclick="logout()" title="Click to sign out" style="display:none;"></div>
+      <div id="userPill" class="user-pill" onclick="openMyAccount()" title="View my account" style="display:none;"></div>
       <div class="header-meta">
         <div><span class="status-dot"></span><span style="color:var(--green);">ONLINE</span></div>
         <div>SITE-65 · O5-EC CLEARANCE</div>
@@ -693,12 +737,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
   <div class="nav" style="align-items:stretch;">
 
-    <!-- CAIRO group -->
-    <div class="nav-group">
-      <div class="nav-group-label" data-action="toggle-nav-group" data-group="cairo">
-        CAIRO <span class="ng-arrow" id="nga-cairo">▾</span>
+    <!-- CAIRO dropdown -->
+    <div class="nav-dd" data-group="cairo">
+      <div class="nav-dd-trigger" data-action="toggle-nav-dd" data-group="cairo">
+        <span id="ddlabel-cairo">CAIRO</span> <span class="ng-arrow">▾</span>
       </div>
-      <div class="nav-group-tabs" id="ngt-cairo">
+      <div class="nav-dd-menu" id="ngt-cairo">
         <div class="nav-tab active" onclick="switchTab(this,'personnel')">PERSONNEL FILE</div>
         <div class="nav-tab" onclick="switchTab(this,'directives')">DIRECTIVES</div>
         <div class="nav-tab" onclick="switchTab(this,'matrix')">PSYCH MATRIX</div>
@@ -706,12 +750,14 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       </div>
     </div>
 
-    <!-- OMEGA-1 group -->
-    <div class="nav-group">
-      <div class="nav-group-label" data-action="toggle-nav-group" data-group="omega1">
-        OMEGA-1 <span class="ng-arrow" id="nga-omega1">▾</span>
+    <!-- OMEGA-1 dropdown -->
+    <div class="nav-dd" data-group="omega1">
+      <div class="nav-dd-trigger" data-action="toggle-nav-dd" data-group="omega1">
+        <span id="ddlabel-omega1">OMEGA-1</span>
+        <span id="ddbadge-omega1" class="nav-dd-badge" style="display:none;"></span>
+        <span class="ng-arrow">▾</span>
       </div>
-      <div class="nav-group-tabs" id="ngt-omega1">
+      <div class="nav-dd-menu" id="ngt-omega1">
         <div class="nav-tab" onclick="switchTab(this,'personnel-files')">FILES</div>
         <div class="nav-tab" onclick="switchTab(this,'roster')">ROSTER</div>
         <div class="nav-tab" onclick="switchTab(this,'poi')">POI / TARGET
@@ -726,12 +772,14 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       </div>
     </div>
 
-    <!-- ETHICS group -->
-    <div class="nav-group">
-      <div class="nav-group-label" data-action="toggle-nav-group" data-group="ethics">
-        ETHICS <span class="ng-arrow" id="nga-ethics">▾</span>
+    <!-- ETHICS dropdown -->
+    <div class="nav-dd" data-group="ethics">
+      <div class="nav-dd-trigger" data-action="toggle-nav-dd" data-group="ethics">
+        <span id="ddlabel-ethics">ETHICS</span>
+        <span id="ddbadge-ethics" class="nav-dd-badge" style="display:none;"></span>
+        <span class="ng-arrow">▾</span>
       </div>
-      <div class="nav-group-tabs" id="ngt-ethics">
+      <div class="nav-dd-menu" id="ngt-ethics">
         <div class="nav-tab" onclick="switchTab(this,'ethics-files')">FILES</div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ROSTER</div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-recruit')">RECRUIT
@@ -743,14 +791,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       </div>
     </div>
 
-    <!-- Standalone tabs -->
-    <div class="nav-group">
-      <div class="nav-group-label">&nbsp;</div>
-      <div class="nav-group-tabs" id="ngt-standalone">
-        <div class="nav-tab" onclick="switchTab(this,'terminal')">TERMINAL
-          <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
-        </div>
-      </div>
+    <!-- Standalone direct tabs -->
+    <div class="nav-tab nav-standalone-tab" onclick="switchTab(this,'blacklist')">BLACKLIST</div>
+    <div class="nav-tab nav-standalone-tab" onclick="switchTab(this,'terminal')">TERMINAL
+      <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
     </div>
 
   </div>
@@ -758,6 +802,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   <div id="cl3Banner" style="display:none;background:rgba(0,80,160,.08);border-bottom:1px solid #1a3a5a;color:#6699cc;font-size:.6rem;letter-spacing:.08em;padding:.4rem 1.2rem;line-height:1.6;">
     ⚑ READ-ONLY MODE · Level 3 Clearance · You may read and reply to threads. Contact the Ethics Committee Chair to request elevated access.
   </div>
+  <div id="notifBanner" style="display:none;background:rgba(0,80,40,.1);border-bottom:1px solid var(--border2);color:var(--green);font-size:.6rem;letter-spacing:.05em;padding:.45rem 1.2rem;line-height:1.7;cursor:pointer;" onclick="dismissNotif()" title="Click to dismiss"></div>
   <div class="panel">
 
     <!-- PERSONNEL FILE -->
@@ -1125,6 +1170,24 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     </div>
 
     <!-- TERMINAL -->
+    <!-- BLACKLIST TAB -->
+    <div class="tab-content" id="tab-blacklist">
+      <div class="sec">▸ BLACKLIST REGISTRY — CROSS-DEPARTMENT CHECK</div>
+
+      <!-- Search bar -->
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;flex-wrap:wrap;">
+        <input id="blSearch" class="pf-search" placeholder="Search name or SteamID across all departments..."
+          style="flex:1;min-width:200px;" oninput="renderBlacklist()" />
+        <button class="pf-btn" onclick="loadBlacklist()" style="font-size:.6rem;">⟳ REFRESH ALL</button>
+      </div>
+      <div id="blSearchResult" style="display:none;background:rgba(255,80,80,.07);border:1px solid #4a1414;padding:.4rem .7rem;margin-bottom:.6rem;font-size:.62rem;border-radius:2px;"></div>
+
+      <!-- Department list rendered here -->
+      <div id="blDeptList">
+        <div class="poi-empty">[ NO DEPARTMENTS CONFIGURED — A CL5 ADMIN MUST ADD DEPARTMENT BLACKLIST SHEETS IN THE ADMIN PANEL ]</div>
+      </div>
+    </div>
+
     <div class="tab-content" id="tab-terminal">
       <div class="term-header-bar">
         <span class="status-dot"></span>
@@ -1451,6 +1514,119 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   </div>
 </div>
 
+<!-- MY ACCOUNT MODAL -->
+<div class="modal-overlay-2" id="myAccountModal" style="z-index:1100;">
+  <div class="modal-box-2" style="width:480px;max-height:80vh;overflow-y:auto;">
+    <h3 style="display:flex;align-items:center;justify-content:space-between;">
+      MY ACCOUNT
+      <button class="modal-cancel" style="font-size:.58rem;padding:2px 8px;" data-action="close-my-account">[ CLOSE ]</button>
+    </h3>
+    <div id="myAccountBody"></div>
+    <div style="display:flex;gap:.5rem;margin-top:.8rem;border-top:1px solid var(--border2);padding-top:.6rem;">
+      <button class="modal-save" data-action="open-change-pass" style="flex:1;">CHANGE PASSPHRASE</button>
+      <button class="modal-cancel" data-action="do-logout" style="flex:1;">SIGN OUT</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSPHRASE MODAL (self-service) -->
+<div class="modal-overlay-2" id="changePassModal" style="z-index:1150;">
+  <div class="modal-box-2" style="width:420px;">
+    <h3>CHANGE PASSPHRASE</h3>
+    <div class="modal-group">
+      <label>CURRENT PASSPHRASE</label>
+      <input class="modal-input" id="changePassCurrent" type="password" placeholder="Your current passphrase..."/>
+    </div>
+    <div class="modal-group">
+      <label>NEW PASSPHRASE</label>
+      <input class="modal-input" id="changePassNew" type="password" placeholder="New passphrase (min 3 chars)..."/>
+    </div>
+    <div class="modal-group">
+      <label>CONFIRM NEW PASSPHRASE</label>
+      <input class="modal-input" id="changePassConfirm" type="password" placeholder="Re-enter new passphrase..."/>
+    </div>
+    <div class="modal-err" id="changePassErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-change-pass">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-change-pass">[ UPDATE PASSPHRASE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASSPHRASE RESET MODAL -->
+<div class="modal-overlay-2" id="passResetModal" style="z-index:1200;">
+  <div class="modal-box-2" style="width:420px;">
+    <h3 id="passResetTitle">RESET PASSPHRASE</h3>
+    <input type="hidden" id="passResetUid"/>
+    <div class="modal-group">
+      <label>NEW PASSPHRASE</label>
+      <input class="modal-input" id="passResetField" type="text" placeholder="Enter a new passphrase (min 3 chars)..."/>
+    </div>
+    <div style="font-size:.55rem;color:var(--text-dim);margin-bottom:.5rem;line-height:1.5;">The new passphrase will be shown to you once so you can share it securely with the member. They can change it later.</div>
+    <div class="modal-err" id="passResetErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-pass-reset">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-pass-reset">[ RESET PASSPHRASE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- BLACKLIST ENTRY MODAL -->
+<div class="modal-overlay-2" id="blEntryModal">
+  <div class="modal-box-2" style="width:480px;">
+    <h3>ADD BLACKLIST ENTRY</h3>
+    <input type="hidden" id="blEntryDeptId"/>
+    <div class="modal-group">
+      <label>FULL NAME / IN-GAME NAME</label>
+      <input class="modal-input" id="blEntryName" placeholder="Name of individual..."/>
+    </div>
+    <div class="modal-group">
+      <label>STEAM ID</label>
+      <input class="modal-input" id="blEntrySteam" placeholder="STEAM_0:0:00000000"/>
+    </div>
+    <div class="modal-group">
+      <label>REASON</label>
+      <textarea class="modal-textarea" id="blEntryReason" placeholder="Reason for blacklist..." rows="3"></textarea>
+    </div>
+    <div class="modal-err" id="blEntryErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-bl-entry-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-bl-entry">[ ADD TO BLACKLIST ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- BLACKLIST DEPT CONFIG MODAL (admin) -->
+<div class="modal-overlay-2" id="blDeptModal" style="z-index:1200;">
+  <div class="modal-box-2" style="width:520px;">
+    <h3 id="blDeptModalTitle">ADD DEPARTMENT BLACKLIST</h3>
+    <input type="hidden" id="blDeptEditId"/>
+    <div class="modal-group">
+      <label>DEPARTMENT NAME</label>
+      <input class="modal-input" id="blDeptName" placeholder="e.g. Internal Security Department"/>
+    </div>
+    <div class="modal-group">
+      <label>GOOGLE SHEET URL</label>
+      <input class="modal-input" id="blDeptUrl" placeholder="https://docs.google.com/spreadsheets/d/..."/>
+      <div style="font-size:.54rem;color:var(--text-dim);margin-top:3px;line-height:1.6;">Sheet must be set to "Anyone with the link can view". Paste the full URL from your browser.</div>
+    </div>
+    <div class="modal-group">
+      <label>SHEET TAB NAME</label>
+      <input class="modal-input" id="blDeptTab" placeholder="Blacklist"/>
+      <div style="font-size:.54rem;color:var(--text-dim);margin-top:3px;">Exact name of the tab at the bottom of the Google Sheet (case-sensitive).</div>
+    </div>
+    <div class="modal-group" style="display:flex;align-items:center;gap:.5rem;">
+      <input type="checkbox" id="blDeptEnabled" checked style="width:auto;"/>
+      <label for="blDeptEnabled" style="margin:0;font-size:.6rem;letter-spacing:.06em;cursor:pointer;">ENABLED (unchecked = hidden from blacklist tab)</label>
+    </div>
+    <div class="modal-err" id="blDeptErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-bl-dept-modal">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-bl-dept">[ SAVE DEPARTMENT ]</button>
+    </div>
+  </div>
+</div>
+
 <!-- STRIKE REASON MODAL (Tryout full strike) -->
 <div class="modal-overlay-2" id="strikeReasonModal">
   <div class="modal-box-2" style="width:420px;">
@@ -1695,11 +1871,21 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       Set the granted clearance before approving. Denied accounts cannot log in.
     </div>
 
-    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin-bottom:.4rem;">▸ PENDING REGISTRATIONS</div>
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin-bottom:.4rem;display:flex;align-items:center;justify-content:space-between;">
+      <span>▸ PENDING REGISTRATIONS</span>
+      <button class="rec-btn" data-action="admin-bulk-approve" style="font-size:.53rem;padding:1px 7px;">✓ APPROVE ALL (CL3)</button>
+    </div>
     <div id="adminPendingList"><div style="font-size:.63rem;color:var(--text-faint);padding:.5rem;">[ LOADING... ]</div></div>
 
     <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ ACTIVE ACCOUNTS</div>
     <div id="adminActiveList"></div>
+    <div id="adminBlSection"></div>
+
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
+      <span>▸ AUDIT LOG <span style="color:var(--text-faint);font-size:.52rem;">(last 100 actions)</span></span>
+      <button class="rec-btn" data-action="admin-refresh-audit" style="font-size:.53rem;padding:1px 7px;">⟳ REFRESH</button>
+    </div>
+    <div id="adminAuditList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);padding:.3rem;"><div style="font-size:.6rem;color:var(--text-faint);">[ NOT LOADED ]</div></div>
   </div>
 </div>
 
@@ -1910,6 +2096,10 @@ async function doAuth() {
         setErr('REGISTRATION DENIED · Contact the Ethics Committee Chair for assistance.');
         setBusy(false); return;
       }
+      if (acctStatus === 'retired') {
+        setErr('ACCOUNT RETIRED · This account is inactive. Contact a CL5 member to reactivate.');
+        setBusy(false); return;
+      }
       var derivedCl = deriveClearance(rec);
 currentUser = { id: uid, clearance: derivedCl, rawClearance: rec.clearance, linkedPfId: rec.linkedPfId || null, linkedEfId: rec.linkedEfId || null };
     }
@@ -1948,8 +2138,8 @@ async function onLogin() { // Make function async
     // Fetch current user record to get unit tag
     userGet(currentUser.id).then(function(rec) {
       var unitTag = rec && rec.unit ? ' · ' + (rec.unit === 'omega1' ? 'Ω-1' : 'EC') : '';
-      pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']' + unitTag + '  ✕ logout';
-    }).catch(function(){ pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']  ✕ logout'; });
+      pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']' + unitTag + '  ▾';
+    }).catch(function(){ pill.textContent = 'EC·' + currentUser.id + ' [L' + currentUser.clearance + ']  ▾'; });
     document.getElementById('ordersAuthNotice').style.display = 'none';
     document.getElementById('ordersForm').style.display = 'block';
     var eof = document.getElementById('ethicsOrdersForm');
@@ -1973,15 +2163,29 @@ async function onLogin() { // Make function async
 
   loadOrders();
   loadPersonnel();
+  loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
   startPolling();
+  setTimeout(showLoginNotifications, 1500); // after data loads
 }
 
 function logout() {
   stopPolling();
   currentUser = null;
-  allOrders = [];
+  // Fully clear in-memory state so nothing leaks to a subsequent session
+  allOrders = []; allEthicsOrders = [];
+  allPersonnel = []; allEthicsPersonnel = [];
+  allRecruitment = []; allEthicsRecruit = [];
+  allPOI = []; allTargets = [];
+  allBlacklistConfigs = []; allBlacklistEntries = []; blSheetCache = {};
+  allAuditLog = [];
+  allUsers = {};
   renderOrders();
   document.getElementById('userPill').style.display = 'none';
+  var nb = document.getElementById('notifBanner'); if (nb) nb.style.display = 'none';
+  // Close any open user modals
+  ['myAccountModal','changePassModal','adminModal'].forEach(function(m){
+    var el = document.getElementById(m); if (el) el.classList.remove('open');
+  });
   var adminBtn = document.getElementById('adminBtn');
   if (adminBtn) adminBtn.style.display = 'none';
   var roBanner = document.getElementById('cl3Banner');
@@ -2012,6 +2216,497 @@ async function loadOrders() {
   }
   renderOrders();
   updateOrderBadge();
+}
+
+// ================================================================
+//  MY ACCOUNT — self-service view for the logged-in user
+// ================================================================
+async function openMyAccount() {
+  if (!currentUser) return;
+  document.getElementById('myAccountModal').classList.add('open');
+  var body = document.getElementById('myAccountBody');
+  body.innerHTML = '<div style="font-size:.62rem;color:var(--text-faint);padding:.5rem;">[ LOADING... ]</div>';
+
+  var rec = null;
+  try { rec = await userGet(currentUser.id); } catch(_) {}
+  if (!rec) rec = {};
+
+  // Resolve linked file
+  var fileInfo = '<span style="color:var(--text-faint);">[ NO FILE LINKED ]</span>';
+  if (rec.linkedPfId) {
+    var pf = allPersonnel.find(function(p){ return p.id === rec.linkedPfId; });
+    fileInfo = pf ? '<span class="badge b-cyan">Ω-1: ' + e(pf.name) + ' [' + e(pf.rank) + ']</span>'
+                  : '<span style="color:var(--amber);">Ω-1 file (ID ' + e(rec.linkedPfId) + ')</span>';
+  } else if (rec.linkedEfId) {
+    var ef = allEthicsPersonnel.find(function(p){ return p.id === rec.linkedEfId; });
+    fileInfo = ef ? '<span class="badge b-amber">EC: ' + e(ef.name) + ' [' + e(ef.role) + ']</span>'
+                  : '<span style="color:var(--amber);">EC file (ID ' + e(rec.linkedEfId) + ')</span>';
+  }
+
+  // Clearance label
+  var clLabels = { '3':'Level 3 — Standard Access', '4':'Level 4 — Senior Access', '5':'Level 5 — Command Access' };
+  var clLabel = clLabels[currentUser.clearance] || ('Level ' + currentUser.clearance);
+
+  // Unit
+  var unitLabel = rec.unit === 'omega1' ? 'OMEGA-1' : rec.unit === 'ethics' ? 'ETHICS COMMITTEE' : '—';
+
+  // Strikes on linked file
+  var myStrikes = [];
+  var linkedRec = rec.linkedPfId ? allPersonnel.find(function(p){return p.id===rec.linkedPfId;})
+                : rec.linkedEfId ? allEthicsPersonnel.find(function(p){return p.id===rec.linkedEfId;}) : null;
+  if (linkedRec && Array.isArray(linkedRec.strikes)) {
+    myStrikes = linkedRec.strikes.filter(function(s){ return isStrikeActive(s); });
+  }
+  var strikeInfo = myStrikes.length
+    ? '<span class="badge b-red">' + myStrikes.length + ' ACTIVE STRIKE' + (myStrikes.length>1?'S':'') + '</span>'
+    : '<span class="badge b-green">NO ACTIVE STRIKES</span>';
+
+  var joinDate = rec.created ? new Date(rec.created).toISOString().slice(0,10) : '—';
+
+  function row(label, val) {
+    return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.64rem;">'
+      + '<span style="color:var(--text-dim);">' + label + '</span>'
+      + '<span style="color:var(--text);text-align:right;">' + val + '</span></div>';
+  }
+
+  body.innerHTML =
+      row('MEMBER ID', 'EC·' + e(currentUser.id))
+    + row('CLEARANCE', e(clLabel))
+    + row('UNIT', e(unitLabel))
+    + row('LINKED FILE', fileInfo)
+    + row('STANDING', strikeInfo)
+    + row('REGISTERED', joinDate)
+    + (myStrikes.length
+        ? '<div style="margin-top:.6rem;font-size:.58rem;color:var(--amber);border-left:2px solid #4a3a14;padding-left:.6rem;line-height:1.6;">⚠ You have ' + myStrikes.length + ' active strike(s) on your file. You may submit an appeal from your personnel file.</div>'
+        : '');
+}
+function closeMyAccount() { document.getElementById('myAccountModal').classList.remove('open'); }
+
+// ── Self-service passphrase change ──
+function openChangePass() {
+  document.getElementById('changePassCurrent').value = '';
+  document.getElementById('changePassNew').value     = '';
+  document.getElementById('changePassConfirm').value = '';
+  document.getElementById('changePassErr').textContent = '';
+  document.getElementById('changePassModal').classList.add('open');
+}
+function closeChangePass() { document.getElementById('changePassModal').classList.remove('open'); }
+async function saveChangePass() {
+  if (!currentUser) return;
+  var cur  = document.getElementById('changePassCurrent').value;
+  var nw   = document.getElementById('changePassNew').value.trim();
+  var conf = document.getElementById('changePassConfirm').value.trim();
+  var errEl = document.getElementById('changePassErr');
+  if (!cur || !nw || !conf) { errEl.textContent = '> ALL FIELDS REQUIRED'; return; }
+  if (nw.length < 3)        { errEl.textContent = '> NEW PASSPHRASE TOO SHORT (MIN 3)'; return; }
+  if (nw !== conf)          { errEl.textContent = '> NEW PASSPHRASES DO NOT MATCH'; return; }
+  var rec = null;
+  try { rec = await userGet(currentUser.id); } catch(_) {}
+  if (!rec) { errEl.textContent = '> COULD NOT LOAD ACCOUNT'; return; }
+  if (rec.hash !== hashPass(cur)) { errEl.textContent = '> CURRENT PASSPHRASE INCORRECT'; return; }
+  rec.hash = hashPass(nw);
+  rec.passChangedAt = Date.now();
+  try {
+    await userSet(currentUser.id, rec);
+    closeChangePass();
+    closeMyAccount();
+    alert('Passphrase updated successfully.');
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+
+// ── Login notifications: surface pending actions relevant to the user ──
+function showLoginNotifications() {
+  if (!currentUser) return;
+  var banner = document.getElementById('notifBanner');
+  if (!banner) return;
+  var cl = parseInt(currentUser.clearance || '3');
+  var items = [];
+
+  if (cl >= 4) {
+    var needVoteO = allRecruitment.filter(function(r){
+      return r.stage === 'scouting' && !(r.votes && r.votes[currentUser.id]);
+    }).length;
+    if (needVoteO) items.push('🗳 ' + needVoteO + ' Omega-1 recruit' + (needVoteO>1?'s':'') + ' awaiting your vote');
+
+    var needVoteE = allEthicsRecruit.filter(function(r){
+      return r.stage === 'application' && !(r.votes && r.votes[currentUser.id]);
+    }).length;
+    if (needVoteE) items.push('🗳 ' + needVoteE + ' Ethics application' + (needVoteE>1?'s':'') + ' awaiting your vote');
+  }
+
+  if (cl >= 5) {
+    var pendingRegs = Object.values(allUsers).filter(function(u){ return u.status === 'pending'; }).length;
+    if (pendingRegs) items.push('👤 ' + pendingRegs + ' registration' + (pendingRegs>1?'s':'') + ' awaiting approval');
+
+    var appeals = 0;
+    allPersonnel.concat(allEthicsPersonnel).forEach(function(p){
+      if (Array.isArray(p.strikes)) appeals += p.strikes.filter(function(s){
+        return s.status === 'Appealed' && s.appeal && !s.appeal.resolution;
+      }).length;
+    });
+    if (appeals) items.push('⚖ ' + appeals + ' strike appeal' + (appeals>1?'s':'') + ' awaiting review');
+  }
+
+  var myRec = currentUser.linkedPfId ? allPersonnel.find(function(p){return p.id===currentUser.linkedPfId;})
+            : currentUser.linkedEfId ? allEthicsPersonnel.find(function(p){return p.id===currentUser.linkedEfId;}) : null;
+  if (myRec && Array.isArray(myRec.strikes)) {
+    var myActive = myRec.strikes.filter(function(s){ return isStrikeActive(s); }).length;
+    if (myActive) items.push('⚠ You have ' + myActive + ' active strike' + (myActive>1?'s':'') + ' on your file');
+  }
+
+  if (!items.length) { banner.style.display = 'none'; return; }
+  banner.innerHTML = '▸ ' + items.join('  ·  ') + '  <span style="color:var(--text-faint);">(click to dismiss)</span>';
+  banner.style.display = 'block';
+}
+function dismissNotif() {
+  var b = document.getElementById('notifBanner');
+  if (b) b.style.display = 'none';
+}
+
+// ================================================================
+//  AUDIT LOG — records admin/sensitive actions (CL5 view only)
+// ================================================================
+var allAuditLog = [];
+
+async function auditGetAll() {
+  if (firebaseReady) { var r = await fbGetAll('/auditLog'); return r ? Object.values(r).filter(function(x){return x&&x.id;}) : []; }
+  return Object.values(lsAll('auditLog/')).filter(function(x){return x&&x.id;});
+}
+// Record an action. Fire-and-forget — never blocks the calling action.
+function auditRecord(action, detail) {
+  if (!currentUser) return;
+  var entry = {
+    id: 'aud_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    action: action, detail: detail || '',
+    by: currentUser.id, at: Date.now()
+  };
+  try {
+    if (firebaseReady) fbSet('/auditLog/' + entry.id, entry);
+    else lsSet('auditLog/' + entry.id, entry);
+    allAuditLog.push(entry);
+  } catch(_) {}
+}
+
+async function loadAuditLog() {
+  try { allAuditLog = await auditGetAll(); } catch(_) { allAuditLog = []; }
+  renderAuditLog();
+}
+
+function renderAuditLog() {
+  var el = document.getElementById('adminAuditList');
+  if (!el) return;
+  var sorted = allAuditLog.slice().sort(function(a,b){ return b.at - a.at; }).slice(0, 100);
+  if (!sorted.length) {
+    el.innerHTML = '<div style="font-size:.6rem;color:var(--text-faint);padding:.4rem;">[ NO AUDIT ENTRIES ]</div>';
+    return;
+  }
+  el.innerHTML = sorted.map(function(a) {
+    var dt = new Date(a.at).toISOString().slice(0,16).replace('T',' ');
+    return '<div style="font-size:.58rem;border-bottom:1px solid var(--border);padding:3px 4px;display:flex;justify-content:space-between;gap:.5rem;">'
+      + '<span><span style="color:var(--amber);">' + e(a.action) + '</span>'
+      + (a.detail ? ' <span style="color:var(--text);">' + e(a.detail) + '</span>' : '') + '</span>'
+      + '<span style="color:var(--text-faint);white-space:nowrap;">EC·' + e(a.by) + ' · ' + dt + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+// ================================================================
+//  BLACKLIST REGISTRY
+// ================================================================
+var allBlacklistConfigs = [];
+var allBlacklistEntries = [];
+var blSheetCache = {};
+var blCollapsed  = new Set();
+
+async function blConfigGetAll() {
+  if (firebaseReady) { var r = await fbGetAll('/blacklistConfig'); return r ? Object.values(r).filter(function(x){return x&&x.id;}) : []; }
+  return Object.values(lsAll('blacklistConfig/')).filter(function(x){return x&&x.id;});
+}
+async function blConfigSet(id, data) {
+  if (firebaseReady) await fbSet('/blacklistConfig/' + id, data);
+  else lsSet('blacklistConfig/' + id, data);
+}
+async function blConfigDel(id) {
+  if (firebaseReady) await fbDel('/blacklistConfig/' + id);
+  else lsDel('blacklistConfig/' + id);
+}
+async function blEntryGetAll() {
+  if (firebaseReady) { var r = await fbGetAll('/blacklist'); return r ? Object.values(r).filter(function(x){return x&&x.id;}) : []; }
+  return Object.values(lsAll('blacklist/')).filter(function(x){return x&&x.id;});
+}
+async function blEntrySet(id, data) {
+  if (firebaseReady) await fbSet('/blacklist/' + id, data);
+  else lsSet('blacklist/' + id, data);
+}
+async function blEntryDel(id) {
+  if (firebaseReady) await fbDel('/blacklist/' + id);
+  else lsDel('blacklist/' + id);
+}
+
+async function loadBlacklist() {
+  try {
+    allBlacklistConfigs = await blConfigGetAll();
+    allBlacklistEntries = await blEntryGetAll();
+  } catch(_) { allBlacklistConfigs = []; allBlacklistEntries = []; }
+  var enabled = allBlacklistConfigs.filter(function(c){ return c.enabled !== false; });
+  enabled.forEach(function(cfg) {
+    if (cfg.sheetUrl && cfg.tabName) fetchSheetData(cfg.id, cfg.sheetUrl, cfg.tabName);
+  });
+  renderBlacklist();
+}
+
+async function fetchSheetData(deptId, sheetUrl, tabName) {
+  blSheetCache[deptId] = { status: 'loading', headers: [], rows: [], error: null };
+  renderBlacklist();
+  try {
+    var match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9\-_]+)/);
+    if (!match) throw new Error('Invalid Google Sheets URL — paste the full URL from your browser.');
+    var sheetId = match[1];
+    var csvUrl  = 'https://docs.google.com/spreadsheets/d/' + sheetId
+                + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(tabName);
+    var resp = await fetch(csvUrl);
+    if (!resp.ok) throw new Error('Sheet returned HTTP ' + resp.status + '. Ensure the sheet is shared with "Anyone with the link can view".');
+    var text  = await resp.text();
+    var lines = blParseCSV(text).filter(function(r){ return r.some(function(c){ return c.trim(); }); });
+    if (!lines.length) {
+      blSheetCache[deptId] = { status: 'empty', headers: [], rows: [], error: null };
+    } else {
+      blSheetCache[deptId] = { status: 'ok', headers: lines[0], rows: lines.slice(1), error: null };
+    }
+  } catch(err) {
+    blSheetCache[deptId] = { status: 'error', headers: [], rows: [], error: err.message };
+  }
+  renderBlacklist();
+}
+
+function blParseCSV(text) {
+  var rows = []; var line = []; var cell = ''; var inQ = false;
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (inQ) {
+      if (ch === '"') { if (text[i+1] === '"') { cell += '"'; i++; } else inQ = false; }
+      else { cell += ch; }
+    } else if (ch === '"') { inQ = true; }
+    else if (ch === ',') { line.push(cell.trim()); cell = ''; }
+    else if (ch === '\n') {
+      line.push(cell.trim()); cell = '';
+      if (line.some(function(c){return c;})) rows.push(line); line = [];
+    } else if (ch !== '\r') { cell += ch; }
+  }
+  if (cell || line.length) { line.push(cell.trim()); if (line.some(function(c){return c;})) rows.push(line); }
+  return rows;
+}
+
+function canManageBlacklist() {
+  if (!currentUser) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  if (currentUser.linkedPfId) {
+    var pf = allPersonnel.find(function(p){ return p.id === currentUser.linkedPfId; });
+    if (pf && CL4_SENIOR_RANKS.includes(pf.rank)) return true;
+  }
+  if (currentUser.linkedEfId) {
+    var ef = allEthicsPersonnel.find(function(p){ return p.id === currentUser.linkedEfId; });
+    if (ef) return true;
+  }
+  return false;
+}
+
+function renderBlacklist() {
+  var el = document.getElementById('blDeptList');
+  if (!el) return;
+  var query = ((document.getElementById('blSearch') || {}).value || '').trim().toLowerCase();
+  var enabled = allBlacklistConfigs.filter(function(c){ return c.enabled !== false; });
+
+  if (!enabled.length) {
+    el.innerHTML = '<div class="poi-empty">[ NO DEPARTMENTS CONFIGURED — A CL5 ADMIN MUST ADD DEPARTMENT BLACKLIST SHEETS IN THE ADMIN PANEL ]</div>';
+    var sr = document.getElementById('blSearchResult');
+    if (sr) sr.style.display = 'none';
+    return;
+  }
+
+  var srEl = document.getElementById('blSearchResult');
+  if (srEl && query.length >= 2) {
+    var hits = [];
+    enabled.forEach(function(cfg) {
+      var sc = blSheetCache[cfg.id];
+      if (sc && sc.status==='ok') {
+        sc.rows.forEach(function(row) { if (row.join(' ').toLowerCase().includes(query)) hits.push(cfg.name); });
+      }
+      allBlacklistEntries.filter(function(en){ return en.deptId===cfg.id; }).forEach(function(en) {
+        if ((en.name+' '+en.steamId+' '+en.reason).toLowerCase().includes(query)) hits.push(cfg.name);
+      });
+    });
+    var unique = hits.filter(function(v,i,a){ return a.indexOf(v)===i; });
+    srEl.style.display = 'block';
+    if (unique.length) {
+      srEl.innerHTML = '⚠ BLACKLIST MATCH — found in: <strong>' + unique.map(e).join(', ') + '</strong>';
+      srEl.style.color = '#ff8888';
+    } else {
+      srEl.innerHTML = '✓ No blacklist matches for "' + e(query) + '"';
+      srEl.style.color = 'var(--green-dim)';
+    }
+  } else if (srEl) { srEl.style.display = 'none'; }
+
+  el.innerHTML = enabled.map(function(cfg) {
+    var isCollapsed = blCollapsed.has(cfg.id);
+    var sc = blSheetCache[cfg.id];
+    var manualEnts = allBlacklistEntries.filter(function(en){ return en.deptId===cfg.id; });
+
+    var statusHtml = '';
+    if (!cfg.sheetUrl) statusHtml = '<span class="bl-sheet-status bl-status-empty">○ NO SHEET</span>';
+    else if (!sc) statusHtml = '<span class="bl-sheet-status bl-status-loading">○ PENDING</span>';
+    else if (sc.status==='loading') statusHtml = '<span class="bl-sheet-status bl-status-loading">● FETCHING...</span>';
+    else if (sc.status==='ok')      statusHtml = '<span class="bl-sheet-status bl-status-ok">● '+sc.rows.length+' SHEET ENTRIES</span>';
+    else if (sc.status==='empty')   statusHtml = '<span class="bl-sheet-status bl-status-empty">○ SHEET EMPTY</span>';
+    else if (sc.status==='error')   statusHtml = '<span class="bl-sheet-status bl-status-error" title="'+e(sc.error)+'">✗ SHEET ERROR</span>';
+
+    var sheetHtml = '';
+    if (sc && sc.status==='ok') {
+      var fRows = query.length>=2 ? sc.rows.filter(function(r){ return r.join(' ').toLowerCase().includes(query); }) : sc.rows;
+      sheetHtml = '<div class="bl-section-label">▸ FROM GOOGLE SHEET'+(query.length>=2&&fRows.length<sc.rows.length?' ('+fRows.length+' of '+sc.rows.length+' match)':'')+'</div>'
+        + '<div style="overflow-x:auto;"><table class="bl-table"><thead><tr>'
+        + sc.headers.map(function(h){ return '<th>'+e(h)+'</th>'; }).join('')
+        + '</tr></thead><tbody>'
+        + (fRows.length ? fRows.map(function(row){ return '<tr>'+row.map(function(c){ return '<td>'+e(c)+'</td>'; }).join('')+'</tr>'; }).join('')
+          : '<tr><td colspan="'+sc.headers.length+'" style="color:var(--text-faint);font-style:italic;">[ No matches ]</td></tr>')
+        + '</tbody></table></div>';
+    } else if (sc && sc.status==='error') {
+      sheetHtml = '<div style="font-size:.58rem;color:#ff8888;padding:.3rem 0;line-height:1.6;">⚠ Could not load sheet: '+e(sc.error)+'</div>';
+    }
+
+    var fManual = query.length>=2 ? manualEnts.filter(function(en){ return (en.name+' '+en.steamId+' '+en.reason).toLowerCase().includes(query); }) : manualEnts;
+    var manualHtml = fManual.length ? fManual.map(function(en) {
+      var dt = new Date(en.addedAt).toISOString().slice(0,10);
+      var canDel = currentUser && parseInt(currentUser.clearance)>=5;
+      return '<div class="bl-entry">'
+        + '<div class="bl-entry-meta">'
+        + '<div class="bl-entry-name">'+e(en.name||'—')+'</div>'
+        + (en.steamId?'<div class="bl-entry-steam">'+e(en.steamId)+'</div>':'')
+        + '<div class="bl-entry-reason">'+e(en.reason||'—')+'</div>'
+        + '<div class="bl-entry-added">EC·'+e(en.addedBy)+' · '+dt+'</div>'
+        + '</div>'
+        + (canDel?'<button style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.8rem;padding:0 4px;" data-action="del-bl-entry" data-id="'+e(en.id)+'" title="Delete">✕</button>':'')
+        + '</div>';
+    }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);">[ NO MANUAL ENTRIES ]</div>';
+
+    var addBtn = canManageBlacklist()
+      ? '<button class="rec-btn" data-action="open-bl-entry-modal" data-deptid="'+e(cfg.id)+'" data-deptname="'+e(cfg.name)+'" style="font-size:.55rem;padding:2px 9px;margin-top:.5rem;">+ ADD MANUAL ENTRY</button>'
+      : '';
+
+    return '<div class="bl-dept">'
+      + '<div class="bl-dept-hdr" data-action="toggle-bl-dept" data-id="'+e(cfg.id)+'">'
+      + '<span style="font-size:.65rem;font-weight:bold;letter-spacing:.1em;color:var(--text);">▸ '+e(cfg.name.toUpperCase())+'</span>'
+      + '<div style="display:flex;align-items:center;gap:.5rem;">'+statusHtml
+      + '<span style="font-size:.6rem;color:var(--text-dim);">'+(isCollapsed?'▸':'▾')+'</span></div></div>'
+      + '<div style="display:'+(isCollapsed?'none':'block')+';"><div class="bl-dept-body">'
+      + sheetHtml
+      + '<div class="bl-section-label">▸ MANUAL ENTRIES (CAIRO.AIC)</div>'
+      + manualHtml + addBtn
+      + '</div></div></div>';
+  }).join('');
+}
+
+function openBlEntryModal(deptId, deptName) {
+  if (!canManageBlacklist()) return;
+  document.getElementById('blEntryDeptId').value = deptId;
+  document.getElementById('blEntryName').value   = '';
+  document.getElementById('blEntrySteam').value  = '';
+  document.getElementById('blEntryReason').value = '';
+  document.getElementById('blEntryErr').textContent = '';
+  var h = document.querySelector('#blEntryModal h3');
+  if (h) h.textContent = 'ADD ENTRY — ' + deptName.toUpperCase();
+  document.getElementById('blEntryModal').classList.add('open');
+}
+function closeBlEntryModal() { document.getElementById('blEntryModal').classList.remove('open'); }
+
+async function saveBlEntry() {
+  if (!canManageBlacklist()) return;
+  var deptId = document.getElementById('blEntryDeptId').value;
+  var name   = document.getElementById('blEntryName').value.trim();
+  var steam  = document.getElementById('blEntrySteam').value.trim();
+  var reason = document.getElementById('blEntryReason').value.trim();
+  var errEl  = document.getElementById('blEntryErr');
+  if (!name)   { errEl.textContent = '> NAME REQUIRED'; return; }
+  if (!reason) { errEl.textContent = '> REASON REQUIRED'; return; }
+  var entry = { id:'bl_'+Date.now()+'_'+Math.random().toString(36).slice(2,4),
+    deptId: deptId, name: name, steamId: steam, reason: reason,
+    addedBy: currentUser.id, addedAt: Date.now() };
+  try {
+    await blEntrySet(entry.id, entry);
+    allBlacklistEntries.push(entry);
+    closeBlEntryModal();
+    renderBlacklist();
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+
+async function deleteBlEntry(id) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!await pfConfirm('PERMANENTLY REMOVE THIS BLACKLIST ENTRY?')) return;
+  try {
+    await blEntryDel(id);
+    allBlacklistEntries = allBlacklistEntries.filter(function(x){ return x.id !== id; });
+    renderBlacklist();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+function toggleBlDept(id) {
+  if (blCollapsed.has(id)) blCollapsed.delete(id); else blCollapsed.add(id);
+  renderBlacklist();
+}
+
+// Admin config modal
+function openBlDeptModal(existingId) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var ex = existingId ? allBlacklistConfigs.find(function(c){ return c.id===existingId; }) : null;
+  document.getElementById('blDeptEditId').value    = existingId || '';
+  document.getElementById('blDeptName').value      = ex ? ex.name    : '';
+  document.getElementById('blDeptUrl').value       = ex ? (ex.sheetUrl||'') : '';
+  document.getElementById('blDeptTab').value       = ex ? (ex.tabName||'Blacklist') : 'Blacklist';
+  document.getElementById('blDeptEnabled').checked = ex ? ex.enabled !== false : true;
+  document.getElementById('blDeptErr').textContent = '';
+  var h = document.getElementById('blDeptModalTitle');
+  if (h) h.textContent = existingId ? 'EDIT DEPARTMENT' : 'ADD DEPARTMENT BLACKLIST';
+  document.getElementById('blDeptModal').classList.add('open');
+}
+function closeBlDeptModal() { document.getElementById('blDeptModal').classList.remove('open'); }
+
+async function saveBlDept() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var editId  = document.getElementById('blDeptEditId').value;
+  var name    = document.getElementById('blDeptName').value.trim();
+  var url     = document.getElementById('blDeptUrl').value.trim();
+  var tabName = document.getElementById('blDeptTab').value.trim();
+  var enabled = document.getElementById('blDeptEnabled').checked;
+  var errEl   = document.getElementById('blDeptErr');
+  if (!name)    { errEl.textContent = '> DEPARTMENT NAME REQUIRED'; return; }
+  if (!tabName) { errEl.textContent = '> SHEET TAB NAME REQUIRED'; return; }
+  if (url && !url.match(/spreadsheets\/d\//)) { errEl.textContent = '> MUST BE A GOOGLE SHEETS URL'; return; }
+  var id = editId || ('dept_'+Date.now()+'_'+Math.random().toString(36).slice(2,4));
+  var rec = { id: id, name: name, sheetUrl: url, tabName: tabName, enabled: enabled,
+              updatedBy: currentUser.id, updatedAt: Date.now() };
+  try {
+    await blConfigSet(id, rec);
+    allBlacklistConfigs = await blConfigGetAll();
+    closeBlDeptModal();
+    if (url && tabName && enabled) fetchSheetData(id, url, tabName);
+    else renderBlacklist();
+    renderAdminPanel();
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+
+async function deleteBlDept(id) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!await pfConfirm('DELETE THIS DEPARTMENT BLACKLIST?\n\nAll manual entries for this department will also be removed.')) return;
+  try {
+    await blConfigDel(id);
+    var toDelete = allBlacklistEntries.filter(function(en){ return en.deptId===id; });
+    for (var i=0;i<toDelete.length;i++) { await blEntryDel(toDelete[i].id); }
+    allBlacklistConfigs = allBlacklistConfigs.filter(function(c){ return c.id!==id; });
+    allBlacklistEntries = allBlacklistEntries.filter(function(en){ return en.deptId!==id; });
+    delete blSheetCache[id];
+    renderAdminPanel();
+    renderBlacklist();
+  } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 // ================================================================
@@ -2103,7 +2798,7 @@ function _onEthicsOrdersSSE(raw) {
   allEthicsOrders = Object.values(raw).filter(function(o){ return o && o.id; })
                     .sort(function(a,b){ return b.created - a.created; });
   updateEthicsOrderBadge();
-  _safeRender(renderEthicsOrders, 'eoOrdersList');
+  _safeRender(renderEthicsOrders, 'ethicsOrdersList');
 }
 
 function _onRecruitSSE(raw) {
@@ -2527,6 +3222,7 @@ function updateOrderBadge() {
   if (!badge) return;
   badge.style.display = pend > 0 ? 'inline-block' : 'none';
   badge.textContent   = pend;
+  updateParentBadges();
 }
 
 function updateEthicsOrderBadge() {
@@ -2535,6 +3231,24 @@ function updateEthicsOrderBadge() {
   if (!badge) return;
   badge.style.display = pend > 0 ? 'inline-block' : 'none';
   badge.textContent   = pend;
+  updateParentBadges();
+}
+
+// Roll up child counts onto the parent dropdown triggers
+function updateParentBadges() {
+  // OMEGA-1: POI + recruit + pending orders
+  var omega = allPOI.filter(function(p){return !p.closed;}).length
+            + allTargets.filter(function(t){return !t.closed;}).length
+            + allRecruitment.filter(function(r){return r.stage !== 'archived';}).length
+            + allOrders.filter(function(o){return o.status==='PENDING';}).length;
+  var ob = document.getElementById('ddbadge-omega1');
+  if (ob) { ob.style.display = omega>0?'inline-flex':'none'; ob.textContent = omega; }
+
+  // ETHICS: recruit + pending orders
+  var ethics = allEthicsRecruit.filter(function(r){return r.stage !== 'archived';}).length
+             + allEthicsOrders.filter(function(o){return o.status==='PENDING';}).length;
+  var eb = document.getElementById('ddbadge-ethics');
+  if (eb) { eb.style.display = ethics>0?'inline-flex':'none'; eb.textContent = ethics; }
 }
 
 function updateEthicsRecruitBadge() {
@@ -2543,6 +3257,7 @@ function updateEthicsRecruitBadge() {
   if (!badge) return;
   badge.style.display = count > 0 ? 'inline-block' : 'none';
   badge.textContent   = count;
+  updateParentBadges();
 }
 
 function updatePoiBadge() {
@@ -2552,6 +3267,7 @@ function updatePoiBadge() {
   if (!badge) return;
   badge.style.display = count > 0 ? 'inline-block' : 'none';
   badge.textContent   = count;
+  updateParentBadges();
 }
 
 function updateRecruitBadge() {
@@ -2560,6 +3276,7 @@ function updateRecruitBadge() {
   if (!badge) return;
   badge.style.display = count > 0 ? 'inline-block' : 'none';
   badge.textContent   = count;
+  updateParentBadges();
 }
 
 // ================================================================
@@ -2577,6 +3294,13 @@ function switchTab(el, id) {
   el.classList.add('active');
   var tab = document.getElementById('tab-'+id);
   if (tab) tab.classList.add('active');
+
+  // Close all dropdowns; mark the parent dropdown that owns the active child
+  document.querySelectorAll('.nav-dd').forEach(function(d){
+    d.classList.remove('open');
+    if (d.contains(el)) d.classList.add('has-active');
+    else d.classList.remove('has-active');
+  });
   if (id === 'matrix')          animateBars();
   if (id === 'orders')          loadOrders();
   if (id === 'ethics-orders')   loadEthicsOrders();
@@ -2586,6 +3310,7 @@ function switchTab(el, id) {
   if (id === 'ethics-files')    loadEthicsPersonnel();
   if (id === 'ethics-roster')   loadEthicsPersonnel();
   if (id === 'poi')             loadPOIData();
+  if (id === 'blacklist')       loadBlacklist();
   if (id === 'recruit') {
     if (!currentUser || parseInt(currentUser.clearance) < 4) {
       var rTab = document.getElementById('tab-recruit');
@@ -2705,8 +3430,13 @@ function updateAdminBadge() {
   badge.style.display = pending > 0 ? 'inline-block' : 'none';
 }
 
-function openAdminPanel() {
+async function openAdminPanel() {
   document.getElementById('adminModal').classList.add('open');
+  // Load blacklist configs so the admin blacklist section is populated
+  if (!allBlacklistConfigs.length) {
+    try { allBlacklistConfigs = await blConfigGetAll(); } catch(_) {}
+  }
+  loadAuditLog();
   renderAdminPanel();
 }
 function closeAdminPanel() { document.getElementById('adminModal').classList.remove('open'); }
@@ -2715,7 +3445,7 @@ function renderAdminPanel() {
   var users    = Object.values(allUsers);
   var pending  = users.filter(function(u){ return u.status === 'pending'; });
   var active   = users.filter(function(u){ return u.status === 'active' || (!u.status && u.hash); });
-  var denied   = users.filter(function(u){ return u.status === 'denied'; });
+  var denied   = users.filter(function(u){ return u.status === 'denied' || u.status === 'retired'; });
 
   // Pending list
   var pendingEl = document.getElementById('adminPendingList');
@@ -2755,8 +3485,8 @@ function renderAdminPanel() {
     activeEl.innerHTML = combined.length ? combined.map(function(u) {
       var uid    = e(u.displayId || '?');
       var status = u.status || 'active';
-      var scls   = status==='denied' ? 'b-red' : 'b-green';
-      var slbl   = status==='denied' ? 'DENIED' : 'ACTIVE';
+      var scls   = status==='denied' ? 'b-red' : status==='retired' ? 'b-amber' : 'b-green';
+      var slbl   = status==='denied' ? 'DENIED' : status==='retired' ? 'RETIRED' : 'ACTIVE';
       return `<div style="border:1px solid var(--border);padding:.4rem .65rem;margin-bottom:2px;font-size:.62rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.3rem;">
           <div>
@@ -2779,8 +3509,11 @@ function renderAdminPanel() {
               <option value="ethics"${u.unit==='ethics'?' selected':''}>ETHICS COMMITTEE</option>
             </select>
             <button class="rec-btn" data-action="admin-set-unit" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">SAVE UNIT</button>
-            ${status==='denied' ? `<button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">RESTORE</button>` : ''}
-            ${status!=='denied' && (u.clearance==='3'||u.clearance==='4') ? `<button class="rec-btn deny" data-action="admin-revoke" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Revoke access">REVOKE</button>` : ''}
+            ${status==='denied' || status==='retired' ? `<button class="rec-btn approve" data-action="admin-approve" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;">RESTORE</button>` : ''}
+            ${status!=='denied' && status!=='retired' && (u.clearance==='3'||u.clearance==='4') ? `<button class="rec-btn deny" data-action="admin-revoke" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Revoke access for cause">REVOKE</button>` : ''}
+            ${status!=='retired' && status!=='denied' ? `<button class="rec-btn" data-action="admin-retire" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;opacity:.85;" title="Mark as retired (honourable inactive)">RETIRE</button>` : ''}
+            <button class="rec-btn" data-action="admin-reset-pass" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;opacity:.85;" title="Reset passphrase">🔑 RESET</button>
+            ${status==='retired' ? `<span class="badge b-amber" style="font-size:.5rem;">RETIRED</span>` : ''}
           </div>
         </div>
         <div style="margin-top:.35rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:.35rem;">
@@ -2819,14 +3552,38 @@ function renderAdminPanel() {
       </div>`;
     }).join('') : '<div style="font-size:.63rem;color:var(--text-faint);">[ NO ACTIVE ACCOUNTS ]</div>';
   }
+
+  // ── Blacklist Department Config (CL5 only) ──
+  var blSection = document.getElementById('adminBlSection');
+  if (blSection) {
+    blSection.innerHTML = '<div style="margin-top:.75rem;border-top:1px solid var(--border2);padding-top:.6rem;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;">'
+      + '<span style="font-size:.58rem;letter-spacing:.14em;color:var(--green-dim);">▸ BLACKLIST DEPARTMENT SHEETS</span>'
+      + '<button class="rec-btn" data-action="open-bl-dept-modal" style="font-size:.55rem;padding:2px 9px;">+ ADD DEPARTMENT</button>'
+      + '</div>'
+      + (allBlacklistConfigs.length ? allBlacklistConfigs.map(function(cfg) {
+          return '<div style="border:1px solid var(--border);padding:.3rem .6rem;margin-bottom:3px;font-size:.6rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.3rem;">'
+            + '<div><span style="color:var(--text);font-weight:bold;">' + e(cfg.name) + '</span>'
+            + (cfg.enabled===false?'<span class="badge b-red" style="margin-left:.3rem;font-size:.5rem;">DISABLED</span>':'<span class="badge b-green" style="margin-left:.3rem;font-size:.5rem;">ENABLED</span>')
+            + '<div style="font-size:.54rem;color:var(--text-dim);margin-top:1px;">Tab: <em>'+e(cfg.tabName||'—')+'</em>'
+            + (cfg.sheetUrl?' · <a href="'+e(cfg.sheetUrl)+'" target="_blank" style="color:var(--cyan);text-decoration:none;">View Sheet ↗</a>':' · No sheet URL')+'</div></div>'
+            + '<div style="display:flex;gap:.3rem;">'
+            + '<button class="rec-btn" data-action="open-bl-dept-modal" data-id="'+e(cfg.id)+'" style="font-size:.53rem;padding:1px 6px;">EDIT</button>'
+            + '<button class="rec-btn deny" data-action="del-bl-dept" data-id="'+e(cfg.id)+'" style="font-size:.53rem;padding:1px 5px;">DELETE</button>'
+            + '</div></div>';
+        }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);">[ NO DEPARTMENTS CONFIGURED ]</div>')
+      + '</div>';
+  }
 }
 
 async function adminApprove(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   var sel = document.getElementById('grantCl_' + uid) || document.getElementById('setCl_' + uid);
   var cl  = sel ? sel.value : '3';
   if (!await pfConfirm('APPROVE EC·' + uid + ' with Clearance Level ' + cl + '?')) return;
   var rec = allUsers[uid] || {};
   rec.status = 'active'; rec.clearance = cl;
+  auditRecord('APPROVED ACCOUNT', 'EC·'+uid+' at CL'+cl);
   rec.approvedBy = currentUser.id; rec.approvedAt = Date.now();
   try {
     await userSet(uid, rec);
@@ -2837,9 +3594,11 @@ async function adminApprove(uid) {
 }
 
 async function adminDeny(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   if (!await pfConfirm('DENY registration for EC·' + uid + '? They will be unable to log in.')) return;
   var rec = allUsers[uid] || {};
   rec.status = 'denied'; rec.deniedBy = currentUser.id; rec.deniedAt = Date.now();
+  auditRecord('DENIED REGISTRATION', 'EC·'+uid);
   try {
     await userSet(uid, rec);
     allUsers[uid] = rec;
@@ -2849,6 +3608,7 @@ async function adminDeny(uid) {
 }
 
 async function adminSetClearance(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   var sel = document.getElementById('setCl_' + uid);
   if (!sel) return;
   var cl = sel.value;
@@ -2857,12 +3617,14 @@ async function adminSetClearance(uid) {
   rec.clearance = cl; rec.clChangedBy = currentUser.id; rec.clChangedAt = Date.now();
   try {
     await userSet(uid, rec);
+    auditRecord('SET CLEARANCE', 'EC·'+uid+' → CL'+(sel?sel.value:rec.clearance));
     allUsers[uid] = rec;
     renderAdminPanel();
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 async function adminLinkFile(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   var sel = document.getElementById('linkFile_' + uid);
   if (!sel || !sel.value) { alert('SELECT A FILE FIRST'); return; }
   var type   = sel.value.slice(0, 2);   // 'pf' or 'ef'
@@ -2875,24 +3637,90 @@ async function adminLinkFile(uid) {
   rec.clearance = deriveClearance(rec);
   try {
     await userSet(uid, rec);
+    auditRecord('LINKED FILE', 'EC·'+uid+' → '+label);
     allUsers[uid] = rec;
     renderAdminPanel();
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 async function adminUnlinkFile(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   if (!await pfConfirm('Unlink EC·' + uid + ' from their personnel file?\n\nTheir clearance will revert to their stored level.')) return;
   var rec = allUsers[uid] || {};
   rec.linkedPfId = null;
   rec.linkedEfId = null;
   try {
     await userSet(uid, rec);
+    auditRecord('UNLINKED FILE', 'EC·'+uid);
+    allUsers[uid] = rec;
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+// ── Passphrase reset (CL5) ──
+function adminResetPass(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  document.getElementById('passResetUid').value = uid;
+  document.getElementById('passResetField').value = '';
+  document.getElementById('passResetErr').textContent = '';
+  document.getElementById('passResetTitle').textContent = 'RESET PASSPHRASE — EC·' + uid;
+  document.getElementById('passResetModal').classList.add('open');
+}
+function closePassReset() { document.getElementById('passResetModal').classList.remove('open'); }
+async function savePassReset() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var uid     = document.getElementById('passResetUid').value;
+  var newPass = document.getElementById('passResetField').value.trim();
+  var errEl   = document.getElementById('passResetErr');
+  if (!newPass || newPass.length < 3) { errEl.textContent = '> PASSPHRASE MUST BE AT LEAST 3 CHARACTERS'; return; }
+  var rec = allUsers[uid] || {};
+  rec.hash = hashPass(newPass);
+  rec.passResetBy = currentUser.id; rec.passResetAt = Date.now();
+  try {
+    await userSet(uid, rec);
+    auditRecord('RESET PASSPHRASE', 'EC·'+uid);
+    allUsers[uid] = rec;
+    closePassReset();
+    alert('Passphrase reset for EC·' + uid + '.\n\nNew passphrase: ' + newPass + '\n\nShare this with the member securely. They can change it later.');
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+
+// ── Bulk approve all pending at CL3 (CL5) ──
+async function adminBulkApprove() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var pending = Object.values(allUsers).filter(function(u){ return u.status === 'pending'; });
+  if (!pending.length) { alert('No pending registrations.'); return; }
+  if (!await pfConfirm('APPROVE ALL ' + pending.length + ' pending registration(s) at CL3?\n\nYou can adjust individual clearances afterwards.')) return;
+  var ok = 0;
+  for (var i = 0; i < pending.length; i++) {
+    var u = pending[i];
+    var uid = u.displayId;
+    u.status = 'active'; u.clearance = '3';
+    try { await userSet(uid, u); allUsers[uid] = u; ok++; } catch(_) {}
+  }
+  auditRecord('BULK APPROVED', ok + ' account(s) at CL3');
+  updateAdminBadge();
+  renderAdminPanel();
+  alert('Approved ' + ok + ' of ' + pending.length + ' pending account(s) at CL3.');
+}
+
+// ── Retire / un-retire an account (CL5) ──
+// 'retired' = honourable inactive status, distinct from 'denied' (revoked for cause)
+async function adminRetire(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!await pfConfirm('Mark EC·' + uid + ' as RETIRED?\n\nThis is an honourable inactive status. They cannot log in but are not revoked for cause. Reversible.')) return;
+  var rec = allUsers[uid] || {};
+  rec.status = 'retired'; rec.retiredBy = currentUser.id; rec.retiredAt = Date.now();
+  try {
+    await userSet(uid, rec);
+    auditRecord('RETIRED ACCOUNT', 'EC·'+uid);
     allUsers[uid] = rec;
     renderAdminPanel();
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 async function adminSetUnit(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   var sel = document.getElementById('setUnit_' + uid);
   if (!sel) return;
   var unit = sel.value; // '' | 'omega1' | 'ethics'
@@ -2903,15 +3731,18 @@ async function adminSetUnit(uid) {
   rec.unitSetBy = currentUser.id; rec.unitSetAt = Date.now();
   try {
     await userSet(uid, rec);
+    auditRecord('SET UNIT', 'EC·'+uid+' → '+(unit||'none'));
     allUsers[uid] = rec;
     renderAdminPanel();
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 async function adminRevoke(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   if (!await pfConfirm('REVOKE ACCESS for EC·' + uid + '?\n\nThey will be unable to log in until restored.')) return;
   var rec = allUsers[uid] || {};
-  rec.status = 'denied'; rec.revokedBy = currentUser.id; rec.revokedAt = Date.now();
+  rec.status = 'denied'; rec.revokedBy = currentUser.id;
+  auditRecord('REVOKED ACCESS', 'EC·'+uid); rec.revokedAt = Date.now();
   try {
     await userSet(uid, rec);
     allUsers[uid] = rec;
@@ -2938,7 +3769,10 @@ function deriveClearance(userRec) {
     return String(stored);
   }
 
-  var fileCl = 3; // default if file/rank not found
+  // default: if the linked file isn't found in memory yet (arrays not loaded at login time),
+  // use the stored/approved clearance as a safe fallback rather than dropping to CL3.
+  // This is corrected to the file-derived value once personnel data loads in the background.
+  var fileCl = stored;
 
   // Ethics Committee roles
   if (userRec.linkedEfId) {
@@ -2984,6 +3818,44 @@ async function personnelDel(id) {
   else lsDel('personnel/' + id);
 }
 
+// ── Re-derive clearance once personnel data is in memory ──
+// Called at the end of loadPersonnel / loadEthicsPersonnel so any
+// stored-vs-file-rank discrepancy (e.g. from a promotion/demotion) is
+// corrected without requiring a full re-login.
+async function refreshClearance() {
+  if (!currentUser) return;
+  try {
+    var rec = await userGet(currentUser.id);
+    if (!rec) return;
+    var newCl = deriveClearance(rec);
+    if (newCl === currentUser.clearance) return; // nothing changed
+
+    currentUser.clearance = newCl;
+
+    // Update pill text
+    var pill = document.getElementById('userPill');
+    if (pill && pill.style.display !== 'none') {
+      var unitTag = rec.unit ? ' · ' + (rec.unit === 'omega1' ? 'Ω-1' : 'EC') : '';
+      pill.textContent = 'EC·' + currentUser.id + ' [L' + newCl + ']' + unitTag + '  ▾';
+    }
+    // Update admin button visibility
+    var adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) adminBtn.style.display = parseInt(newCl) >= 5 ? 'inline-block' : 'none';
+    // Update CL3 read-only banner
+    var cl3Banner = document.getElementById('cl3Banner');
+    if (cl3Banner) cl3Banner.style.display = (currentUser && parseInt(newCl) <= 3) ? 'block' : 'none';
+    // Re-render active tab so access filters reflect the corrected clearance
+    var active = document.querySelector('.tab-content.active');
+    if (active) {
+      var tid = active.id;
+      if (tid === 'tab-personnel-files') renderPersonnelFiles();
+      else if (tid === 'tab-roster')     renderRoster();
+      else if (tid === 'tab-ethics-files') renderEthicsFiles();
+      else if (tid === 'tab-ethics-roster') renderEthicsRoster();
+    }
+  } catch(_) {}
+}
+
 async function loadPersonnel() {
   try {
     var raw = await personnelGetAll();
@@ -2992,6 +3864,7 @@ async function loadPersonnel() {
   await loadSquadrons();
   renderPersonnelFiles();
   renderRoster();
+  refreshClearance(); // silently correct clearance now that allPersonnel is populated
 }
 
 // ── Render Personnel Files ──
@@ -3012,7 +3885,8 @@ function getEfReadLevel(p) {
 }
 // Determine how high a file the current user may read
 function getUserReadLevel() {
-  if (!currentUser) return 0;
+  // Guests / observers get baseline CL3 read access (read-only of standard files)
+  if (!currentUser) return 3;
   var cl = parseInt(currentUser.clearance || '3');
   if (cl >= 5) return 6;
   if (currentUser.linkedEfId) {
@@ -3309,6 +4183,15 @@ function renderRoster() {
 
   var active = allPersonnel.filter(function(p){ return !p.status || p.status === 'Active'; });
 
+  // Access control: hide personnel above the current user's read level (own file always shown)
+  var rosterReadLevel = getUserReadLevel();
+  if (rosterReadLevel < 6) {
+    active = active.filter(function(p) {
+      var isSelf = currentUser && currentUser.linkedPfId === p.id;
+      return isSelf || getPfReadLevel(p) <= rosterReadLevel;
+    });
+  }
+
   if (!active.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="roster-empty">[ NO ACTIVE PERSONNEL ON RECORD ]</td></tr>';
     return;
@@ -3500,7 +4383,7 @@ document.addEventListener('click', function(ev) {
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
-    case 'toggle-nav-group': toggleNavGroup(el.dataset.group); break;
+    case 'toggle-nav-dd': ev.stopPropagation(); toggleNavDd(el.dataset.group); break;
     case 'open-scout-modal':  openScoutModal(null); break;
     case 'close-scout-modal': closeScoutModal(); break;
     case 'save-scout':        saveScout(); break;
@@ -3576,7 +4459,16 @@ document.addEventListener('click', function(ev) {
     case 'delete-pf-sqd':   ev.stopPropagation(); deletePfSquadron(el.dataset.sqdid); break;
     // Ethics card
     case 'toggle-ef':        ev.stopPropagation(); toggleEfCard(id); break;
-    case 'toggle-ef-section':ev.stopPropagation(); toggleEfSection(id, el.dataset.section); break;
+    case 'toggle-bl-dept':       toggleBlDept(el.dataset.id); break;
+    case 'open-bl-entry-modal':  openBlEntryModal(el.dataset.deptid, el.dataset.deptname); break;
+    case 'close-bl-entry-modal': closeBlEntryModal(); break;
+    case 'save-bl-entry':        saveBlEntry(); break;
+    case 'del-bl-entry':         deleteBlEntry(el.dataset.id); break;
+    case 'open-bl-dept-modal':   openBlDeptModal(el.dataset.id || null); break;
+    case 'close-bl-dept-modal':  closeBlDeptModal(); break;
+    case 'save-bl-dept':         saveBlDept(); break;
+    case 'del-bl-dept':          deleteBlDept(el.dataset.id); break;
+    case 'toggle-ef-section': ev.stopPropagation(); toggleEfSection(id, el.dataset.section); break;
     case 'toggle-ethics-tag': toggleEthicsTag(el.dataset.efid, el.dataset.tag); break;
     case 'edit-ef':          ev.stopPropagation(); openEthicsModal(id); break;
     case 'delete-ef':        ev.stopPropagation(); deleteEthicsRecord(id); break;
@@ -3593,6 +4485,17 @@ document.addEventListener('click', function(ev) {
     case 'admin-set-unit':     adminSetUnit(el.dataset.uid); break;
     case 'admin-link-file':    adminLinkFile(el.dataset.uid); break;
     case 'admin-unlink-file':  adminUnlinkFile(el.dataset.uid); break;
+    case 'admin-reset-pass':   adminResetPass(el.dataset.uid); break;
+    case 'close-pass-reset':   closePassReset(); break;
+    case 'save-pass-reset':    savePassReset(); break;
+    case 'close-my-account':   closeMyAccount(); break;
+    case 'open-change-pass':   openChangePass(); break;
+    case 'close-change-pass':  closeChangePass(); break;
+    case 'save-change-pass':   saveChangePass(); break;
+    case 'do-logout':          closeMyAccount(); logout(); break;
+    case 'admin-retire':       adminRetire(el.dataset.uid); break;
+    case 'admin-bulk-approve': adminBulkApprove(); break;
+    case 'admin-refresh-audit':loadAuditLog(); break;
     case 'admin-revoke':       adminRevoke(el.dataset.uid); break;
     case 'close-award-modal':    closeAwardModal(); break;
     case 'save-award':           saveAward(); break;
@@ -3870,6 +4773,7 @@ function openStrikeModal(pfId, strikeId, system) {
 function closeStrikeModal() { document.getElementById('strikeModal').classList.remove('open'); }
 
 async function saveStrike() {
+  if (!canIssueStrike()) return;
   var pfId     = document.getElementById('strikeTargetPfId').value;
   var strikeId = document.getElementById('strikeTargetStrikeId').value;
   var system   = document.getElementById('strikeSystem').value || 'pf';
@@ -3926,6 +4830,7 @@ async function saveStrike() {
   rec.updated = Date.now();
   try {
     await saveFn(pfId, rec);
+    auditRecord('ISSUED STRIKE', (system==='ef'?'EC':'Ω-1')+' file '+pfId);
     closeStrikeModal();
     renderFn();
   } catch(e) { document.getElementById('strikeErr').textContent = '> SAVE ERROR: ' + e.message; }
@@ -4148,6 +5053,7 @@ async function removeSqdMember(sqdId, memberId, type) {
 function closeSquadronModal() { document.getElementById('squadronModal').classList.remove('open'); }
 
 async function saveSquadron() {
+  if (!canEditPersonnel()) return;
   var mode     = document.getElementById('squadronModalMode').value;
   var type     = document.getElementById('squadronType').value || 'pf';
   var memberId = document.getElementById('squadronTargetPfId').value;
@@ -5104,6 +6010,7 @@ function openEthicsDenyModal(id) {
 }
 function closeEthicsDenyModal() { document.getElementById('ethicsDenyModal').classList.remove('open'); }
 async function saveEthicsDeny() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   var id     = document.getElementById('ethicsDenyId').value;
   var reason = document.getElementById('ethicsDenyReason').value.trim();
   if (!reason){ document.getElementById('ethicsDenyErr').textContent='> REASON REQUIRED'; return; }
@@ -5193,22 +6100,25 @@ async function deleteEthicsIntComment(recId, noteCreated) {
 // ================================================================
 //  NAV GROUP COLLAPSE
 // ================================================================
-var navCollapsed = new Set(); // which nav groups are collapsed
+var navCollapsed = new Set(); // (legacy, retained to avoid reference errors — nav now uses dropdowns)
 
-function toggleNavGroup(group) {
-  var tabs  = document.getElementById('ngt-' + group);
-  var arrow = document.getElementById('nga-' + group);
-  if (!tabs) return;
-  if (navCollapsed.has(group)) {
-    navCollapsed.delete(group);
-    tabs.classList.remove('collapsed');
-    if (arrow) arrow.classList.remove('closed');
-  } else {
-    navCollapsed.add(group);
-    tabs.classList.add('collapsed');
-    if (arrow) arrow.classList.add('closed');
-  }
+function toggleNavDd(group) {
+  var dd = document.querySelector('.nav-dd[data-group="' + group + '"]');
+  if (!dd) return;
+  var wasOpen = dd.classList.contains('open');
+  // Close all dropdowns first
+  document.querySelectorAll('.nav-dd').forEach(function(d){ d.classList.remove('open'); });
+  // Toggle this one (open only if it wasn't already open)
+  if (!wasOpen) dd.classList.add('open');
 }
+
+// Close any open nav dropdown when clicking outside the nav
+document.addEventListener('click', function(ev) {
+  var nav = document.querySelector('.nav');
+  if (nav && !nav.contains(ev.target)) {
+    document.querySelectorAll('.nav-dd.open').forEach(function(d){ d.classList.remove('open'); });
+  }
+});
 
 // ================================================================
 //  POI / TARGET SYSTEM
@@ -5356,6 +6266,7 @@ function openPoiCloseModal(id, type) {
 }
 function closePoiCloseModal() { document.getElementById('poiCloseModal').classList.remove('open'); }
 async function savePoiClose() {
+  if (!currentUser || parseInt(currentUser.clearance) < 4) return;
   var id     = document.getElementById('poiCloseId').value;
   var type   = document.getElementById('poiCloseType').value;
   var reason = document.getElementById('poiCloseReason').value.trim();
@@ -5371,6 +6282,7 @@ async function savePoiClose() {
   } catch(err) { document.getElementById('poiCloseErr').textContent = '> ERROR: '+err.message; }
 }
 async function reopenPoi(id, type) {
+  if (!currentUser || parseInt(currentUser.clearance) < 4) { alert('CLEARANCE LEVEL 4 REQUIRED'); return; }
   if (!await pfConfirm('REOPEN THIS FILE?')) return;
   var list = type==='poi' ? allPOI : allTargets;
   var rec  = list.find(function(x){return x.id===id;});
@@ -5525,6 +6437,7 @@ function openPoiModal(id, type) {
 function closePoiModal() { document.getElementById('poiModal').classList.remove('open'); }
 
 async function savePoi() {
+  if (!canEditPersonnel()) return;
   var type     = document.getElementById('poiModalType').value;
   var editId   = document.getElementById('poiModalEditId').value;
   var name     = document.getElementById('poiName').value.trim();
@@ -5560,9 +6473,10 @@ async function savePoi() {
     } catch(err) { document.getElementById('poiErr').textContent = '> SAVE ERROR: '+err.message; return; }
   } else {
     var list2 = type==='poi' ? allPOI : allTargets;
+    var nextNum = list2.reduce(function(mx, x){ return Math.max(mx, x.number || 0); }, 0) + 1;
     var newRec = {
       id: (type==='poi'?'poi_':'tgt_') + now + '_' + Math.random().toString(36).slice(2,4),
-      number: list2.length + 1, name: name, department: dept, deptOther: deptOther,
+      number: nextNum, name: name, department: dept, deptOther: deptOther,
       position: position, reason: reason, notes: [],
       createdBy: currentUser.id, created: now
     };
@@ -5587,6 +6501,7 @@ async function savePoi() {
 }
 
 async function deletePoi(id, type) {
+  if (!currentUser || parseInt(currentUser.clearance) < 4) return;
   var list = type==='poi' ? allPOI : allTargets;
   var rec  = list.find(function(x){return x.id===id;});
   if (!rec) return;
@@ -5600,7 +6515,7 @@ async function deletePoi(id, type) {
 }
 
 async function addPoiNote(id, type) {
-  if (!currentUser) return;
+  if (!currentUser || parseInt(currentUser.clearance) < 4) return;
   var inp = document.getElementById('poinote_' + id);
   if (!inp || !inp.value.trim()) return;
   var list = type==='poi' ? allPOI : allTargets;
@@ -5742,6 +6657,7 @@ async function loadEthicsPersonnel() {
 
   renderEthicsFiles();
   renderEthicsRoster();
+  refreshClearance(); // silently correct clearance now that allEthicsPersonnel is populated
 }
 
 function renderEthicsFiles() {
@@ -5968,6 +6884,15 @@ function renderEthicsRoster() {
   if (!tbody) return;
   var activeEthics = allEthicsPersonnel.filter(function(p){ return !p.status || p.status === 'Active'; });
 
+  // Access control: hide ethics personnel above the user's read level (own file always shown)
+  var efRosterReadLevel = getUserReadLevel();
+  if (efRosterReadLevel < 6) {
+    activeEthics = activeEthics.filter(function(p) {
+      var isSelf = currentUser && currentUser.linkedEfId === p.id;
+      return isSelf || getEfReadLevel(p) <= efRosterReadLevel;
+    });
+  }
+
   if (!activeEthics.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="roster-empty">[ NO ACTIVE ETHICS PERSONNEL ON RECORD ]</td></tr>';
     return;
@@ -6042,7 +6967,7 @@ function closeEthicsModal() {
 }
 
 async function saveEthicsRecord() {
-  var name = document.getElementById('efName').value.trim();
+  if (!window._awaitingEfLink && !canEditPersonnel()) return;
   var role = document.getElementById('efRole').value;
   if (!name) { document.getElementById('efErr').textContent = '> NAME REQUIRED'; return; }
   if (!role) { document.getElementById('efErr').textContent = '> ROLE REQUIRED'; return; }
@@ -6135,7 +7060,7 @@ async function deleteEthicsRecord(id) {
 }
 
 async function addEthicsNote(id) {
-  if (!currentUser) return;
+  if (!currentUser || !canEditPersonnel()) return;
   var inp = document.getElementById('efnote_' + id);
   if (!inp) return;
   var text = inp.value.trim();
