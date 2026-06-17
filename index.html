@@ -4254,6 +4254,7 @@ function buildOrderDocument(o, unit) {
     + '.stampbox{position:absolute;top:120px;right:40px;border:3px double #7a0000;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;font-size:13px;letter-spacing:.1em;padding:6px 14px;transform:rotate(-9deg);opacity:.82;}'
     + '.stampbox.ok{border-color:#0a5a23;color:#0a5a23;}'
     + '.footer{margin-top:26px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
+    + '.redact{background:#000;color:#000;padding:0 .5em;border-radius:1px;user-select:none;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
     + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;padding:0;}.classbar{margin:0 0 4px;}}'
     + '</style></head><body><div class="page">'
     + '<div class="runhead"><span>SCP FOUNDATION · ETHICS COMMITTEE</span><span>DOC ' + escHtml(ref) + ' · ' + clLabel.split(' ·')[0] + '</span></div>'
@@ -4267,7 +4268,7 @@ function buildOrderDocument(o, unit) {
     +   '<tr><td class="k">Classification</td><td class="v">' + clLabel + ' · CONFIDENTIAL</td></tr>'
     +   '<tr><td class="k">Date of Issue</td><td class="v">' + issued + ' UTC</td></tr>'
     +   '<tr><td class="k">Originating Body</td><td class="v">Ethics Committee · CAIRO.AIC</td></tr>'
-    +   '<tr><td class="k">Issuing Officer</td><td class="v">EC·' + escHtml(o.author || '—') + ' · Clearance L' + escHtml(o.clearance || '—') + '</td></tr>'
+    +   '<tr><td class="k">Issuing Officer</td><td class="v">EC·' + escHtml(o.author || '—') + ' · Clearance <span class="redact">LEVEL</span></td></tr>'
     +   '<tr><td class="k">Classification of Order</td><td class="v">' + escHtml(typeLbl) + '</td></tr>'
     +   '<tr><td class="k">Priority</td><td class="v">' + escHtml(priority) + '</td></tr>'
     +   '<tr><td class="k">Status</td><td class="v">' + escHtml(status) + '</td></tr>'
@@ -4276,7 +4277,7 @@ function buildOrderDocument(o, unit) {
     + '<div class="subject">SUBJECT: ' + escHtml(subject) + '</div>'
     + '<div class="body">' + bodyHtml + '</div>'
     + '<div class="sig"><span class="by">Issued by authority of:</span><br>Ethics Committee · SCP Foundation'
-    +   '<div class="line">Authorising Signatory — EC·' + escHtml(o.author || '________') + ', Clearance L' + escHtml(o.clearance || '_') + '</div>'
+    +   '<div class="line">Authorising Signatory — EC·' + escHtml(o.author || '________') + ', Clearance <span class="redact">LVL</span></div>'
     + '</div>'
     + '<div class="footer">CONFIDENTIAL // ' + clLabel.split(' ·')[0] + ' // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE</div>'
     + '</div></body></html>';
@@ -4792,6 +4793,41 @@ function canEditUnitFile(unit) { // unit: 'pf' (Omega-1) or 'ef' (Ethics)
   if (parseInt(currentUser.clearance) >= 5) return true;
   if (unit === 'pf') return !!currentUser.linkedPfId; // must be an Omega-1 member
   if (unit === 'ef') return !!currentUser.linkedEfId; // must be an Ethics member
+  return false;
+}
+// The current user's Ethics Committee role ('Chairman' | 'Member' | 'Assistant' | null).
+function currentEfRole() {
+  if (!currentUser || !currentUser.linkedEfId) return null;
+  var ef = allEthicsPersonnel.find(function(p){ return p.id === currentUser.linkedEfId; });
+  return ef ? (ef.role || null) : null;
+}
+// Whether the current user may MANAGE (edit / discharge / retire / tag / LOA) a given file.
+// This is stricter than read access:
+//   • CL5 (Overseer) and senior Ethics (Chairman / Member) — may manage any file.
+//   • Senior Omega-1 (CL4 senior ranks) — may manage Omega-1 files only.
+//   • Ethics Assistants (CL4) — may manage ONLY their own file (self-service), nothing else.
+//   • Everyone else — no management rights.
+function canManageFile(p, unit) {
+  if (!currentUser || !p) return false;
+  var cl = parseInt(currentUser.clearance || '0');
+  if (cl >= 5) return true;                                  // Overseer / command
+
+  var efRole = currentEfRole();
+  // Senior Ethics (Chairman / Member) manage anything within their remit.
+  if (efRole === 'Chairman' || efRole === 'Member') return true;
+
+  // Ethics Assistant: own file only, never others, never Omega-1.
+  if (efRole === 'Assistant') {
+    return unit === 'ef' && currentUser.linkedEfId === p.id;
+  }
+
+  // Senior Omega-1 ranks manage Omega-1 files only.
+  if (unit === 'pf' && currentUser.linkedPfId) {
+    var me = allPersonnel.find(function(x){ return x.id === currentUser.linkedPfId; });
+    if (me && CL4_SENIOR_RANKS.includes(me.rank)) return true;
+    // An Omega-1 member may always manage their own file.
+    if (currentUser.linkedPfId === p.id) return true;
+  }
   return false;
 }
 
@@ -5918,7 +5954,7 @@ list.innerHTML = filtered.map(function(p) {
         + '</div>';
     }
     var isOpen  = pfExpanded.has(p.id);
-    var canEdit = canEditPersonnel();
+    var canEdit = canManageFile(p, 'pf');
     var isSelf = currentUser && currentUser.linkedPfId === p.id;
     var isCL5 = currentUser && parseInt(currentUser.clearance) >= 5;
     var selfRestricted = isSelf && !isCL5;
@@ -6209,6 +6245,11 @@ var pfModalMode = 'new'; // 'new' | 'edit'
 function openPersonnelModal(id) {
   // Allow opening when triggered from the link-file flow, even if clearance is low
   if (!window._awaitingPfLink && !canEditPersonnel()) return;
+  // Editing an existing file requires management authority over that file
+  if (id && !window._awaitingPfLink) {
+    var editRec = allPersonnel.find(function(p){ return p.id === id; });
+    if (editRec && !canManageFile(editRec, 'pf')) { alert('You do not have authority to edit this file.'); return; }
+  }
   pfModalMode = id ? 'edit' : 'new';
 
   // During first-time link flow, restrict rank options to those that match the
@@ -6278,6 +6319,10 @@ async function savePersonnelRecord() {
 
   if (editId) {
     var rec = allPersonnel.find(function(p){ return p.id === editId; });
+    if (rec && !window._awaitingPfLink && !canManageFile(rec, 'pf')) {
+      alert('You do not have authority to edit this file.');
+      btn.disabled = false; btn.textContent = '[ SAVE ]'; return;
+    }
     if (rec) {
       // Cross-unit rule: Ethics-only members (no Omega-1 file) can't edit Omega-1 files unless CL5
       if (!window._awaitingPfLink && !canEditUnitFile('pf')) {
@@ -6662,6 +6707,8 @@ var TAG_TYPES = ['Recruitment','Engagement','Development'];
 
 function openTagModal(pfId) {
   if (!canEditPersonnel()) return;
+  var tagRec = allPersonnel.find(function(p){ return p.id === pfId; });
+  if (tagRec && !canManageFile(tagRec, 'pf')) { alert('You do not have authority to manage this file.'); return; }
   document.getElementById('tagTargetId').value = pfId;
   document.getElementById('tagType').value = '';
   document.getElementById('tagRole').value = '';
@@ -6698,6 +6745,7 @@ async function removeTag(pfId, tagType) {
   if (!canEditPersonnel()) return;
   var rec = allPersonnel.find(function(p){ return p.id === pfId; });
   if (!rec) return;
+  if (!canManageFile(rec, 'pf')) { alert('You do not have authority to manage this file.'); return; }
   rec.tags = (rec.tags || []).filter(function(t){ return t.type !== tagType; });
   rec.updated = Date.now();
   try { await personnelSet(pfId, rec); renderPersonnelFiles(); } catch(e) { alert('ERROR: ' + e.message); }
@@ -7010,6 +7058,11 @@ async function squadronDel(id) {
 function openSquadronModal(mode, memberId, sqdId, type) {
   if (!canEditPersonnel()) return;
   type = type || 'pf';
+  if (memberId) {
+    var sqUnit = type === 'ef' ? 'ef' : 'pf';
+    var sqRec = (sqUnit === 'ef' ? allEthicsPersonnel : allPersonnel).find(function(p){ return p.id === memberId; });
+    if (sqRec && !canManageFile(sqRec, sqUnit)) { alert('You do not have authority to manage this file.'); return; }
+  }
   document.getElementById('squadronModalMode').value    = mode;
   document.getElementById('squadronType').value         = type;
   document.getElementById('squadronTargetPfId').value   = memberId || '';
@@ -8695,6 +8748,7 @@ async function setPersonnelStatus(id, status) {
   var labels = { Retired: 'RETIRE', Discharged: 'DISCHARGE', Active: 'REACTIVATE' };
   var rec = allPersonnel.find(function(p){ return p.id === id; });
   if (!rec) return;
+  if (!canManageFile(rec, 'pf')) { alert('You do not have authority to manage this file.'); return; }
   if (!await pfConfirm('CONFIRM: ' + labels[status] + ' ' + rec.name + '?\n\nRecord will be retained for archival purposes.')) return;
   rec.status    = status;
   rec.updatedBy = currentUser ? currentUser.id : '';
@@ -8707,6 +8761,7 @@ async function setPersonnelStatus(id, status) {
 async function deletePersonnelRecord(id) {
   if (!canEditPersonnel()) return;
   var rec = allPersonnel.find(function(p){ return p.id === id; });
+  if (rec && !canManageFile(rec, 'pf')) { alert('You do not have authority to manage this file.'); return; }
   if (!await pfConfirm('CONFIRM: DELETE RECORD FOR ' + (rec ? rec.name : id) + '?\n\nThis cannot be undone.')) return;
   try { await personnelDel(id); } catch(e) {}
   allPersonnel = allPersonnel.filter(function(p){ return p.id !== id; });
@@ -8718,6 +8773,8 @@ async function deletePersonnelRecord(id) {
 // ── Notes ──
 async function addPersonnelNote(id) {
   if (!canEditPersonnel()) return;
+  var noteRec = allPersonnel.find(function(p){ return p.id === id; });
+  if (noteRec && !canManageFile(noteRec, 'pf')) { alert('You do not have authority to manage this file.'); return; }
   var inp  = document.getElementById('pfnote_' + id);
   if (!inp) return;
   var text = inp.value.trim();
@@ -8855,6 +8912,7 @@ async function toggleEthicsTag(efId, tag) {
   if (!canEditPersonnel()) return;
   var rec = allEthicsPersonnel.find(function(p){ return p.id === efId; });
   if (!rec) return;
+  if (!canManageFile(rec, 'ef')) { alert('You do not have authority to manage this file.'); return; }
   var tags = Array.isArray(rec.tags) ? rec.tags.slice() : [];
   var idx  = tags.indexOf(tag);
   if (idx > -1) tags.splice(idx, 1); else tags.push(tag);
@@ -8871,7 +8929,7 @@ function buildEthicsCard(p) {
   var RESTRICTED = '<span style="color:var(--text-faint);font-style:italic;letter-spacing:.05em;">[ RESTRICTED ]</span>';
 
   var isOpen  = efExpanded.has(p.id);
-  var canEdit = canEditPersonnel() && efAccess === 'full'; // can't edit what you can't fully see
+  var canEdit = canManageFile(p, 'ef') && efAccess === 'full'; // can't edit what you can't fully see, and only with management rights
   var pStatus = p.status || 'Active';
   var notes   = Array.isArray(p.notes)      ? p.notes.slice().sort((a,b)=>a.created-b.created) : [];
   var history = Array.isArray(p.rankHistory)? p.rankHistory.slice().sort((a,b)=>b.changedAt-a.changedAt) : [];
@@ -8880,12 +8938,15 @@ function buildEthicsCard(p) {
   var statusBadge = pStatus !== 'Active' ? `<span class="badge ${pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span>` : '';
 
   var efFileSecBadges = fileIntegrityBadge(p.id, 'ef') + fileCompartmentBadges(p.id, 'ef');
+  var efLinkedBadge = userForFile(p.id, 'ef')
+    ? '<span class="badge b-green" style="font-size:.5rem; margin-left:4px;">● LINKED</span>'
+    : '';
   if (!isOpen) {
     return `<div class="pf-card" id="efcard_${e(p.id)}">
       <div class="pf-card-header" data-action="toggle-ef" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='var(--accent-softer)'" onmouseout="this.style.background=''">
         <div>
           <div class="pf-name">${e(p.name||'UNNAMED')}${p.nickname?` <span style="color:var(--text-dim);font-size:.6rem;">"${e(p.nickname)}"</span>`:''}</div>
-          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${efFileSecBadges}</div>
+          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${efFileSecBadges}${efLinkedBadge}</div>
         </div>
         <span style="font-size:.62rem;color:var(--text-dim);">▸</span>
       </div>
@@ -8946,7 +9007,7 @@ function buildEthicsCard(p) {
     <div class="pf-card-header" data-action="toggle-ef" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='var(--accent-softer)'" onmouseout="this.style.background=''">
       <div>
         <div class="pf-name">${e(p.name||'UNNAMED')}${p.nickname?` <span style="color:var(--text-dim);font-size:.6rem;">"${e(p.nickname)}"</span>`:''}</div>
-        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${efFileSecBadges}${(Array.isArray(p.tags)&&p.tags.length?p.tags.map(t=>`<span class="badge ${ETHICS_TAG_CLS_MAP[t]||'b-dim'}" style="font-size:.5rem;">${e(t)}</span>`).join(''):'')}</div>
+        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${efFileSecBadges}${efLinkedBadge}${(Array.isArray(p.tags)&&p.tags.length?p.tags.map(t=>`<span class="badge ${ETHICS_TAG_CLS_MAP[t]||'b-dim'}" style="font-size:.5rem;">${e(t)}</span>`).join(''):'')}</div>
       </div>
       <span style="font-size:.62rem;color:var(--text-dim);">▾</span>
     </div>
@@ -9106,6 +9167,11 @@ function renderEthicsRoster() {
 function openEthicsModal(id) {
   // Allow opening when triggered from the link-file flow, even if clearance is low
   if (!window._awaitingEfLink && !canEditPersonnel()) return;
+  // Editing an existing file requires management authority over that file
+  if (id && !window._awaitingEfLink) {
+    var editEf = allEthicsPersonnel.find(function(p){ return p.id === id; });
+    if (editEf && !canManageFile(editEf, 'ef')) { alert('You do not have authority to edit this file.'); return; }
+  }
 
   // During first-time link flow, restrict role options to those that match the
   // user's approved stored clearance — prevents self-promotion via role selection.
@@ -9164,6 +9230,11 @@ async function saveEthicsRecord() {
   var now = Date.now();
 
   if (editId) {
+    var efGuardRec = allEthicsPersonnel.find(function(x){ return x.id === editId; });
+    if (efGuardRec && !window._awaitingEfLink && !canManageFile(efGuardRec, 'ef')) {
+      document.getElementById('efErr').textContent = '> NO AUTHORITY TO EDIT THIS FILE';
+      btn.disabled = false; btn.textContent = '[ SAVE RECORD ]'; return;
+    }
     var existing = allEthicsPersonnel.find(function(x){ return x.id === editId; });
     if (!existing) { btn.disabled = false; btn.textContent = '[ SAVE RECORD ]'; return; }
     // Cross-unit rule: Omega-1-only members can't edit Ethics files unless CL5
@@ -9239,6 +9310,7 @@ async function setEthicsStatus(id, status) {
   var labels = { Retired: 'RETIRE', Discharged: 'DISCHARGE', Active: 'REACTIVATE' };
   var rec = allEthicsPersonnel.find(function(p){ return p.id === id; });
   if (!rec) return;
+  if (!canManageFile(rec, 'ef')) { alert('You do not have authority to manage this file.'); return; }
   if (!await pfConfirm('CONFIRM: ' + labels[status] + ' ' + rec.name + '?\n\nRecord will be retained for archival purposes.')) return;
   rec.status    = status;
   rec.updatedBy = currentUser ? currentUser.id : '';
@@ -9250,6 +9322,8 @@ async function setEthicsStatus(id, status) {
 
 async function deleteEthicsRecord(id) {
   if (!canEditPersonnel()) return;
+  var delRec = allEthicsPersonnel.find(function(p){ return p.id === id; });
+  if (delRec && !canManageFile(delRec, 'ef')) { alert('You do not have authority to manage this file.'); return; }
   if (!await pfConfirm('CONFIRM: PERMANENTLY DELETE THIS ETHICS RECORD?')) return;
   await ethicsPersonnelDel(id);
   allEthicsPersonnel = allEthicsPersonnel.filter(function(p){ return p.id !== id; });
@@ -9260,13 +9334,13 @@ async function deleteEthicsRecord(id) {
 
 async function addEthicsNote(id) {
   if (!currentUser || !canEditPersonnel()) return;
+  var p = allEthicsPersonnel.find(function(x){ return x.id === id; });
+  if (!p) return;
+  if (!canManageFile(p, 'ef')) { alert('You do not have authority to manage this file.'); return; }
   var inp = document.getElementById('efnote_' + id);
   if (!inp) return;
   var text = inp.value.trim();
   if (!text) return;
-
-  var p = allEthicsPersonnel.find(function(x){ return x.id === id; });
-  if (!p) return;
 
   var note = {
     id: 'enote_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
@@ -9443,6 +9517,9 @@ function getActiveLeave(p) {
 
 function openLeaveModal(pfId, division) {
   if (!canIssueLeave()) { alert('CLEARANCE LEVEL 4 REQUIRED TO ISSUE LEAVE'); return; }
+  var lUnit = division === 'ef' ? 'ef' : 'pf';
+  var lRec = (lUnit === 'ef' ? allEthicsPersonnel : allPersonnel).find(function(p){ return p.id === pfId; });
+  if (lRec && !canManageFile(lRec, lUnit)) { alert('You do not have authority to manage this file.'); return; }
   document.getElementById('leaveTargetPfId').value     = pfId;
   document.getElementById('leaveTargetDivision').value = division || 'pf';
   document.getElementById('leaveType').value           = 'LoA';
@@ -9458,6 +9535,9 @@ function closeLeaveModal() { document.getElementById('leaveModal').classList.rem
 async function saveLeave() {
   var pfId     = document.getElementById('leaveTargetPfId').value;
   var division = document.getElementById('leaveTargetDivision').value;
+  var leaveUnit = division === 'ef' ? 'ef' : 'pf';
+  var leaveRec = (leaveUnit === 'ef' ? allEthicsPersonnel : allPersonnel).find(function(p){ return p.id === pfId; });
+  if (leaveRec && !canManageFile(leaveRec, leaveUnit)) { alert('You do not have authority to manage this file.'); return; }
   var type     = document.getElementById('leaveType').value;
   var start    = document.getElementById('leaveStartDate').value;
   var end      = document.getElementById('leaveEndDate').value;
