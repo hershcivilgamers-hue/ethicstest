@@ -1172,6 +1172,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <div class="poi-file-back" data-action="poi-back">◁ BACK TO POI / TARGET LIST</div>
         <div class="poi-file-title" id="poiFileTitle"></div>
         <div id="poiFileBody"></div>
+        <input type="file" id="poiPhotoInput" accept="image/*" style="display:none;" onchange="handlePoiPhotoSelected(this)"/>
       </div>
     </div>
 
@@ -4193,6 +4194,105 @@ function directiveStamp(status) {
     return { label: s, cls: 'review' };
   return { label: s, cls: '' };
 }
+
+// ── Formal directive document export ──
+// Produces a self-contained, print-optimised HTML memorandum (Foundation house style)
+// from an order object. Recipients open it in any browser and can read or print → PDF.
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function buildOrderDocument(o, unit) {
+  var ref      = directiveRef(o);
+  var min      = parseInt(o.minClearance || '3');
+  var classLine = (min >= 5 ? 'LEVEL 5-A' : min >= 4 ? 'LEVEL 4-A' : 'LEVEL 3-A')
+                + ' // ETHICS COMMITTEE & DESIGNATED RECIPIENTS ONLY'
+                + (o.compartment ? ' // ' + escHtml((compartmentName(o.compartment) || 'COMPARTMENTED')).toUpperCase() + ' PROGRAM' : '');
+  var issued   = safeDateTime(o.created);
+  var priority = (o.priority || 'ROUTINE').toUpperCase();
+  var status   = (o.status || 'PENDING').toUpperCase();
+  var typeLbl  = (o.type || (unit === 'ef' ? 'DIRECTIVE' : 'ORDER')).toUpperCase();
+  var bodyText = (unit === 'ef' ? o.body : o.desc) || '';
+  var subject  = (o.title || 'ETHICS COMMITTEE DIRECTIVE').toUpperCase();
+  var compLine = o.compartment ? '<tr><td class="k">NEED-TO-KNOW PROGRAM</td><td class="v">' + escHtml(compartmentName(o.compartment) || 'COMPARTMENTED') + '</td></tr>' : '';
+
+  // Split body into paragraphs for clean document flow
+  var paras = bodyText.split(/\n\s*\n/).map(function(p){ return p.trim(); }).filter(Boolean);
+  var bodyHtml = paras.length
+    ? paras.map(function(p){ return '<p>' + escHtml(p).replace(/\n/g,'<br>') + '</p>'; }).join('')
+    : '<p style="color:#777;font-style:italic;">[ No directive text recorded. ]</p>';
+
+  var clLabel = min >= 5 ? 'LEVEL 5-A · COMMAND' : min >= 4 ? 'LEVEL 4-A · SENIOR' : 'LEVEL 3-A · STANDARD';
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+    + '<title>' + escHtml(ref) + ' — ' + escHtml(subject) + '</title>'
+    + '<style>'
+    + '@page{size:A4;margin:18mm 16mm;}'
+    + '*{box-sizing:border-box;}'
+    + 'body{font-family:"Times New Roman",Georgia,serif;color:#111;background:#525659;margin:0;padding:24px;line-height:1.55;}'
+    + '.page{background:#fff;max-width:780px;margin:0 auto 24px;padding:46px 54px 40px;box-shadow:0 2px 18px rgba(0,0,0,.4);position:relative;}'
+    + '.runhead{display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.04em;color:#444;border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:2px;text-transform:uppercase;}'
+    + '.classbar{background:#1a1a1a;color:#fff;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.14em;text-align:center;padding:5px 4px;margin:0 -54px 4px;font-weight:bold;}'
+    + '.classbar.crit{background:#7a0000;} .classbar.warn{background:#7a4a00;}'
+    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.42em;color:#222;margin:10px 0 18px;font-weight:bold;}'
+    + '.lh{text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}'
+    + '.lh .org{font-size:21px;font-weight:bold;letter-spacing:.06em;}'
+    + '.lh .sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#333;margin-top:3px;}'
+    + '.lh .div{font-size:10px;letter-spacing:.1em;color:#555;margin-top:6px;font-style:italic;}'
+    + '.doctype{text-align:center;font-size:13px;font-weight:bold;letter-spacing:.16em;margin:14px 0 16px;text-transform:uppercase;}'
+    + 'table.meta{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px;}'
+    + 'table.meta td{border:1px solid #999;padding:4px 8px;vertical-align:top;}'
+    + 'table.meta td.k{background:#ededed;font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#333;width:34%;font-weight:bold;}'
+    + 'table.meta td.v{font-weight:bold;}'
+    + '.subject{font-size:14px;font-weight:bold;margin:6px 0 16px;text-align:center;text-decoration:underline;line-height:1.4;}'
+    + '.body p{margin:0 0 12px;text-align:justify;font-size:12.5px;}'
+    + '.sig{margin-top:34px;border-top:1px solid #000;padding-top:12px;font-size:11.5px;}'
+    + '.sig .by{font-style:italic;color:#333;}'
+    + '.sig .line{margin-top:18px;border-top:1px solid #000;width:260px;padding-top:3px;font-size:10.5px;letter-spacing:.04em;}'
+    + '.stampbox{position:absolute;top:120px;right:40px;border:3px double #7a0000;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;font-size:13px;letter-spacing:.1em;padding:6px 14px;transform:rotate(-9deg);opacity:.82;}'
+    + '.stampbox.ok{border-color:#0a5a23;color:#0a5a23;}'
+    + '.footer{margin-top:26px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
+    + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;padding:0;}.classbar{margin:0 0 4px;}}'
+    + '</style></head><body><div class="page">'
+    + '<div class="runhead"><span>SCP FOUNDATION · ETHICS COMMITTEE</span><span>DOC ' + escHtml(ref) + ' · ' + clLabel.split(' ·')[0] + '</span></div>'
+    + '<div class="classbar ' + (priority==='CRITICAL'?'crit':priority==='URGENT'?'warn':'') + '">' + classLine + '</div>'
+    + '<div class="scp-tag">SECURE · CONTAIN · PROTECT</div>'
+    + '<div class="lh"><div class="org">SCP FOUNDATION</div><div class="sub">Ethics Committee</div><div class="div">CAIRO.AIC Oversight Terminal · O5 Liaison Division</div></div>'
+    + '<div class="doctype">' + (unit==='ef' ? 'ETHICS COMMITTEE DIRECTIVE' : 'OMEGA-1 OPERATIONAL ORDER') + '</div>'
+    + '<div class="stampbox ' + (directiveStamp(status).cls==='ratified'?'ok':'') + '">' + escHtml(status) + '</div>'
+    + '<table class="meta">'
+    +   '<tr><td class="k">Memorandum Ref</td><td class="v">' + escHtml(ref) + '</td></tr>'
+    +   '<tr><td class="k">Classification</td><td class="v">' + clLabel + ' · CONFIDENTIAL</td></tr>'
+    +   '<tr><td class="k">Date of Issue</td><td class="v">' + issued + ' UTC</td></tr>'
+    +   '<tr><td class="k">Originating Body</td><td class="v">Ethics Committee · CAIRO.AIC</td></tr>'
+    +   '<tr><td class="k">Issuing Officer</td><td class="v">EC·' + escHtml(o.author || '—') + ' · Clearance L' + escHtml(o.clearance || '—') + '</td></tr>'
+    +   '<tr><td class="k">Classification of Order</td><td class="v">' + escHtml(typeLbl) + '</td></tr>'
+    +   '<tr><td class="k">Priority</td><td class="v">' + escHtml(priority) + '</td></tr>'
+    +   '<tr><td class="k">Status</td><td class="v">' + escHtml(status) + '</td></tr>'
+    +   compLine
+    + '</table>'
+    + '<div class="subject">SUBJECT: ' + escHtml(subject) + '</div>'
+    + '<div class="body">' + bodyHtml + '</div>'
+    + '<div class="sig"><span class="by">Issued by authority of:</span><br>Ethics Committee · SCP Foundation'
+    +   '<div class="line">Authorising Signatory — EC·' + escHtml(o.author || '________') + ', Clearance L' + escHtml(o.clearance || '_') + '</div>'
+    + '</div>'
+    + '<div class="footer">CONFIDENTIAL // ' + clLabel.split(' ·')[0] + ' // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE</div>'
+    + '</div></body></html>';
+}
+// Export an order (by id) as a downloadable formal document.
+function exportOrderDocument(id, unit) {
+  var list = unit === 'ef' ? allEthicsOrders : allOrders;
+  var o = list.find(function(x){ return x.id === id; });
+  if (!o) { alert('Order not found.'); return; }
+  // Respect access: a viewer who can't see the order can't export it.
+  if (orderIsRestricted(o)) { alert('You do not have access to this directive.'); return; }
+  var html = buildOrderDocument(o, unit);
+  var safeName = directiveRef(o).replace(/[^A-Za-z0-9_-]/g,'_');
+  downloadFile(safeName + '.html', html, 'text/html');
+  auditRecord('EXPORTED DIRECTIVE', directiveRef(o) + ' — ' + (o.title || ''));
+}
 function statusBadge(s) {
   return s==='COMPLETED'?'b-green':s==='IN PROGRESS'?'b-cyan':s==='FLAGGED'?'b-red':'b-amber';
 }
@@ -4298,6 +4398,7 @@ function renderOrders() {
         '</div>' +
         '<div class="order-card-actions">' +
           statusCtrl +
+          '<button class="order-action-btn" onclick="exportOrderDocument(\'' + o.id + '\', \'omega\')" title="Export as formal document" style="font-size:.6rem;">⎙ DOC</button>' +
           (isCL5order ? '<button class="order-action-btn" onclick="openOrderEdit(\'' + o.id + '\')" title="Edit order" style="font-size:.6rem;">✎</button>' : '') +
           (isOwner
             ? '<button class="order-action-btn del-btn" onclick="deleteOrder(\'' + o.id + '\')">✕</button>'
@@ -6318,6 +6419,8 @@ document.addEventListener('click', function(ev) {
     case 'poi-back':         renderPoiList(); break;
     case 'open-poi-file':        renderPoiFile(el.dataset.type, el.dataset.id); break;
     case 'edit-poi':             openPoiModal(el.dataset.id, el.dataset.poitype); break;
+    case 'poi-photo-upload':     triggerPoiPhoto(el.dataset.poitype, el.dataset.id); break;
+    case 'poi-photo-remove':     removePoiPhoto(el.dataset.poitype, el.dataset.id); break;
     case 'delete-poi':           deletePoi(el.dataset.id, el.dataset.poitype); break;
     case 'toggle-poi-archive':   togglePoiArchive(); break;
     case 'close-poi-file':       openPoiCloseModal(el.dataset.id, el.dataset.poitype); break;
@@ -7701,6 +7804,7 @@ function renderEthicsOrders() {
         '</div>' +
         '<div class="order-card-actions">' +
           statusCtrl +
+          '<button class="order-action-btn" onclick="exportOrderDocument(\'' + e(o.id) + '\', \'ef\')" title="Export as formal document" style="font-size:.6rem;">⎙ DOC</button>' +
           (isCL5 ? '<button class="order-action-btn" onclick="openEthicsOrderEdit(\'' + e(o.id) + '\')" title="Edit order" style="font-size:.6rem;">✎</button>' : '') +
           (canEdit ? '<button class="order-action-btn del-btn" data-action="del-eo" data-id="' + e(o.id) + '">✕</button>' : '') +
         '</div>' +
@@ -8315,6 +8419,7 @@ function renderPoiFile(type, id) {
     : '';
   if (bodyEl) bodyEl.innerHTML = closedBanner +
     `<div class="pf-card-body open" style="background:var(--bg3);border:1px solid var(--border2);padding:.9rem;">` +
+      buildPoiPhotoPanel(type, id, record, canEdit) +
       fieldsHtml +
       `<div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin:.6rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ NOTES</div>` +
       notesHtml + noteForm + actionBtns +
@@ -8482,6 +8587,95 @@ async function addPoiNote(id, type) {
   try {
     if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
     inp.value = '';
+    renderPoiFile(type, id);
+  } catch(err) { alert('ERROR: '+err.message); }
+}
+
+// ── POI / Target photograph (downscaled client-side, stored as a data URL) ──
+// Build the photo panel shown at the top of a POI/Target file.
+function buildPoiPhotoPanel(type, id, record, canEdit) {
+  var has = !!record.photo;
+  var inner;
+  if (has) {
+    inner = '<img src="' + record.photo + '" alt="subject photograph" style="width:130px;height:160px;object-fit:cover;border:1px solid var(--border2);background:#111;border-radius:2px;display:block;"/>'
+      + '<div style="font-size:.5rem;color:var(--text-faint);margin-top:.25rem;letter-spacing:.05em;text-align:center;">PHOTOGRAPH ON FILE</div>'
+      + (record.photoBy ? '<div style="font-size:.48rem;color:var(--text-faint);text-align:center;">EC·' + e(record.photoBy) + (record.photoAt ? ' · ' + safeDate(record.photoAt) : '') + '</div>' : '');
+  } else {
+    inner = '<div style="width:130px;height:160px;border:1px dashed var(--border2);background:var(--bg2);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.5rem;color:var(--text-faint);letter-spacing:.08em;border-radius:2px;">NO PHOTOGRAPH<br>ON FILE</div>';
+  }
+  var controls = '';
+  if (canEdit) {
+    controls = '<div style="display:flex;flex-direction:column;gap:.3rem;margin-top:.4rem;">'
+      + '<button class="pf-btn" data-action="poi-photo-upload" data-poitype="' + e(type) + '" data-id="' + e(id) + '" style="font-size:.54rem;">[ ' + (has?'REPLACE':'UPLOAD') + ' PHOTO ]</button>'
+      + (has ? '<button class="pf-btn" data-action="poi-photo-remove" data-poitype="' + e(type) + '" data-id="' + e(id) + '" style="font-size:.54rem;">[ REMOVE ]</button>' : '')
+      + '</div>';
+  }
+  return '<div style="float:right;margin:0 0 .6rem .8rem;width:130px;">' + inner + controls + '</div>';
+}
+// Triggered by the hidden file input on the file view.
+function triggerPoiPhoto(type, id) {
+  var inp = document.getElementById('poiPhotoInput');
+  if (!inp) return;
+  inp.value = '';
+  inp.dataset.type = type; inp.dataset.id = id;
+  inp.click();
+}
+// Downscale an image File to a JPEG data URL no larger than maxDim on its long edge.
+function downscaleImage(file, maxDim, quality) {
+  return new Promise(function(resolve, reject){
+    if (!file || !/^image\//.test(file.type)) { reject(new Error('Not an image file.')); return; }
+    var reader = new FileReader();
+    reader.onerror = function(){ reject(new Error('Could not read file.')); };
+    reader.onload = function(){
+      var img = new Image();
+      img.onerror = function(){ reject(new Error('Could not decode image.')); };
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        var cw = Math.round(w * scale), ch = Math.round(h * scale);
+        var canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0,0,cw,ch);
+        ctx.drawImage(img, 0, 0, cw, ch);
+        try { resolve(canvas.toDataURL('image/jpeg', quality || 0.72)); }
+        catch(err) { reject(err); }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function handlePoiPhotoSelected(inputEl) {
+  if (!canEditPersonnel()) return;
+  var type = inputEl.dataset.type, id = inputEl.dataset.id;
+  var file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) { alert('Image too large (max 8MB before processing).'); return; }
+  var list = type==='poi' ? allPOI : allTargets;
+  var rec  = list.find(function(x){ return x.id===id; });
+  if (!rec) return;
+  try {
+    var dataUrl = await downscaleImage(file, 360, 0.72);
+    // Guard against an oversized result (very large images / DB limits)
+    if (dataUrl.length > 700000) dataUrl = await downscaleImage(file, 260, 0.6);
+    rec.photo = dataUrl;
+    rec.photoBy = currentUser.id; rec.photoAt = Date.now();
+    if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
+    auditRecord('ADDED PHOTO', (type==='poi'?'POI ':'TARGET ')+'EC·'+(rec.name||id));
+    renderPoiFile(type, id);
+  } catch(err) { alert('Could not process image: ' + err.message); }
+}
+async function removePoiPhoto(type, id) {
+  if (!canEditPersonnel()) return;
+  if (!await pfConfirm('Remove the photograph from this file?')) return;
+  var list = type==='poi' ? allPOI : allTargets;
+  var rec  = list.find(function(x){ return x.id===id; });
+  if (!rec) return;
+  rec.photo = null; rec.photoBy = null; rec.photoAt = null;
+  try {
+    if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
+    auditRecord('REMOVED PHOTO', (type==='poi'?'POI ':'TARGET ')+'EC·'+(rec.name||id));
     renderPoiFile(type, id);
   } catch(err) { alert('ERROR: '+err.message); }
 }
