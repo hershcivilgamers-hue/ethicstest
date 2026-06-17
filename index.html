@@ -5657,6 +5657,43 @@ function fileCompartmentBadges(fileId, unit) {
     return '<span class="badge b-dim" style="margin-left:4px;font-size:.5rem;" title="Need-to-know program">▢ ' + e(nm) + '</span>';
   }).join('');
 }
+// Editable integrity-status control shown on a personnel file (senior CL4 + CL5 only).
+// Reads/writes the same integrityStatus field on the linked account as the admin panel.
+function fileIntegrityControl(fileId, unit) {
+  if (!canViewFileIntegrity()) return '';
+  var u = userForFile(fileId, unit);
+  if (!u) return '<div style="font-size:.56rem;color:var(--text-faint);">No linked account — integrity status is tracked on the member\'s account.</div>';
+  var cur = u.integrityStatus || '';
+  var opts = [
+    ['',                'CLEAR — no concerns'],
+    ['psych-eval',      'PSYCH EVAL PENDING'],
+    ['monitoring',      'MONITORING — anomaly exposure'],
+    ['memetic',         'MEMETIC HAZARD — exposure suspected'],
+    ['amnestic-pending','AMNESTIC TREATMENT PENDING'],
+    ['impostor-review', 'POSSIBLE IMPOSTER — identity unverified'],
+    ['compromised',     'COMPROMISED — access suspended']
+  ].map(function(o){
+    return '<option value="' + o[0] + '"' + (o[0]===cur?' selected':'') + '>' + o[1] + '</option>';
+  }).join('');
+  return '<div style="font-size:.56rem;color:var(--text-faint);margin-bottom:.4rem;line-height:1.5;">Visible to senior command (CL4+) only. COMPROMISED and POSSIBLE IMPOSTER suspend the member\'s access.</div>'
+    + '<select class="order-select" style="width:100%;" '
+    + 'onchange="setFileIntegrity(\'' + e(u.displayId) + '\', this.value)">' + opts + '</select>';
+}
+// Persist an integrity-status change made from a personnel file.
+async function setFileIntegrity(uid, status) {
+  if (!canViewFileIntegrity()) return;
+  var rec = allUsers[uid];
+  if (!rec) { alert('Linked account not found.'); return; }
+  if ((rec.integrityStatus || '') === (status || '')) return;
+  rec.integrityStatus = status || null;
+  try {
+    await userPatch(uid, { integrityStatus: status || null });
+    auditRecord('SET INTEGRITY STATUS', 'EC·'+uid+' → '+(status ? integrityLabel(status) : 'CLEAR') + ' (via file)');
+    // Refresh whichever views are open
+    if (typeof renderPersonnelFiles === 'function') renderPersonnelFiles();
+    if (typeof renderAdminPanel === 'function' && document.getElementById('adminModal') && document.getElementById('adminModal').classList.contains('open')) renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
 function getEfReadLevel(p) {
   if (!p) return 3;
   if (p.role === 'Chairman' || p.role === 'Member') return 6;
@@ -5967,6 +6004,9 @@ var linkedBadge = linkedPfIds.has(p.id)
               body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'') },
             { key:'notes',     label:'NOTES ON FILE',        count: ' ('+notes.length+')', body: notesHtml + noteForm },
           ];
+          if (canViewFileIntegrity()) {
+            sections.push({ key:'security', label:'⚕ SECURITY STATUS', count:'', body: fileIntegrityControl(p.id, 'pf') });
+          }
           return sections.map(sec => {
             var collapsed = pfCollapsed.has(p.id + ':' + sec.key);
             return `<div class="pf-sec-hdr" data-action="toggle-section" data-id="${e(p.id)}" data-section="${sec.key}">
@@ -8806,6 +8846,12 @@ function buildEthicsCard(p) {
         <span>▸ NOTES (${restrictSens ? '—' : notes.length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':notes')?'-90':'0'}deg)">▾</span>
       </div>
       <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':notes')?'none':'block'};padding:0 .1rem .4rem;">${notesHtml}${noteForm}</div>
+      ${canViewFileIntegrity() ? `
+      <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="security">
+        <span>▸ ⚕ SECURITY STATUS</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':security')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':security')?'none':'block'};padding:.3rem .1rem .4rem;">${fileIntegrityControl(p.id, 'ef')}</div>
+      ` : ''}
       ${actionBtns}${statusBtns}
     </div>
   </div>`;
