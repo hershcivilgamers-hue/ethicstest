@@ -391,6 +391,34 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .order-card-desc{color:var(--text);margin-top:6px;line-height:1.7;white-space:pre-wrap;}
 .order-card-actions{display:flex;gap:.4rem;flex-shrink:0;align-items:center;}
 .order-action-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 7px;cursor:pointer;transition:all .15s;}
+
+/* ── Formal directive document styling ── */
+.order-card{position:relative;}
+.dir-banner{font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.32em;text-align:center;padding:2px 0;font-weight:bold;text-transform:uppercase;}
+.dir-banner.top{margin:-.75rem -.9rem .6rem;border-bottom:1px solid var(--border2);}
+.dir-banner.bottom{margin:.6rem -.9rem -.75rem;border-top:1px solid var(--border2);}
+.dir-banner.routine  {background:var(--accent-softer);color:var(--green-dim);}
+.dir-banner.elevated {background:rgba(0,180,220,.10);color:var(--cyan);}
+.dir-banner.urgent   {background:rgba(220,150,0,.12);color:var(--amber);}
+.dir-banner.critical {background:rgba(200,0,0,.13);color:var(--red);}
+.dir-letterhead{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;border-bottom:1px dashed var(--border2);padding-bottom:.45rem;margin-bottom:.5rem;}
+.dir-seal-mark{font-family:'VT323',monospace;font-size:.56rem;letter-spacing:.06em;color:var(--text-dim);line-height:1.35;}
+.dir-seal-mark .org{color:var(--green);font-size:.62rem;letter-spacing:.12em;display:block;}
+.dir-ref{text-align:right;font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--text-dim);line-height:1.5;white-space:nowrap;}
+.dir-ref .refno{color:var(--text);letter-spacing:.08em;}
+.dir-title{color:var(--green);font-size:.92rem;font-family:'VT323',monospace;letter-spacing:.06em;line-height:1.2;margin:.15rem 0 .1rem;text-shadow:var(--title-glow);}
+.dir-fields{display:flex;flex-wrap:wrap;gap:.1rem 1.4rem;font-family:'Share Tech Mono',monospace;font-size:.54rem;margin:.4rem 0 .1rem;padding:.35rem .5rem;background:var(--accent-softer);border:1px solid var(--border);border-radius:var(--radius);}
+.dir-field{display:flex;gap:.4rem;align-items:baseline;}
+.dir-field .k{color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;}
+.dir-field .v{color:var(--text);letter-spacing:.04em;}
+.dir-body{color:var(--text);margin:.55rem 0 .2rem;line-height:1.8;white-space:pre-wrap;font-size:.66rem;padding-left:.6rem;border-left:2px solid var(--border2);}
+.dir-authorization{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;padding-top:.4rem;border-top:1px dashed var(--border2);font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--text-dim);}
+.dir-sig{line-height:1.4;}
+.dir-sig .by{color:var(--text-faint);letter-spacing:.1em;font-size:.5rem;text-transform:uppercase;}
+.dir-sig .who{color:var(--green);font-family:'VT323',monospace;font-size:.72rem;letter-spacing:.05em;}
+.dir-stamp{border:2px solid var(--red);color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.56rem;font-weight:bold;letter-spacing:.12em;padding:.2rem .5rem;border-radius:3px;transform:rotate(-6deg);opacity:.85;text-transform:uppercase;}
+.dir-stamp.ratified{border-color:var(--green-dim);color:var(--green-dim);}
+.dir-stamp.review{border-color:var(--amber);color:var(--amber);}
 .order-action-btn:hover{border-color:var(--text-dim);color:var(--text);}
 .order-action-btn.del-btn:hover{border-color:var(--red);color:var(--red);}
 .status-select{background:var(--bg);border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 4px;outline:none;cursor:pointer;}
@@ -726,6 +754,20 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <option value="4">Level 4 — Senior Access</option>
         <option value="5">Level 5 — Command Access</option>
       </select>
+      <label class="login-label">HOME SITE <span style="color:var(--text-faint);font-size:.6rem;">(confirmed by CL5 on approval)</span></label>
+      <select class="login-input order-select" id="loginSite" style="width:100%;margin-bottom:.5rem;">
+        <option value="">— Unassigned —</option>
+        <option value="Site-19">Site-19</option>
+        <option value="Site-17">Site-17</option>
+        <option value="Site-15">Site-15</option>
+        <option value="Site-23">Site-23</option>
+        <option value="Site-64">Site-64</option>
+        <option value="Site-73">Site-73</option>
+        <option value="Site-88">Site-88</option>
+        <option value="Area-14">Area-14</option>
+        <option value="Area-32">Area-32</option>
+        <option value="Mobile">Mobile / MTF</option>
+      </select>
       <div style="font-size:.6rem;color:var(--text-dim);background:var(--accent-softer);border:1px solid var(--border2);padding:.45rem .65rem;margin-bottom:.9rem;line-height:1.6;">
         ⚑ New accounts require CL5 approval before access is granted.<br>
         All accounts start at <strong style="color:var(--green-dim);">Level 3</strong> pending review.
@@ -733,6 +775,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     </div>
     <button class="login-btn" id="loginBtn">[ AUTHENTICATE ]</button>
 <button class="login-btn sec-btn" id="guestBtn">[ ENTER AS OBSERVER · READ-ONLY ]</button>
+    <div style="text-align:center;margin-top:.6rem;">
+      <a href="javascript:void(0)" data-action="open-forgot" style="font-size:.56rem;color:var(--text-dim);text-decoration:none;letter-spacing:.05em;cursor:pointer;">Forgot passphrase? Reset with a recovery code →</a>
+    </div>
   </div>
 </div>
 
@@ -940,6 +985,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
               <option value="4">VISIBLE: CL4+</option>
               <option value="5">VISIBLE: CL5 ONLY</option>
             </select>
+            <select class="order-select" id="oCompartment" title="Restrict to a need-to-know compartment">
+              <option value="">OPEN (no compartment)</option>
+            </select>
           </div>
           <textarea class="order-textarea" id="oDesc"
             placeholder="Detailed directive description. Specify scope, expected output, and any relevant precedent references..."></textarea>
@@ -988,7 +1036,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
     <!-- ROSTER -->
     <div class="tab-content" id="tab-roster">
-      <div class="sec">▸ OMEGA-1 ACTIVE ROSTER — RANKED ORDER</div>
+      <div class="sec" style="display:flex;align-items:center;justify-content:space-between;">▸ OMEGA-1 ACTIVE ROSTER — RANKED ORDER
+        <button class="rec-btn" data-action="export-roster-pf" style="font-size:.53rem;padding:1px 7px;display:none;" id="exportRosterPfBtn" title="Download roster as CSV (CL5)">⤓ EXPORT CSV</button>
+      </div>
       <div style="font-size:.58rem;color:var(--text-dim);margin-bottom:.75rem;">
         Populated automatically from Omega-1 Personnel Files · Sorted highest to lowest rank
       </div>
@@ -1037,7 +1087,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
     <!-- ETHICS ROSTER -->
     <div class="tab-content" id="tab-ethics-roster">
-      <div class="sec">▸ ETHICS COMMITTEE ROSTER</div>
+      <div class="sec" style="display:flex;align-items:center;justify-content:space-between;">▸ ETHICS COMMITTEE ROSTER
+        <button class="rec-btn" data-action="export-roster-ef" style="font-size:.53rem;padding:1px 7px;display:none;" id="exportRosterEfBtn" title="Download roster as CSV (CL5)">⤓ EXPORT CSV</button>
+      </div>
       <div style="font-size:.58rem;color:var(--text-dim);margin-bottom:.75rem;">
         Populated automatically from Ethics Personnel Files · Chairman → Member → Assistant
       </div>
@@ -1547,9 +1599,11 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <button class="modal-cancel" style="font-size:.58rem;padding:2px 8px;" data-action="close-my-account">[ CLOSE ]</button>
     </h3>
     <div id="myAccountBody"></div>
-    <div style="display:flex;gap:.5rem;margin-top:.8rem;border-top:1px solid var(--border2);padding-top:.6rem;">
-      <button class="modal-save" data-action="open-change-pass" style="flex:1;">CHANGE PASSPHRASE</button>
-      <button class="modal-cancel" data-action="do-logout" style="flex:1;">SIGN OUT</button>
+    <div style="display:flex;gap:.5rem;margin-top:.8rem;border-top:1px solid var(--border2);padding-top:.6rem;flex-wrap:wrap;">
+      <button class="modal-save" data-action="open-change-pass" style="flex:1;min-width:130px;">CHANGE PASSPHRASE</button>
+      <button class="rec-btn" data-action="regen-recovery" style="flex:1;min-width:130px;font-size:.6rem;">RECOVERY CODES</button>
+      <button class="rec-btn" data-action="open-duress" style="flex:1;min-width:130px;font-size:.6rem;">⚠ DURESS CODE</button>
+      <button class="modal-cancel" data-action="do-logout" style="flex:1;min-width:130px;">SIGN OUT</button>
     </div>
   </div>
 </div>
@@ -1574,6 +1628,206 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="modal-actions">
       <button class="modal-cancel" data-action="close-change-pass">[ CANCEL ]</button>
       <button class="modal-save" data-action="save-change-pass">[ UPDATE PASSPHRASE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION TIMEOUT WARNING MODAL -->
+<div class="modal-overlay-2" id="sessionWarnModal" style="z-index:1350;">
+  <div class="modal-box-2" style="width:400px;text-align:center;">
+    <h3>⚠ SESSION EXPIRING</h3>
+    <div style="font-size:.62rem;color:var(--text-dim);margin:.6rem 0 .8rem;line-height:1.6;">
+      Your session will expire from inactivity in <span id="sessionCountdown" style="color:var(--amber);font-family:'VT323',monospace;font-size:1.1rem;">120</span> seconds.
+    </div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="modal-save" data-action="session-stay" style="flex:none;padding:5px 16px;">[ STAY SIGNED IN ]</button>
+      <button class="modal-cancel" data-action="session-logout-now" style="flex:none;padding:5px 16px;">[ SIGN OUT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECOVERY CODES DISPLAY MODAL (shown once) -->
+<div class="modal-overlay-2" id="recoveryShowModal" style="z-index:1300;">
+  <div class="modal-box-2" style="width:460px;">
+    <h3>⚠ RECOVERY CODES</h3>
+    <div id="recoveryShowMsg" style="font-size:.6rem;color:var(--green-dim);margin-bottom:.5rem;"></div>
+    <div style="font-size:.56rem;color:var(--text-dim);margin-bottom:.6rem;line-height:1.6;">
+      Save these codes somewhere safe. Each can be used <strong>once</strong> to reset your passphrase if you forget it. They will <strong>not be shown again</strong>. Anyone with a code can reset your account — treat them like passwords.
+    </div>
+    <div id="recoveryCodesList" style="font-family:'VT323',monospace;font-size:1rem;letter-spacing:.1em;background:var(--bg3);border:1px solid var(--border2);padding:.7rem;border-radius:var(--radius);columns:2;margin-bottom:.6rem;"></div>
+    <div class="modal-actions">
+      <button class="rec-btn" data-action="copy-recovery" style="font-size:.6rem;padding:3px 10px;">⧉ COPY ALL</button>
+      <button class="modal-save" data-action="ack-recovery">[ I'VE SAVED THESE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARTMENT EDITOR MODAL (CL5) -->
+<div class="modal-overlay-2" id="compartmentModal" style="z-index:1200;">
+  <div class="modal-box-2" style="width:440px;">
+    <h3 id="compartmentModalTitle">NEW ACCESS COMPARTMENT</h3>
+    <input type="hidden" id="compartmentId"/>
+    <div style="font-size:.55rem;color:var(--text-faint);margin-bottom:.6rem;line-height:1.5;">A need-to-know program. Members must be granted this compartment to view content tagged with it — regardless of clearance level.</div>
+    <div class="modal-group">
+      <label>PROGRAM NAME</label>
+      <input class="modal-input" id="compartmentName" placeholder="e.g. PROJECT OLYMPIA"/>
+    </div>
+    <div class="modal-group">
+      <label>CODE <span style="color:var(--text-faint);">(short tag, optional)</span></label>
+      <input class="modal-input" id="compartmentCode" placeholder="e.g. OLYMPIA" style="text-transform:uppercase;"/>
+    </div>
+    <div class="modal-group">
+      <label>DESCRIPTION <span style="color:var(--text-faint);">(optional)</span></label>
+      <textarea class="modal-input" id="compartmentDesc" rows="2" placeholder="What this program covers..."></textarea>
+    </div>
+    <div class="modal-err" id="compartmentErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-compartment">[ CANCEL ]</button>
+      <button class="rec-btn deny" id="compartmentDelBtn" data-action="delete-compartment" style="font-size:.6rem;padding:3px 10px;display:none;">[ DELETE ]</button>
+      <button class="modal-save" data-action="save-compartment">[ SAVE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- DURESS CODE MODAL -->
+<div class="modal-overlay-2" id="duressModal" style="z-index:1250;">
+  <div class="modal-box-2" style="width:430px;">
+    <h3>⚠ DURESS CODE</h3>
+    <div style="font-size:.56rem;color:var(--text-dim);margin-bottom:.5rem;line-height:1.6;">
+      A duress code is a <strong>second, secret passphrase</strong>. If you are ever forced to log in against your will, enter this code instead of your real passphrase. You will appear to log in normally, but Security will be <strong>silently alerted</strong> that you are under coercion.
+    </div>
+    <div id="duressStatus" style="font-size:.56rem;color:var(--amber);margin-bottom:.6rem;"></div>
+    <div class="modal-group">
+      <label>DURESS CODE</label>
+      <input class="modal-input" id="duressNew" type="password" placeholder="Set a duress code (min 3 chars)..."/>
+    </div>
+    <div class="modal-group">
+      <label>CONFIRM DURESS CODE</label>
+      <input class="modal-input" id="duressConfirm" type="password" placeholder="Re-enter duress code..."/>
+    </div>
+    <div class="modal-err" id="duressErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-duress">[ CANCEL ]</button>
+      <button class="rec-btn deny" id="duressClearBtn" data-action="clear-duress" style="font-size:.6rem;padding:3px 10px;display:none;">[ REMOVE ]</button>
+      <button class="modal-save" data-action="save-duress">[ SAVE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PASSPHRASE MODAL -->
+<div class="modal-overlay-2" id="forgotModal" style="z-index:1250;">
+  <div class="modal-box-2" style="width:420px;">
+    <h3>RESET VIA RECOVERY CODE</h3>
+    <div style="font-size:.56rem;color:var(--text-dim);margin-bottom:.6rem;line-height:1.5;">Enter your Member ID and one of your unused recovery codes to set a new passphrase.</div>
+    <div class="modal-group">
+      <label>MEMBER ID</label>
+      <input class="modal-input" id="forgotUser" placeholder="Your member ID..." style="text-transform:uppercase;"/>
+    </div>
+    <div class="modal-group">
+      <label>RECOVERY CODE</label>
+      <input class="modal-input" id="forgotCode" placeholder="XXXX-XXXX" style="text-transform:uppercase;font-family:'VT323',monospace;letter-spacing:.1em;"/>
+    </div>
+    <div class="modal-group">
+      <label>NEW PASSPHRASE</label>
+      <input class="modal-input" id="forgotNewPass" type="password" placeholder="New passphrase (min 3 chars)..."/>
+    </div>
+    <div class="modal-group">
+      <label>CONFIRM NEW PASSPHRASE</label>
+      <input class="modal-input" id="forgotConfirm" type="password" placeholder="Re-enter new passphrase..."/>
+    </div>
+    <div class="modal-err" id="forgotErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-forgot">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-forgot">[ RESET PASSPHRASE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN NOTES / FLAG MODAL (CL5) -->
+<div class="modal-overlay-2" id="adminNotesModal" style="z-index:1200;">
+  <div class="modal-box-2" style="width:480px;max-height:80vh;overflow-y:auto;">
+    <h3 id="adminNotesTitle">ADMIN NOTES</h3>
+    <input type="hidden" id="adminNotesUid"/>
+    <div style="font-size:.55rem;color:var(--text-faint);margin-bottom:.6rem;line-height:1.5;">Private administrative notes — visible only to CL5 command, never to the member.</div>
+
+    <div class="modal-group">
+      <label>FLAG</label>
+      <select class="modal-input" id="adminNotesFlag">
+        <option value="">— No flag —</option>
+        <option value="TRUSTED">TRUSTED</option>
+        <option value="UNDER REVIEW">UNDER REVIEW</option>
+        <option value="WATCH">WATCH</option>
+        <option value="VPN GRANTED">VPN GRANTED</option>
+        <option value="PROBATION">PROBATION</option>
+      </select>
+    </div>
+
+    <div class="modal-group">
+      <label>INTEGRITY STATUS</label>
+      <select class="modal-input" id="adminNotesIntegrity">
+        <option value="">CLEAR — no concerns</option>
+        <option value="psych-eval">PSYCH EVAL PENDING</option>
+        <option value="monitoring">MONITORING — anomaly exposure</option>
+        <option value="memetic">MEMETIC HAZARD — exposure suspected</option>
+        <option value="amnestic-pending">AMNESTIC TREATMENT PENDING</option>
+        <option value="impostor-review">POSSIBLE IMPOSTER — identity unverified</option>
+        <option value="compromised">COMPROMISED — access suspended</option>
+      </select>
+      <div style="font-size:.5rem;color:var(--text-faint);margin-top:.2rem;line-height:1.4;">COMPROMISED and POSSIBLE IMPOSTER suspend the member's access until cleared.</div>
+    </div>
+
+    <div class="modal-group">
+      <label>HOME SITE</label>
+      <select class="modal-input" id="adminNotesSite">
+        <option value="">— Unassigned —</option>
+        <option value="Site-19">Site-19</option>
+        <option value="Site-17">Site-17</option>
+        <option value="Site-15">Site-15</option>
+        <option value="Site-23">Site-23</option>
+        <option value="Site-64">Site-64</option>
+        <option value="Site-73">Site-73</option>
+        <option value="Site-88">Site-88</option>
+        <option value="Area-14">Area-14</option>
+        <option value="Area-32">Area-32</option>
+        <option value="Mobile">Mobile / MTF</option>
+      </select>
+    </div>
+
+    <div class="modal-group">
+      <label>ACCESS COMPARTMENTS <span style="color:var(--text-faint);">(need-to-know grants)</span></label>
+      <div id="adminNotesCompartments" style="border:1px solid var(--border2);border-radius:var(--radius);padding:.4rem .5rem;max-height:120px;overflow-y:auto;background:var(--bg3);"></div>
+    </div>
+
+    <div style="font-size:.58rem;letter-spacing:.1em;color:var(--text-dim);margin:.7rem 0 .3rem;">▸ NOTE HISTORY</div>
+    <div id="adminNotesList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);padding:.3rem;margin-bottom:.5rem;"></div>
+
+    <div class="modal-group">
+      <label>ADD NOTE</label>
+      <textarea class="modal-input" id="adminNotesField" rows="2" placeholder="Add an administrative note..."></textarea>
+    </div>
+    <div class="modal-err" id="adminNotesErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-admin-notes">[ CLOSE ]</button>
+      <button class="modal-save" data-action="save-admin-notes">[ SAVE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- REASON CAPTURE MODAL (deny / revoke) -->
+<div class="modal-overlay-2" id="reasonModal" style="z-index:1200;">
+  <div class="modal-box-2" style="width:440px;">
+    <h3 id="reasonTitle">PROVIDE REASON</h3>
+    <div id="reasonSubtitle" style="font-size:.58rem;color:var(--text-dim);margin-bottom:.5rem;"></div>
+    <input type="hidden" id="reasonUid"/>
+    <input type="hidden" id="reasonAction"/>
+    <div class="modal-group">
+      <label id="reasonLabel">REASON</label>
+      <textarea class="modal-input" id="reasonField" rows="3" placeholder="State the reason (will be recorded and shown to the member)..."></textarea>
+    </div>
+    <div class="modal-err" id="reasonErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-reason">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-reason">[ CONFIRM ]</button>
     </div>
   </div>
 </div>
@@ -1920,13 +2174,75 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     </div>
     <div id="adminPendingList"><div style="font-size:.63rem;color:var(--text-faint);padding:.5rem;">[ LOADING... ]</div></div>
 
-    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ ACTIVE ACCOUNTS</div>
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
+      <span>▸ USER DIRECTORY <span id="adminDirCount" style="color:var(--text-faint);font-size:.52rem;"></span></span>
+      <button class="rec-btn" data-action="export-users" style="font-size:.53rem;padding:1px 7px;" title="Download all accounts as CSV">⤓ EXPORT CSV</button>
+    </div>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem;align-items:center;">
+      <input id="adminDirSearch" oninput="renderAdminPanel()" placeholder="Search ID / unit / file..." style="flex:1;min-width:140px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:3px 8px;border-radius:var(--radius);"/>
+      <select id="adminDirStatus" onchange="renderAdminPanel()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.56rem;padding:3px 6px;border-radius:var(--radius);">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="denied">Denied/Revoked</option>
+        <option value="retired">Retired</option>
+        <option value="locked">Locked</option>
+      </select>
+      <select id="adminDirCl" onchange="renderAdminPanel()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.56rem;padding:3px 6px;border-radius:var(--radius);">
+        <option value="">All CL</option>
+        <option value="3">CL3</option>
+        <option value="4">CL4</option>
+        <option value="5">CL5</option>
+      </select>
+      <select id="adminDirSite" onchange="renderAdminPanel()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.56rem;padding:3px 6px;border-radius:var(--radius);">
+        <option value="">All sites</option>
+        <option value="Site-19">Site-19</option>
+        <option value="Site-17">Site-17</option>
+        <option value="Site-15">Site-15</option>
+        <option value="Site-23">Site-23</option>
+        <option value="Site-64">Site-64</option>
+        <option value="Site-73">Site-73</option>
+        <option value="Site-88">Site-88</option>
+        <option value="Area-14">Area-14</option>
+        <option value="Area-32">Area-32</option>
+        <option value="Mobile">Mobile / MTF</option>
+        <option value="__none__">Unassigned</option>
+      </select>
+      <select id="adminDirSort" onchange="renderAdminPanel()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.56rem;padding:3px 6px;border-radius:var(--radius);">
+        <option value="recent">Newest</option>
+        <option value="lastlogin">Last sign-in</option>
+        <option value="id">ID (A-Z)</option>
+        <option value="clearance">Clearance</option>
+      </select>
+    </div>
+    <div id="adminBulkBar" style="display:none;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem;padding:.4rem .5rem;background:var(--accent-softer);border:1px solid var(--border2);border-radius:var(--radius);">
+      <span id="adminBulkCount" style="font-size:.58rem;color:var(--green);letter-spacing:.05em;"></span>
+      <button class="rec-btn approve" data-action="bulk-approve" style="font-size:.54rem;padding:1px 7px;">APPROVE</button>
+      <select id="bulkClSel" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.54rem;padding:1px 4px;border-radius:var(--radius);">
+        <option value="3">CL3</option><option value="4">CL4</option><option value="5">CL5</option>
+      </select>
+      <button class="rec-btn" data-action="bulk-clearance" style="font-size:.54rem;padding:1px 7px;">SET CLEARANCE</button>
+      <button class="rec-btn" data-action="bulk-retire" style="font-size:.54rem;padding:1px 7px;">RETIRE</button>
+      <button class="rec-btn deny" data-action="bulk-revoke" style="font-size:.54rem;padding:1px 7px;">REVOKE</button>
+      <button class="rec-btn" data-action="bulk-clear" style="font-size:.54rem;padding:1px 7px;opacity:.7;margin-left:auto;">CLEAR SELECTION</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;">
+      <label style="font-size:.54rem;color:var(--text-dim);cursor:pointer;"><input type="checkbox" id="adminDirSelectAll" onchange="toggleDirSelectAll(this.checked)" style="vertical-align:middle;margin-right:.3rem;cursor:pointer;"/>Select all visible</label>
+    </div>
     <div id="adminActiveList"></div>
     <div id="adminBlSection"></div>
 
     <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
+      <span>▸ ACCESS COMPARTMENTS <span style="color:var(--text-faint);font-size:.52rem;">(need-to-know programs)</span></span>
+      <button class="rec-btn" data-action="new-compartment" style="font-size:.53rem;padding:1px 7px;">+ NEW</button>
+    </div>
+    <div id="adminCompartmentList"></div>
+
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
       <span>▸ AUDIT LOG <span style="color:var(--text-faint);font-size:.52rem;">(last 100 actions)</span></span>
-      <button class="rec-btn" data-action="admin-refresh-audit" style="font-size:.53rem;padding:1px 7px;">⟳ REFRESH</button>
+      <span style="display:flex;gap:.3rem;">
+        <button class="rec-btn" data-action="admin-refresh-audit" style="font-size:.53rem;padding:1px 7px;">⟳ REFRESH</button>
+        <button class="rec-btn" data-action="export-audit" style="font-size:.53rem;padding:1px 7px;" title="Download audit log as CSV">⤓ EXPORT</button>
+      </span>
     </div>
     <div id="adminAuditList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);padding:.3rem;"><div style="font-size:.6rem;color:var(--text-faint);">[ NOT LOADED ]</div></div>
   </div>
@@ -1962,6 +2278,33 @@ async function fbSet(path, data) {
   });
 }
 
+// PATCH merges only the given fields server-side, leaving other fields intact.
+// This avoids the read-modify-write race where a full PUT clobbers concurrent edits.
+async function fbUpdate(path, fields) {
+  await fetch(fbPath(path), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields)
+  });
+}
+// Update only specific fields on a user record (race-safe). Falls back to a
+// merge-into-localStorage when Firebase isn't active.
+async function userPatch(userId, fields) {
+  var k = 'users/' + safeKey(userId);
+  if (firebaseReady) {
+    await fbUpdate('/' + k, fields);
+  } else {
+    var existing = lsGet(k) || {};
+    for (var f in fields) { if (fields.hasOwnProperty(f)) existing[f] = fields[f]; }
+    lsSet(k, existing);
+  }
+  // Keep the in-memory copy consistent if present
+  if (allUsers && allUsers[safeKey(userId)]) {
+    var rec = allUsers[safeKey(userId)];
+    for (var g in fields) { if (fields.hasOwnProperty(g)) rec[g] = fields[g]; }
+  }
+}
+
 async function fbDelete(path) {
   await fetch(fbPath(path), { method: 'DELETE' });
 }
@@ -1977,7 +2320,7 @@ async function fbGetAll(path) {
 
 // Firebase keys cannot contain . $ # [ ] /
 function safeKey(s) {
-  return String(s).replace(/[.$#\[\]\/]/g, '_').toUpperCase();
+  return String(s).trim().replace(/[.$#\[\]\/]/g, '_').toUpperCase();
 }
 
 // ================================================================
@@ -2106,25 +2449,247 @@ async function hashPassSecure(passphrase, salt) {
   return 'fb_' + h;
 }
 
+// PBKDF2 key-stretched hash (hashVer 3). ~150k SHA-256 iterations makes offline
+// brute-force of a leaked database vastly more expensive than a single hash.
+var PBKDF2_ITERS = 150000;
+async function hashPassPBKDF2(passphrase, salt, iters) {
+  iters = iters || PBKDF2_ITERS;
+  if (window.crypto && window.crypto.subtle && window.crypto.subtle.importKey) {
+    try {
+      var enc = new TextEncoder();
+      var keyMaterial = await window.crypto.subtle.importKey(
+        'raw', enc.encode(passphrase), { name:'PBKDF2' }, false, ['deriveBits']);
+      var bits = await window.crypto.subtle.deriveBits(
+        { name:'PBKDF2', salt: enc.encode(salt), iterations: iters, hash:'SHA-256' },
+        keyMaterial, 256);
+      return Array.from(new Uint8Array(bits)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    } catch(_) {
+      // Fall through to SHA-256 path if PBKDF2 unsupported
+    }
+  }
+  return await hashPassSecure(passphrase, salt);
+}
+
 // Build a fresh credential object for storing on a user record.
 async function makeCredential(passphrase) {
   var salt = makeSalt();
-  var hash = await hashPassSecure(passphrase, salt);
-  return { hash: hash, salt: salt, hashVer: 2 };
+  // hashVer 3 = PBKDF2 key-stretched. Records the iteration count so future
+  // changes to PBKDF2_ITERS don't break verification of existing accounts.
+  var hash = await hashPassPBKDF2(passphrase, salt, PBKDF2_ITERS);
+  return { hash: hash, salt: salt, hashVer: 3, iters: PBKDF2_ITERS };
+}
+// Copy all credential fields onto a record (keeps hash scheme fields in sync).
+function applyCredential(rec, cred) {
+  rec.hash = cred.hash;
+  rec.salt = cred.salt;
+  rec.hashVer = cred.hashVer;
+  rec.iters = cred.iters || null;
+  return rec;
+}
+
+// ── Recovery codes ──
+// Generate N human-friendly one-time codes (e.g. "A7F2-9C4E"). Returns the plain
+// codes (to show the user once) plus their hashed forms (to store).
+function makeRecoveryCodeString() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
+  var a = new Uint8Array(8);
+  var c = window.crypto || window.msCrypto;
+  if (c && c.getRandomValues) c.getRandomValues(a);
+  else for (var i=0;i<a.length;i++) a[i]=Math.floor(Math.random()*256);
+  var s = '';
+  for (var j=0;j<8;j++) { s += chars[a[j] % chars.length]; if (j===3) s += '-'; }
+  return s;
+}
+async function generateRecoveryCodes(count) {
+  count = count || 8;
+  var plain = [], stored = [];
+  for (var i=0;i<count;i++) {
+    var code = makeRecoveryCodeString();
+    plain.push(code);
+    var salt = makeSalt();
+    // Normalise (uppercase, strip dashes/spaces) before hashing so input is forgiving
+    var hash = await hashPassSecure(code.replace(/[-\s]/g,'').toUpperCase(), salt);
+    stored.push({ hash: hash, salt: salt, used: false });
+  }
+  return { plain: plain, stored: stored };
+}
+// Verify a recovery code against a user record's stored codes.
+// Returns the index of the matching unused code, or -1.
+async function verifyRecoveryCode(rec, code) {
+  if (!rec || !Array.isArray(rec.recoveryCodes)) return -1;
+  var norm = String(code||'').replace(/[-\s]/g,'').toUpperCase();
+  if (!norm) return -1;
+  for (var i=0;i<rec.recoveryCodes.length;i++) {
+    var rc = rec.recoveryCodes[i];
+    if (rc.used) continue;
+    var h = await hashPassSecure(norm, rc.salt);
+    if (h === rc.hash) return i;
+  }
+  return -1;
+}
+
+// Show the one-time recovery codes after they are generated.
+var _pendingRecoveryProceed = null;
+function showRecoveryCodes(codes, msg, onAck) {
+  var list = document.getElementById('recoveryCodesList');
+  list.innerHTML = codes.map(function(c){ return '<div style="padding:2px 0;">' + e(c) + '</div>'; }).join('');
+  document.getElementById('recoveryShowMsg').textContent = msg || '';
+  window._recoveryCodesPlain = codes.join('\n');
+  _pendingRecoveryProceed = onAck || null;
+  document.getElementById('recoveryShowModal').classList.add('open');
+}
+function ackRecoveryCodes() {
+  document.getElementById('recoveryShowModal').classList.remove('open');
+  window._recoveryCodesPlain = null;
+  var cb = _pendingRecoveryProceed; _pendingRecoveryProceed = null;
+  if (typeof cb === 'function') cb();
+}
+function copyRecoveryCodes() {
+  var txt = window._recoveryCodesPlain || '';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function(){
+      var btn = document.querySelector('[data-action="copy-recovery"]');
+      if (btn) { var t = btn.textContent; btn.textContent = '✓ COPIED'; setTimeout(function(){ btn.textContent = t; }, 1500); }
+    }).catch(function(){ alert('Copy failed — please select and copy manually.'); });
+  } else {
+    alert('Recovery codes:\n\n' + txt);
+  }
+}
+
+// ── Forgot-passphrase flow (self-service reset via recovery code) ──
+function openForgot() {
+  document.getElementById('forgotUser').value = '';
+  document.getElementById('forgotCode').value = '';
+  document.getElementById('forgotNewPass').value = '';
+  document.getElementById('forgotConfirm').value = '';
+  document.getElementById('forgotErr').textContent = '';
+  document.getElementById('forgotModal').classList.add('open');
+}
+function closeForgot() { document.getElementById('forgotModal').classList.remove('open'); }
+async function saveForgot() {
+  var uid  = safeKey(document.getElementById('forgotUser').value.trim());
+  var code = document.getElementById('forgotCode').value.trim();
+  var nw   = document.getElementById('forgotNewPass').value.trim();
+  var conf = document.getElementById('forgotConfirm').value.trim();
+  var errEl = document.getElementById('forgotErr');
+  if (!uid || !code || !nw || !conf) { errEl.textContent = '> ALL FIELDS REQUIRED'; return; }
+  if (nw.length < 3) { errEl.textContent = '> NEW PASSPHRASE TOO SHORT (MIN 3)'; return; }
+  if (nw !== conf)   { errEl.textContent = '> PASSPHRASES DO NOT MATCH'; return; }
+  var rec = null;
+  try { rec = await userGet(uid); } catch(_) {}
+  if (!rec) { errEl.textContent = '> ID NOT FOUND'; return; }
+  if (!Array.isArray(rec.recoveryCodes) || !rec.recoveryCodes.length) {
+    errEl.textContent = '> NO RECOVERY CODES ON FILE · Contact a CL5 member.'; return;
+  }
+  var idx = await verifyRecoveryCode(rec, code);
+  if (idx < 0) { errEl.textContent = '> INVALID OR ALREADY-USED CODE'; return; }
+  // Consume the code, set the new passphrase
+  rec.recoveryCodes[idx].used = true;
+  rec.recoveryCodes[idx].usedAt = Date.now();
+  var cred = await makeCredential(nw);
+  applyCredential(rec, cred);
+  rec.passChangedAt = Date.now();
+  // A successful recovery also clears any lockout
+  rec.lockedUntil = null; rec.failedAttempts = 0;
+  try {
+    await userSet(uid, rec);
+    auditRecord('PASSPHRASE RECOVERED', 'EC·'+uid+' via recovery code', 'SYSTEM');
+    closeForgot();
+    var remaining = rec.recoveryCodes.filter(function(c){ return !c.used; }).length;
+    alert('Passphrase reset successfully.\n\nYou have ' + remaining + ' recovery code' + (remaining===1?'':'s') + ' remaining. You can now sign in with your new passphrase.');
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+
+// ── Regenerate recovery codes from My Account (invalidates old ones) ──
+async function regenerateRecoveryCodes() {
+  if (!currentUser) return;
+  if (!await pfConfirm('Generate a new set of recovery codes?\n\nThis will INVALIDATE all your existing codes. You will be shown the new codes once.')) return;
+  var rec = null;
+  try { rec = await userGet(currentUser.id); } catch(_) {}
+  if (!rec) { alert('Could not load account.'); return; }
+  var recovery = await generateRecoveryCodes(8);
+  rec.recoveryCodes = recovery.stored;
+  try {
+    await userSet(currentUser.id, rec);
+    auditRecord('REGENERATED RECOVERY CODES', 'EC·'+currentUser.id);
+    closeMyAccount();
+    showRecoveryCodes(recovery.plain, 'NEW RECOVERY CODES · Your old codes no longer work.');
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+// ── Duress code (covert coercion signal) ──
+function openDuressModal() {
+  if (!currentUser) return;
+  document.getElementById('duressNew').value = '';
+  document.getElementById('duressConfirm').value = '';
+  document.getElementById('duressErr').textContent = '';
+  // Reflect whether one is currently set
+  (async function(){
+    var rec = null; try { rec = await userGet(currentUser.id); } catch(_) {}
+    var status = document.getElementById('duressStatus');
+    if (status) status.textContent = (rec && rec.duressCred) ? 'A duress code is currently set.' : 'No duress code set.';
+    var clearBtn = document.getElementById('duressClearBtn');
+    if (clearBtn) clearBtn.style.display = (rec && rec.duressCred) ? 'inline-block' : 'none';
+  })();
+  document.getElementById('duressModal').classList.add('open');
+}
+function closeDuressModal() { document.getElementById('duressModal').classList.remove('open'); }
+async function saveDuressCode() {
+  if (!currentUser) return;
+  var nw   = document.getElementById('duressNew').value;
+  var conf = document.getElementById('duressConfirm').value;
+  var errEl = document.getElementById('duressErr');
+  if (!nw || nw.length < 3) { errEl.textContent = '> DURESS CODE TOO SHORT (MIN 3)'; return; }
+  if (nw !== conf) { errEl.textContent = '> CODES DO NOT MATCH'; return; }
+  var rec = null;
+  try { rec = await userGet(currentUser.id); } catch(_) {}
+  if (!rec) { errEl.textContent = '> COULD NOT LOAD ACCOUNT'; return; }
+  // The duress code must NOT equal the real passphrase (or it could never be distinguished).
+  var sameAsReal = await verifyPass(rec, nw);
+  if (sameAsReal.ok) { errEl.textContent = '> DURESS CODE MUST DIFFER FROM YOUR PASSPHRASE'; return; }
+  rec.duressCred = await makeCredential(nw); // hashed like a real credential
+  rec.duressActive = false; rec.duressTriggeredAt = null;
+  try {
+    await userSet(currentUser.id, rec);
+    auditRecord('SET DURESS CODE', 'EC·'+currentUser.id);
+    closeDuressModal();
+    alert('Duress code saved.\n\nIf you are ever forced to log in under coercion, use this code instead of your passphrase. You will appear to log in normally, but Security will be silently alerted.');
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+async function clearDuressCode() {
+  if (!currentUser) return;
+  if (!await pfConfirm('Remove your duress code?')) return;
+  var rec = null;
+  try { rec = await userGet(currentUser.id); } catch(_) {}
+  if (!rec) return;
+  rec.duressCred = null;
+  try {
+    await userSet(currentUser.id, rec);
+    auditRecord('CLEARED DURESS CODE', 'EC·'+currentUser.id);
+    closeDuressModal();
+    alert('Duress code removed.');
+  } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 // Verify a passphrase against a user record. Returns:
 //   { ok: bool, needsUpgrade: bool }
-// needsUpgrade=true means the account is on the legacy hash and matched —
-// the caller should re-store a secure credential transparently.
+// needsUpgrade=true means the account is on an older hash scheme and matched —
+// the caller should re-store a fresh (PBKDF2) credential transparently.
 async function verifyPass(rec, passphrase) {
   if (!rec) return { ok:false, needsUpgrade:false };
-  // New-style salted hash
+  // hashVer 3 — PBKDF2 (current). Use the stored iteration count.
+  if (rec.hashVer === 3 && rec.salt) {
+    var p = await hashPassPBKDF2(passphrase, rec.salt, rec.iters || PBKDF2_ITERS);
+    // If iteration policy has since increased, flag for transparent re-hash.
+    var stale = (rec.iters || PBKDF2_ITERS) < PBKDF2_ITERS;
+    return { ok: p === rec.hash, needsUpgrade: (p === rec.hash) && stale };
+  }
+  // hashVer 2 — salted SHA-256. Matches → upgrade to PBKDF2.
   if (rec.hashVer === 2 && rec.salt) {
     var computed = await hashPassSecure(passphrase, rec.salt);
-    return { ok: computed === rec.hash, needsUpgrade:false };
+    return { ok: computed === rec.hash, needsUpgrade: computed === rec.hash };
   }
-  // Legacy hash (no salt / no version)
+  // Legacy hash (no salt / no version). Matches → upgrade to PBKDF2.
   var legacy = hashPassLegacy(passphrase);
   return { ok: legacy === rec.hash, needsUpgrade: legacy === rec.hash };
 }
@@ -2161,24 +2726,32 @@ async function doAuth() {
       var existing = await userGet(uid);
       if (existing) { setErr('ID ALREADY REGISTERED'); setBusy(false); return; }
       var reqCl = document.getElementById('loginClearance').value;
+      var reqSite = (document.getElementById('loginSite') || {}).value || '';
       var cred = await makeCredential(p); // salted SHA-256
+      var recovery = await generateRecoveryCodes(8); // one-time recovery codes
       // Check if any active account exists yet (bootstrap case)
       var allU = await userGetAll();
       var hasActive = allU && Object.values(allU).some(function(x){ return x.status==='active' || (!x.status && x.hash); });
       if (hasActive) {
         // Normal path: save as pending CL3, do NOT log in
-        await userSet(uid, { hash: cred.hash, salt: cred.salt, hashVer: cred.hashVer,
-          clearance: '3', requestedClearance: reqCl,
+        await userSet(uid, { hash: cred.hash, salt: cred.salt, hashVer: cred.hashVer, iters: cred.iters || null,
+          recoveryCodes: recovery.stored,
+          clearance: '3', requestedClearance: reqCl, site: reqSite || null,
           status: 'pending', created: Date.now(), displayId: uid });
         setBusy(false);
-        setErr('REGISTRATION SUBMITTED · Awaiting CL5 approval. You will be notified via EC channels.');
+        showRecoveryCodes(recovery.plain, 'REGISTRATION SUBMITTED · Awaiting CL5 approval.');
         return;
       } else {
         // Bootstrap: first-ever account, auto-approve at requested clearance
-        await userSet(uid, { hash: cred.hash, salt: cred.salt, hashVer: cred.hashVer,
-          clearance: reqCl, requestedClearance: reqCl,
+        await userSet(uid, { hash: cred.hash, salt: cred.salt, hashVer: cred.hashVer, iters: cred.iters || null,
+          recoveryCodes: recovery.stored,
+          clearance: reqCl, requestedClearance: reqCl, site: reqSite || null,
           status: 'active', created: Date.now(), displayId: uid });
         currentUser = { id: uid, clearance: reqCl };
+        // Show codes; proceed into the app only after the user acknowledges them
+        setBusy(false);
+        showRecoveryCodes(recovery.plain, 'ACCOUNT CREATED · Save these, then continue.', function(){ onLogin(); });
+        return;
       }
 
     } else {
@@ -2195,6 +2768,31 @@ async function doAuth() {
 
       var v = await verifyPass(rec, p);
       if (!v.ok) {
+        // ── Duress check: a secondary passphrase that logs in normally but silently
+        // signals coercion. Checked only when the real passphrase fails, so it never
+        // interferes with normal login. ──
+        if (rec.duressCred) {
+          var dv = await verifyPass({ hashVer: rec.duressCred.hashVer, salt: rec.duressCred.salt,
+                                      hash: rec.duressCred.hash, iters: rec.duressCred.iters }, p);
+          if (dv.ok) {
+            // Fire the silent alarm: flag the account + audit it as a SYSTEM event.
+            var dnow = Date.now();
+            try { await userPatch(uid, { duressTriggeredAt: dnow, duressActive: true, lastLogin: dnow, loginCount: (rec.loginCount||0)+1, failedAttempts: 0 }); } catch(_) {}
+            if (typeof auditRecord === 'function') auditRecord('⚠ DURESS SIGNAL', 'EC·'+uid+' authenticated under duress — covert coercion alert', 'SYSTEM');
+            // Proceed with a normal-looking login so a coercer notices nothing.
+            rec.duressTriggeredAt = dnow; rec.duressActive = true;
+            rec.lastLogin = dnow; rec.loginCount = (rec.loginCount||0)+1; rec.failedAttempts = 0;
+            var dStatus = rec.status || 'active';
+            if (dStatus === 'pending' || dStatus === 'denied' || dStatus === 'retired') {
+              // Even under duress, a non-active account can't enter — but show the SAME
+              // generic message it normally would, to avoid tipping off the coercer.
+              setErr('AUTHENTICATION FAILED'); setBusy(false); return;
+            }
+            currentUser = { id: uid, clearance: deriveClearance(rec), rawClearance: rec.clearance,
+                            linkedPfId: rec.linkedPfId || null, linkedEfId: rec.linkedEfId || null, compartments: Array.isArray(rec.compartments) ? rec.compartments : [], duress: true };
+            setBusy(false); onLogin(); return;
+          }
+        }
         // Record the failed attempt and lock after a threshold
         var fails = (rec.failedAttempts || 0) + 1;
         rec.failedAttempts = fails;
@@ -2208,11 +2806,12 @@ async function doAuth() {
           var mins = lockCount === 1 ? 1 : lockCount === 2 ? 5 : 15;
           rec.lockedUntil = Date.now() + mins*60000;
           rec.failedAttempts = 0; // reset counter; lockout now governs
-          try { await userSet(uid, rec); } catch(_) {}
+          // PATCH only the lockout fields so we don't clobber a concurrent admin edit
+          try { await userPatch(uid, { failedAttempts:0, lastFailedAt:rec.lastFailedAt, lockoutCount:lockCount, lockedUntil:rec.lockedUntil }); } catch(_) {}
           if (typeof auditRecord === 'function') auditRecord('ACCOUNT LOCKED', 'EC·'+uid+' ('+mins+'min) after repeated failures', 'SYSTEM');
           setErr('ACCOUNT LOCKED · Too many failed attempts. Locked for ' + mins + ' minute' + (mins>1?'s':'') + '.');
         } else {
-          try { await userSet(uid, rec); } catch(_) {}
+          try { await userPatch(uid, { failedAttempts:fails, lastFailedAt:rec.lastFailedAt }); } catch(_) {}
           setErr('AUTHENTICATION FAILED · ' + remaining + ' attempt' + (remaining>1?'s':'') + ' remaining before lockout.');
         }
         setBusy(false); return;
@@ -2225,15 +2824,21 @@ async function doAuth() {
       rec.lastLogin = Date.now();
       rec.loginCount = (rec.loginCount || 0) + 1;
 
-      // Transparently upgrade legacy-hashed accounts to salted SHA-256 on successful login
+      var loginPatch = {
+        failedAttempts: 0, lockedUntil: null, lockoutCount: 0,
+        lastLogin: rec.lastLogin, loginCount: rec.loginCount
+      };
+      // Transparently upgrade older-scheme accounts to PBKDF2 on successful login
       if (v.needsUpgrade) {
         try {
           var up = await makeCredential(p);
-          rec.hash = up.hash; rec.salt = up.salt; rec.hashVer = up.hashVer;
+          applyCredential(rec, up);
+          loginPatch.hash = up.hash; loginPatch.salt = up.salt;
+          loginPatch.hashVer = up.hashVer; loginPatch.iters = up.iters || null;
         } catch(_) { /* non-fatal: login still proceeds */ }
       }
-      // Persist the login/failure-reset (and any hash upgrade) together
-      try { await userSet(uid, rec); } catch(_) {}
+      // PATCH only the login/upgrade fields so a concurrent admin edit isn't clobbered
+      try { await userPatch(uid, loginPatch); } catch(_) {}
 
       var acctStatus = rec.status || 'active'; // legacy accounts (no status) = active
       if (acctStatus === 'pending') {
@@ -2241,15 +2846,21 @@ async function doAuth() {
         setBusy(false); return;
       }
       if (acctStatus === 'denied') {
-        setErr('REGISTRATION DENIED · Contact the Ethics Committee Chair for assistance.');
+        var dreason = rec.statusReason ? ' · Reason: ' + rec.statusReason : '';
+        setErr('ACCESS DENIED · Contact the Ethics Committee Chair for assistance.' + dreason);
         setBusy(false); return;
       }
       if (acctStatus === 'retired') {
         setErr('ACCOUNT RETIRED · This account is inactive. Contact a CL5 member to reactivate.');
         setBusy(false); return;
       }
+      // Integrity hold: COMPROMISED / POSSIBLE IMPOSTER suspend access until Security clears it.
+      if (integrityBlocksAccess(rec.integrityStatus)) {
+        setErr('ACCESS SUSPENDED · This account is under a security hold (' + integrityLabel(rec.integrityStatus) + '). Contact Site Security.');
+        setBusy(false); return;
+      }
       var derivedCl = deriveClearance(rec);
-currentUser = { id: uid, clearance: derivedCl, rawClearance: rec.clearance, linkedPfId: rec.linkedPfId || null, linkedEfId: rec.linkedEfId || null };
+currentUser = { id: uid, clearance: derivedCl, rawClearance: rec.clearance, linkedPfId: rec.linkedPfId || null, linkedEfId: rec.linkedEfId || null, compartments: Array.isArray(rec.compartments) ? rec.compartments : [] };
     }
   } catch(e) {
     setErr('CONNECTION ERROR: ' + e.message);
@@ -2312,13 +2923,84 @@ async function onLogin() { // Make function async
   loadOrders();
   loadPersonnel();
   loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
+  loadCompartments();
   startPolling();
   setTimeout(showLoginNotifications, 1500); // after data loads
+  if (typeof startSessionTimer === 'function') startSessionTimer();
 }
+
+// ── Session idle timeout ──
+var SESSION_IDLE_MS = 30 * 60000;   // 30 minutes of inactivity → logout
+var SESSION_WARN_MS = 2 * 60000;    // show warning 2 minutes before
+var _sessionTimer = null, _sessionWarnTimer = null, _sessionCountdownTimer = null;
+
+function startSessionTimer() {
+  clearSessionTimers();
+  if (!currentUser) return;            // only for authenticated sessions
+  if (currentUser.guest) return;       // not for read-only observers
+  _sessionWarnTimer = setTimeout(showSessionWarning, Math.max(0, SESSION_IDLE_MS - SESSION_WARN_MS));
+  _sessionTimer = setTimeout(sessionExpire, SESSION_IDLE_MS);
+}
+function clearSessionTimers() {
+  if (_sessionTimer) clearTimeout(_sessionTimer);
+  if (_sessionWarnTimer) clearTimeout(_sessionWarnTimer);
+  if (_sessionCountdownTimer) clearInterval(_sessionCountdownTimer);
+  _sessionTimer = _sessionWarnTimer = _sessionCountdownTimer = null;
+}
+function resetSessionTimer() {
+  if (!currentUser || currentUser.guest) return;
+  // If the warning is showing, don't silently reset — let the user choose.
+  var warn = document.getElementById('sessionWarnModal');
+  if (warn && warn.classList.contains('open')) return;
+  startSessionTimer();
+}
+function showSessionWarning() {
+  if (!currentUser || currentUser.guest) return;
+  var modal = document.getElementById('sessionWarnModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  var remaining = Math.floor(SESSION_WARN_MS / 1000);
+  var cd = document.getElementById('sessionCountdown');
+  if (cd) cd.textContent = remaining;
+  _sessionCountdownTimer = setInterval(function() {
+    remaining--;
+    if (cd) cd.textContent = remaining;
+    if (remaining <= 0) { clearInterval(_sessionCountdownTimer); _sessionCountdownTimer = null; }
+  }, 1000);
+}
+function sessionStay() {
+  var modal = document.getElementById('sessionWarnModal');
+  if (modal) modal.classList.remove('open');
+  if (_sessionCountdownTimer) { clearInterval(_sessionCountdownTimer); _sessionCountdownTimer = null; }
+  startSessionTimer(); // fresh full idle window
+}
+function sessionExpire() {
+  var modal = document.getElementById('sessionWarnModal');
+  if (modal) modal.classList.remove('open');
+  clearSessionTimers();
+  var wasUser = currentUser ? currentUser.id : null;
+  logout();
+  if (wasUser && typeof setErr === 'function') {
+    setErr('SESSION EXPIRED · Signed out due to inactivity.');
+  }
+}
+// Activity listeners (throttled) reset the idle timer.
+var _lastActivityReset = 0;
+function _onUserActivity() {
+  var now = Date.now();
+  if (now - _lastActivityReset < 5000) return; // throttle to once per 5s
+  _lastActivityReset = now;
+  resetSessionTimer();
+}
+['click','keydown','mousemove','scroll','touchstart'].forEach(function(ev){
+  document.addEventListener(ev, _onUserActivity, { passive: true });
+});
 
 function logout() {
   stopPolling();
+  if (typeof clearSessionTimers === 'function') clearSessionTimers();
   currentUser = null;
+  if (typeof adminDirSelected !== 'undefined' && adminDirSelected.clear) adminDirSelected.clear();
   // Fully clear in-memory state so nothing leaks to a subsequent session
   allOrders = []; allEthicsOrders = [];
   allPersonnel = []; allEthicsPersonnel = [];
@@ -2330,9 +3012,9 @@ function logout() {
   renderOrders();
   document.getElementById('userPill').style.display = 'none';
   var nb = document.getElementById('notifBanner'); if (nb) nb.style.display = 'none';
-  // Close any open user modals
-  ['myAccountModal','changePassModal','adminModal'].forEach(function(m){
-    var el = document.getElementById(m); if (el) el.classList.remove('open');
+  // Close any open modal so none is orphaned over the login screen after logout/expiry
+  Array.prototype.forEach.call(document.querySelectorAll('.modal-overlay.open, .modal-overlay-2.open'), function(el){
+    el.classList.remove('open');
   });
   var adminBtn = document.getElementById('adminBtn');
   if (adminBtn) adminBtn.style.display = 'none';
@@ -2343,6 +3025,64 @@ function logout() {
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   setLoginMode('login');
+}
+
+// ================================================================
+//  COMPARTMENTS (need-to-know access programs)
+// ================================================================
+// A compartment is a named access program. Members are "read into" compartments
+// via grants on their user record (rec.compartments = [id,...]). Content tagged
+// with a compartment requires BOTH sufficient clearance AND the grant to view.
+var allCompartments = [];
+
+async function compartmentsGetAll() {
+  if (firebaseReady) {
+    var all = await fbGetAll('/compartments');
+    return all ? Object.values(all) : [];
+  }
+  return Object.values(lsAll('compartments/'));
+}
+async function compartmentSet(id, data) {
+  var k = 'compartments/' + safeKey(id);
+  if (firebaseReady) await fbSet('/' + k, data);
+  else lsSet(k, data);
+}
+async function compartmentDel(id) {
+  var k = 'compartments/' + safeKey(id);
+  if (firebaseReady) await fbDelete('/' + k);
+  else lsDel(k);
+}
+async function loadCompartments() {
+  try {
+    var raw = await compartmentsGetAll();
+    allCompartments = (raw || []).filter(function(c){ return c && c.id; });
+    allCompartments.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+  } catch(e) { allCompartments = []; }
+}
+function compartmentName(id) {
+  var c = allCompartments.find(function(x){ return x.id === id; });
+  return c ? c.name : null;
+}
+// Does the current user hold a given compartment grant? CL5 holds all (Overseer access).
+function userHasCompartment(compId) {
+  if (!compId) return true; // untagged content is open at clearance level
+  if (currentUser && parseInt(currentUser.clearance) >= 5) return true;
+  if (!currentUser) return false;
+  var grants = currentUser.compartments;
+  return Array.isArray(grants) && grants.indexOf(compId) !== -1;
+}
+
+// Populate a <select> with the available compartments (used by the order form).
+function populateCompartmentSelect(selectId, selectedVal) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return;
+  var cur = selectedVal !== undefined ? selectedVal : sel.value;
+  var opts = '<option value="">OPEN (no compartment)</option>';
+  allCompartments.forEach(function(c){
+    opts += '<option value="' + e(c.id) + '"' + (c.id === cur ? ' selected' : '') + '>' +
+            e((c.code ? c.code + ' — ' : '') + (c.name || '')) + '</option>';
+  });
+  sel.innerHTML = opts;
 }
 
 // ================================================================
@@ -2412,6 +3152,10 @@ async function openMyAccount() {
   var joinDate = rec.created ? safeDate(rec.created) : '—';
   var lastLoginStr = rec.lastLogin ? safeDateTime(rec.lastLogin) + ' UTC' : '—';
   var loginCountStr = rec.loginCount ? (rec.loginCount + ' total') : '—';
+  var recoveryCount = Array.isArray(rec.recoveryCodes) ? rec.recoveryCodes.filter(function(c){ return !c.used; }).length : 0;
+  var recoveryStr = Array.isArray(rec.recoveryCodes)
+    ? (recoveryCount + ' unused of ' + rec.recoveryCodes.length)
+    : '<span style="color:var(--amber);">none — generate below</span>';
 
   function row(label, val) {
     return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.64rem;">'
@@ -2423,11 +3167,16 @@ async function openMyAccount() {
       row('MEMBER ID', 'EC·' + e(currentUser.id))
     + row('CLEARANCE', e(clLabel))
     + row('UNIT', e(unitLabel))
+    + row('HOME SITE', e(rec.site || '— Unassigned —'))
+    + row('PROGRAMS', (Array.isArray(rec.compartments) && rec.compartments.length
+        ? rec.compartments.map(function(id){ return e(compartmentName(id) || id); }).join(', ')
+        : '— None —'))
     + row('LINKED FILE', fileInfo)
     + row('STANDING', strikeInfo)
     + row('REGISTERED', joinDate)
     + row('LAST SIGN-IN', lastLoginStr)
     + row('SIGN-INS', loginCountStr)
+    + row('RECOVERY CODES', recoveryStr)
     + (myStrikes.length
         ? '<div style="margin-top:.6rem;font-size:.58rem;color:var(--amber);border-left:2px solid #4a3a14;padding-left:.6rem;line-height:1.6;">⚠ You have ' + myStrikes.length + ' active strike(s) on your file. You may submit an appeal from your personnel file.</div>'
         : '');
@@ -2458,7 +3207,7 @@ async function saveChangePass() {
   var v = await verifyPass(rec, cur);
   if (!v.ok) { errEl.textContent = '> CURRENT PASSPHRASE INCORRECT'; return; }
   var cred = await makeCredential(nw);
-  rec.hash = cred.hash; rec.salt = cred.salt; rec.hashVer = cred.hashVer;
+  applyCredential(rec, cred);
   rec.passChangedAt = Date.now();
   try {
     await userSet(currentUser.id, rec);
@@ -2545,6 +3294,88 @@ function auditRecord(action, detail, byOverride) {
 async function loadAuditLog() {
   try { allAuditLog = await auditGetAll(); } catch(_) { allAuditLog = []; }
   renderAuditLog();
+}
+
+// ================================================================
+//  DATA EXPORT — CSV download for directory, roster, audit log (CL5)
+// ================================================================
+// RFC-4180 CSV field escaping: wrap in quotes if it contains comma/quote/newline.
+function csvCell(v) {
+  var s = (v === undefined || v === null) ? '' : String(v);
+  if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+// Build a CSV string from an array of header keys and an array of row objects.
+function buildCSV(headers, rows) {
+  var head = headers.map(function(h){ return csvCell(h.label); }).join(',');
+  var body = rows.map(function(r){
+    return headers.map(function(h){ return csvCell(h.get(r)); }).join(',');
+  }).join('\r\n');
+  return head + '\r\n' + body;
+}
+// Trigger a browser download of text as a file.
+function downloadFile(filename, text, mime) {
+  try {
+    var blob = new Blob([text], { type: (mime || 'text/csv') + ';charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  } catch(err) { alert('Export failed: ' + err.message); }
+}
+function exportStamp() { return new Date().toISOString().slice(0,10); }
+
+// Export the user directory (respects nothing — full account list, CL5 only).
+function exportUsersCSV() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var rows = Object.values(allUsers);
+  var headers = [
+    { label:'Member ID',      get:function(u){ return u.displayId || ''; } },
+    { label:'Clearance',      get:function(u){ return 'CL' + (u.clearance||'3'); } },
+    { label:'Status',         get:function(u){ return u.status || 'active'; } },
+    { label:'Unit',           get:function(u){ return u.unit==='omega1'?'Omega-1':u.unit==='ethics'?'Ethics':''; } },
+    { label:'Home Site',      get:function(u){ return u.site || ''; } },
+    { label:'Linked File',    get:function(u){ return u.linkedPfId || u.linkedEfId || ''; } },
+    { label:'Registered',     get:function(u){ return u.created ? safeDate(u.created) : ''; } },
+    { label:'Last Sign-In',   get:function(u){ return u.lastLogin ? safeDateTime(u.lastLogin) : ''; } },
+    { label:'Sign-In Count',  get:function(u){ return u.loginCount || 0; } },
+    { label:'Locked',         get:function(u){ return (u.lockedUntil && Date.now()<u.lockedUntil) ? 'YES' : ''; } },
+    { label:'Status Reason',  get:function(u){ return u.statusReason || ''; } }
+  ];
+  downloadFile('cairo-users-' + exportStamp() + '.csv', buildCSV(headers, rows));
+  auditRecord('EXPORTED', 'user directory (' + rows.length + ' accounts)');
+}
+
+// Export the audit log (CL5 only).
+function exportAuditCSV() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var rows = allAuditLog.slice().sort(function(a,b){ return b.at - a.at; });
+  var headers = [
+    { label:'Timestamp (UTC)', get:function(a){ return safeDateTime(a.at); } },
+    { label:'Actor',           get:function(a){ return a.by || ''; } },
+    { label:'Action',          get:function(a){ return a.action || ''; } },
+    { label:'Detail',          get:function(a){ return a.detail || ''; } }
+  ];
+  downloadFile('cairo-audit-' + exportStamp() + '.csv', buildCSV(headers, rows));
+}
+
+// Export a personnel roster. system: 'pf' (Omega-1) or 'ef' (Ethics). CL5 only for full export.
+function exportRosterCSV(system) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var isEf = system === 'ef';
+  var rows = (isEf ? allEthicsPersonnel : allPersonnel).slice();
+  var headers = [
+    { label:'Name',       get:function(p){ return p.name || ''; } },
+    { label:'Codename',   get:function(p){ return p.nickname || ''; } },
+    { label: isEf?'Role':'Rank', get:function(p){ return isEf ? (p.role||'') : (p.rank||''); } },
+    { label:'Date of Birth', get:function(p){ return p.dob || ''; } },
+    { label:'Status',     get:function(p){ return p.status || 'Active'; } },
+    { label:'Active Strikes', get:function(p){ return Array.isArray(p.strikes) ? p.strikes.filter(isStrikeActive).length : 0; } }
+  ];
+  downloadFile('cairo-' + (isEf?'ethics':'omega1') + '-roster-' + exportStamp() + '.csv', buildCSV(headers, rows));
+  auditRecord('EXPORTED', (isEf?'Ethics':'Omega-1') + ' roster (' + rows.length + ' personnel)');
 }
 
 function renderAuditLog() {
@@ -3240,6 +4071,7 @@ async function submitOrder() {
     type:     document.getElementById('oType').value,
     status:   'PENDING',
     minClearance: document.getElementById('oMinClearance').value || '3',
+    compartment: (document.getElementById('oCompartment') || {}).value || null,
     author:   currentUser.id,
     clearance: currentUser.clearance,
     created:  now
@@ -3321,6 +4153,33 @@ function pfConfirm(message) {
 }
 function priorityBadge(p) {
   return p==='CRITICAL'?'b-red':p==='URGENT'?'b-amber':p==='ELEVATED'?'b-cyan':'b-green';
+}
+// ── Formal directive document helpers ──
+// A stable reference number derived from the order's id/timestamp, e.g. EC-D/4F2A-7C19
+function directiveRef(o) {
+  var base = String(o.id || '').replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+  if (base.length < 8) base = (base + '00000000').slice(0,8);
+  var a = base.slice(-8, -4), b = base.slice(-4);
+  return 'EC-D/' + a + '-' + b;
+}
+// Priority → banner class (drives the classification banner colour)
+function directiveBannerClass(p) {
+  return p==='CRITICAL'?'critical':p==='URGENT'?'urgent':p==='ELEVATED'?'elevated':'routine';
+}
+// Classification line shown in the banner, by min clearance
+function directiveClassification(o) {
+  var min = parseInt(o.minClearance || '3');
+  var lvl = min >= 5 ? 'LEVEL 5 · COMMAND EYES ONLY' : min >= 4 ? 'LEVEL 4 · SENIOR ACCESS' : 'LEVEL 3 · STANDARD ACCESS';
+  return o.compartment ? lvl + ' · COMPARTMENTED' : lvl;
+}
+// Status → authorization stamp {label, cls}
+function directiveStamp(status) {
+  var s = (status || 'PENDING').toUpperCase();
+  if (s === 'RATIFIED' || s === 'APPROVED' || s === 'ACTIVE' || s === 'COMPLETE' || s === 'COMPLETED' || s === 'CLOSED')
+    return { label: s, cls: 'ratified' };
+  if (s === 'REVIEW' || s === 'UNDER REVIEW' || s === 'PENDING' || s === 'IN REVIEW')
+    return { label: s, cls: 'review' };
+  return { label: s, cls: '' };
 }
 function statusBadge(s) {
   return s==='COMPLETED'?'b-green':s==='IN PROGRESS'?'b-cyan':s==='FLAGGED'?'b-red':'b-amber';
@@ -3409,14 +4268,21 @@ function renderOrders() {
     if (orderIsRestricted(o)) return buildOrderDeniedCard(o, 'ocard_' + o.id);
 
     return '<div class="order-card" id="ocard_' + o.id + '">' +
-      '<div class="order-card-header">' +
-        '<div>' +
-          '<div class="order-card-title">' + e(o.title) + '</div>' +
-          '<div class="order-card-meta">' +
-            ts + ' UTC · EC·' + e(o.author) + ' [L' + e(o.clearance) + '] · ' +
-            '<span class="badge ' + priorityBadge(o.priority) + '">' + e(o.priority) + '</span> · ' +
-            '<span class="badge b-cyan">' + e(o.type) + '</span>' +
-          '</div>' +
+      '<div class="dir-banner top ' + directiveBannerClass(o.priority) + '">' + directiveClassification(o) + '</div>' +
+      '<div class="dir-letterhead">' +
+        '<div class="dir-seal-mark">' +
+          '<span class="org">◆ ETHICS COMMITTEE</span>' +
+          'O5 OVERSIGHT · CAIRO.AIC TERMINAL' +
+        '</div>' +
+        '<div class="dir-ref">' +
+          '<span class="refno">' + directiveRef(o) + '</span><br>' +
+          ts + ' UTC' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-family:\'Share Tech Mono\',monospace;font-size:.5rem;letter-spacing:.18em;color:var(--text-faint);">ETHICS COMMITTEE DIRECTIVE</div>' +
+          '<div class="dir-title">' + e(o.title) + '</div>' +
         '</div>' +
         '<div class="order-card-actions">' +
           statusCtrl +
@@ -3426,12 +4292,23 @@ function renderOrders() {
             : '') +
         '</div>' +
       '</div>' +
-      (o.desc ? '<div class="order-card-desc">' + e(o.desc) + '</div>' : '') +
-      (o.editedBy ? '<div style="font-size:.56rem;color:var(--text-faint);margin-top:3px;">✎ last edited by EC·' + e(o.editedBy) + ' · ' + safeDateTime(o.editedAt) + ' UTC</div>' : '') +
+      '<div class="dir-fields">' +
+        '<div class="dir-field"><span class="k">Priority</span><span class="v"><span class="badge ' + priorityBadge(o.priority) + '">' + e(o.priority) + '</span></span></div>' +
+        '<div class="dir-field"><span class="k">Class</span><span class="v">' + e(o.type) + '</span></div>' +
+        '<div class="dir-field"><span class="k">Filed</span><span class="v">' + ts + ' UTC</span></div>' +
+        (o.compartment ? '<div class="dir-field"><span class="k">Program</span><span class="v">▢ ' + e(compartmentName(o.compartment) || 'COMPARTMENTED') + '</span></div>' : '') +
+      '</div>' +
+      (o.desc ? '<div class="dir-body">' + e(o.desc) + '</div>' : '') +
+      '<div class="dir-authorization">' +
+        '<div class="dir-sig"><span class="by">By order of</span><br><span class="who">EC·' + e(o.author) + '</span> · Clearance L' + e(o.clearance) + '</div>' +
+        '<div class="dir-stamp ' + directiveStamp(o.status).cls + '">' + e(directiveStamp(o.status).label) + '</div>' +
+      '</div>' +
+      (o.editedBy ? '<div style="font-size:.56rem;color:var(--text-faint);margin-top:5px;">✎ last amended by EC·' + e(o.editedBy) + ' · ' + safeDateTime(o.editedAt) + ' UTC</div>' : '') +
       '<div class="comment-toggle" onclick="toggleComments(\'' + o.id + '\')">' +
         toggleLabel +
       '</div>' +
       commentsHtml +
+      '<div class="dir-banner bottom ' + directiveBannerClass(o.priority) + '">' + directiveClassification(o) + '</div>' +
     '</div>';
   }).join('');
 }
@@ -3505,16 +4382,26 @@ function handleCommentKey(ev, orderId) {
 
 // ── Order clearance access helpers ──
 function orderIsRestricted(o) {
-  // CL5 always has full access
+  // CL5 always has full access (Overseer)
   if (currentUser && parseInt(currentUser.clearance) >= 5) return false;
+  // Clearance floor
   var min = parseInt(o.minClearance || '3');
   var cur = parseInt((currentUser && currentUser.clearance) || '0');
-  return cur < min;
+  if (cur < min) return true;
+  // Need-to-know: a compartment-tagged order requires the matching grant
+  if (o.compartment && !userHasCompartment(o.compartment)) return true;
+  return false;
 }
 
 function buildOrderDeniedCard(o, cardId) {
   var min = o.minClearance || '3';
   var ts  = safeDateTime(o.created);
+  // Distinguish clearance denial from need-to-know (compartment) denial
+  var curOk = parseInt((currentUser && currentUser.clearance) || '0') >= parseInt(min);
+  var isCompartmentBlock = curOk && o.compartment && !userHasCompartment(o.compartment);
+  var badgeLabel = isCompartmentBlock ? 'COMPARTMENTED' : ('CL' + e(min) + '+ ONLY');
+  var deniedMsg  = isCompartmentBlock ? 'ACCESS DENIED · NEED-TO-KNOW PROGRAM' : 'ACCESS DENIED · INSUFFICIENT CLEARANCE';
+  var deniedBadge = isCompartmentBlock ? 'COMPARTMENTED ACCESS PROGRAM' : ('MINIMUM CL' + e(min) + ' REQUIRED');
   return '<div class="order-card" id="' + cardId + '">' +
     '<div class="order-card-header">' +
       '<div>' +
@@ -3522,13 +4409,13 @@ function buildOrderDeniedCard(o, cardId) {
         '<div class="order-card-meta">' + ts + ' UTC · EC·' + e(o.author||'—') + '</div>' +
       '</div>' +
       '<div class="order-card-actions">' +
-        '<span class="badge b-dim" style="letter-spacing:.05em;">CL' + e(min) + '+ ONLY</span>' +
+        '<span class="badge b-dim" style="letter-spacing:.05em;">' + badgeLabel + '</span>' +
       '</div>' +
     '</div>' +
     '<div class="order-denied">' +
       '<span>⛔</span>' +
-      '<span>ACCESS DENIED · INSUFFICIENT CLEARANCE</span>' +
-      '<span class="order-denied-badge">MINIMUM CL' + e(min) + ' REQUIRED</span>' +
+      '<span>' + deniedMsg + '</span>' +
+      '<span class="order-denied-badge">' + deniedBadge + '</span>' +
     '</div>' +
   '</div>';
 }
@@ -3650,13 +4537,13 @@ function switchTab(el, id) {
     else d.classList.remove('has-active');
   });
   if (id === 'matrix')          animateBars();
-  if (id === 'orders')          loadOrders();
+  if (id === 'orders')          { loadOrders(); populateCompartmentSelect('oCompartment'); }
   if (id === 'ethics-orders')   loadEthicsOrders();
   if (id === 'ethics-recruit')  loadEthicsRecruit();
   if (id === 'personnel-files') loadPersonnel();
-  if (id === 'roster')          loadPersonnel();
+  if (id === 'roster')          { loadPersonnel(); var rb=document.getElementById('exportRosterPfBtn'); if(rb) rb.style.display=(currentUser&&parseInt(currentUser.clearance)>=5)?'inline-block':'none'; }
   if (id === 'ethics-files')    loadEthicsPersonnel();
-  if (id === 'ethics-roster')   loadEthicsPersonnel();
+  if (id === 'ethics-roster')   { loadEthicsPersonnel(); var rbe=document.getElementById('exportRosterEfBtn'); if(rbe) rbe.style.display=(currentUser&&parseInt(currentUser.clearance)>=5)?'inline-block':'none'; }
   if (id === 'poi')             loadPOIData();
   if (id === 'blacklist')       loadBlacklist();
   if (id === 'recruit') {
@@ -3814,6 +4701,11 @@ async function loadAdminData() {
   try {
     var raw = await userGetAll();
     allUsers = raw || {};
+    // Ensure every record carries its own key as displayId (legacy records may lack it).
+    // Bulk ops and row actions use displayId as the storage key, so it must be present & correct.
+    Object.keys(allUsers).forEach(function(k){
+      if (allUsers[k] && typeof allUsers[k] === 'object') allUsers[k].displayId = k;
+    });
   } catch(e) { allUsers = {}; }
   updateAdminBadge();
 }
@@ -3832,6 +4724,7 @@ async function openAdminPanel() {
   if (!allBlacklistConfigs.length) {
     try { allBlacklistConfigs = await blConfigGetAll(); } catch(_) {}
   }
+  await loadCompartments();
   loadAuditLog();
   renderAdminPanel();
 }
@@ -3877,7 +4770,44 @@ function renderAdminPanel() {
   // Active + denied list
   var activeEl = document.getElementById('adminActiveList');
   if (activeEl) {
-    var combined = active.concat(denied).sort(function(a,b){ return (b.created||0)-(a.created||0); });
+    // ── Directory: apply search, status/clearance filters, and sort ──
+    var dq    = (document.getElementById('adminDirSearch')||{}).value || '';
+    var dStat = (document.getElementById('adminDirStatus')||{}).value || '';
+    var dCl   = (document.getElementById('adminDirCl')||{}).value || '';
+    var dSite = (document.getElementById('adminDirSite')||{}).value || '';
+    var dSort = (document.getElementById('adminDirSort')||{}).value || 'recent';
+    dq = dq.trim().toLowerCase();
+
+    var combined = active.concat(denied);
+
+    combined = combined.filter(function(u){
+      var st = u.status || 'active';
+      var isLocked = u.lockedUntil && Date.now() < u.lockedUntil;
+      if (dStat === 'locked') { if (!isLocked) return false; }
+      else if (dStat && st !== dStat) return false;
+      if (dCl && String(u.clearance||'3') !== dCl) return false;
+      if (dSite) { if (dSite === '__none__') { if (u.site) return false; } else if (u.site !== dSite) return false; }
+      if (dq) {
+        var hay = ((u.displayId||'') + ' ' + (u.unit||'') + ' ' + (u.linkedPfId||'') + ' ' + (u.linkedEfId||'') + ' ' + (u.statusReason||'') + ' ' + (u.adminFlag||'') + ' ' + (u.integrityStatus ? integrityLabel(u.integrityStatus) : '') + ' ' + (u.site||'')).toLowerCase();
+        if (hay.indexOf(dq) === -1) return false;
+      }
+      return true;
+    });
+
+    combined.sort(function(a,b){
+      if (dSort === 'id')        return (a.displayId||'').localeCompare(b.displayId||'');
+      if (dSort === 'clearance') return parseInt(b.clearance||'3') - parseInt(a.clearance||'3');
+      if (dSort === 'lastlogin') return (b.lastLogin||0) - (a.lastLogin||0);
+      return (b.created||0) - (a.created||0); // recent (default)
+    });
+
+    var dirCount = document.getElementById('adminDirCount');
+    if (dirCount) dirCount.textContent = '(' + combined.length + (dq||dStat||dCl ? ' match' : ' total') + ')';
+
+    // Track which accounts are visible (for select-all + bulk ops), prune stale selections
+    adminDirVisible = combined.map(function(u){ return u.displayId; });
+    Array.from(adminDirSelected).forEach(function(id){ if (adminDirVisible.indexOf(id) === -1) adminDirSelected.delete(id); });
+
     activeEl.innerHTML = combined.length ? combined.map(function(u) {
       var uid    = e(u.displayId || '?');
       var status = u.status || 'active';
@@ -3886,11 +4816,16 @@ function renderAdminPanel() {
       return `<div style="border:1px solid var(--border);padding:.4rem .65rem;margin-bottom:2px;font-size:.62rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.3rem;">
           <div>
+            <input type="checkbox" class="adminDirCheck" data-action="dir-select" data-uid="${uid}" ${adminDirSelected.has(u.displayId)?'checked':''} style="vertical-align:middle;margin-right:.4rem;cursor:pointer;"/>
             <span style="font-family:'VT323',monospace;color:var(--green);">EC·${uid}</span>
             <span style="color:var(--text-dim);margin-left:.5rem;">CL${e(u.clearance||'3')}</span>
             <span class="badge ${scls}" style="margin-left:.4rem;">${slbl}</span>
             ${(u.lockedUntil && Date.now() < u.lockedUntil) ? `<span class="badge b-red" style="margin-left:.3rem;font-size:.52rem;">🔒 LOCKED</span>` : ''}
+            ${u.duressActive ? `<span class="badge b-red" style="margin-left:.3rem;font-size:.52rem;animation:pulse 1.5s infinite;" title="This member authenticated under duress">⚠ DURESS</span>` : ''}
+            ${u.adminFlag ? `<span class="badge ${adminFlagClass(u.adminFlag)}" style="margin-left:.3rem;font-size:.52rem;" title="Admin flag">${e(u.adminFlag)}</span>` : ''}
+            ${u.integrityStatus ? `<span class="badge ${integrityClass(u.integrityStatus)}" style="margin-left:.3rem;font-size:.52rem;" title="Integrity status">${e(integrityLabel(u.integrityStatus))}</span>` : ''}
             ${u.unit ? `<span class="badge b-cyan" style="margin-left:.3rem;font-size:.52rem;">${u.unit==='omega1'?'OMEGA-1':'ETHICS'}</span>` : ''}
+            ${u.site ? `<span class="badge b-dim" style="margin-left:.3rem;font-size:.52rem;" title="Home site">${e(u.site)}</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
             <label style="font-size:.56rem;color:var(--text-dim);">SET CL:</label>
@@ -3910,7 +4845,9 @@ function renderAdminPanel() {
             ${status!=='denied' && status!=='retired' && (u.clearance==='3'||u.clearance==='4') ? `<button class="rec-btn deny" data-action="admin-revoke" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Revoke access for cause">REVOKE</button>` : ''}
             ${status!=='retired' && status!=='denied' ? `<button class="rec-btn" data-action="admin-retire" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;opacity:.85;" title="Mark as retired (honourable inactive)">RETIRE</button>` : ''}
             <button class="rec-btn" data-action="admin-reset-pass" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;opacity:.85;" title="Reset passphrase">🔑 RESET</button>
+            <button class="rec-btn" data-action="admin-notes" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;opacity:.85;" title="Admin notes & flag">📝 NOTES${(Array.isArray(u.adminNotes)&&u.adminNotes.length)?' ('+u.adminNotes.length+')':''}</button>
             ${(u.lockedUntil && Date.now() < u.lockedUntil) ? `<button class="rec-btn approve" data-action="admin-unlock" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Clear lockout">🔓 UNLOCK</button>` : ''}
+            ${u.duressActive ? `<button class="rec-btn deny" data-action="admin-ack-duress" data-uid="${uid}" style="font-size:.56rem;padding:1px 6px;" title="Acknowledge & clear the duress alert (Security has responded)">⚠ ACK DURESS</button>` : ''}
             ${status==='retired' ? `<span class="badge b-amber" style="font-size:.5rem;">RETIRED</span>` : ''}
           </div>
         </div>
@@ -3950,8 +4887,12 @@ function renderAdminPanel() {
         <div style="margin-top:.3rem;font-size:.54rem;color:var(--text-faint);letter-spacing:.05em;">
           LAST SIGN-IN: ${u.lastLogin ? safeDateTime(u.lastLogin)+' UTC' : 'never'}${u.loginCount ? ' · '+u.loginCount+' total' : ''}${(u.failedAttempts && u.failedAttempts>0) ? ' · <span style="color:var(--amber);">'+u.failedAttempts+' recent failed</span>' : ''}
         </div>
+        ${u.statusReason && (status==='denied') ? `<div style="margin-top:.2rem;font-size:.54rem;color:var(--red);letter-spacing:.04em;border-left:2px solid var(--border2);padding-left:.4rem;">REASON: ${e(u.statusReason)}</div>` : ''}
       </div>`;
-    }).join('') : '<div style="font-size:.63rem;color:var(--text-faint);">[ NO ACTIVE ACCOUNTS ]</div>';
+    }).join('') : '<div style="font-size:.63rem;color:var(--text-faint);">[ NO ACCOUNTS MATCH FILTERS ]</div>';
+    updateBulkBar();
+    var selAll = document.getElementById('adminDirSelectAll');
+    if (selAll) selAll.checked = adminDirVisible.length > 0 && adminDirVisible.every(function(id){ return adminDirSelected.has(id); });
   }
 
   // ── Blacklist Department Config (CL5 only) ──
@@ -3975,6 +4916,7 @@ function renderAdminPanel() {
         }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);">[ NO DEPARTMENTS CONFIGURED ]</div>')
       + '</div>';
   }
+  renderCompartmentList();
 }
 
 async function adminApprove(uid) {
@@ -3984,6 +4926,8 @@ async function adminApprove(uid) {
   if (!await pfConfirm('APPROVE EC·' + uid + ' with Clearance Level ' + cl + '?')) return;
   var rec = allUsers[uid] || {};
   rec.status = 'active'; rec.clearance = cl;
+  rec.statusReason = null; // clear any prior denial/revocation reason
+  rec.lockedUntil = null; rec.failedAttempts = 0; // restore clears lockout
   auditRecord('APPROVED ACCOUNT', 'EC·'+uid+' at CL'+cl);
   rec.approvedBy = currentUser.id; rec.approvedAt = Date.now();
   try {
@@ -3994,18 +4938,48 @@ async function adminApprove(uid) {
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
-async function adminDeny(uid) {
+function adminDeny(uid) {
   if (!currentUser || parseInt(currentUser.clearance) < 5) return;
-  if (!await pfConfirm('DENY registration for EC·' + uid + '? They will be unable to log in.')) return;
+  openReasonModal('deny', uid, 'DENY REGISTRATION', 'EC·' + uid + ' will be unable to log in.', 'REASON FOR DENIAL');
+}
+
+// ── Reason capture modal (deny / revoke) ──
+function openReasonModal(action, uid, title, subtitle, label) {
+  document.getElementById('reasonAction').value = action;
+  document.getElementById('reasonUid').value = uid;
+  document.getElementById('reasonTitle').textContent = title + ' — EC·' + uid;
+  document.getElementById('reasonSubtitle').textContent = subtitle;
+  document.getElementById('reasonLabel').textContent = label;
+  document.getElementById('reasonField').value = '';
+  document.getElementById('reasonErr').textContent = '';
+  document.getElementById('reasonModal').classList.add('open');
+}
+function closeReasonModal() { document.getElementById('reasonModal').classList.remove('open'); }
+
+async function saveReason() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var action = document.getElementById('reasonAction').value;
+  var uid    = document.getElementById('reasonUid').value;
+  var reason = document.getElementById('reasonField').value.trim();
+  var errEl  = document.getElementById('reasonErr');
+  if (!reason) { errEl.textContent = '> A REASON IS REQUIRED'; return; }
   var rec = allUsers[uid] || {};
-  rec.status = 'denied'; rec.deniedBy = currentUser.id; rec.deniedAt = Date.now();
-  auditRecord('DENIED REGISTRATION', 'EC·'+uid);
+  if (action === 'deny') {
+    rec.status = 'denied'; rec.deniedBy = currentUser.id; rec.deniedAt = Date.now();
+    rec.statusReason = reason;
+    auditRecord('DENIED REGISTRATION', 'EC·'+uid+' — '+reason);
+  } else if (action === 'revoke') {
+    rec.status = 'denied'; rec.revokedBy = currentUser.id; rec.revokedAt = Date.now();
+    rec.statusReason = reason;
+    auditRecord('REVOKED ACCESS', 'EC·'+uid+' — '+reason);
+  }
   try {
     await userSet(uid, rec);
     allUsers[uid] = rec;
+    closeReasonModal();
     updateAdminBadge();
     renderAdminPanel();
-  } catch(err) { alert('ERROR: ' + err.message); }
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
 }
 
 async function adminSetClearance(uid) {
@@ -4058,6 +5032,325 @@ async function adminUnlinkFile(uid) {
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
+// ── Admin notes & flags (CL5) ──
+function adminFlagClass(flag) {
+  return ({ 'TRUSTED':'b-green', 'UNDER REVIEW':'b-amber', 'WATCH':'b-amber',
+            'VPN GRANTED':'b-cyan', 'PROBATION':'b-red' })[flag] || 'b-dim';
+}
+// Integrity / compromise status (Foundation security axis).
+function integrityLabel(s) {
+  return ({ 'psych-eval':'PSYCH EVAL PENDING', 'monitoring':'MONITORING',
+            'memetic':'MEMETIC HAZARD', 'amnestic-pending':'AMNESTIC PENDING',
+            'impostor-review':'POSSIBLE IMPOSTER', 'compromised':'COMPROMISED' })[s] || '';
+}
+function integrityClass(s) {
+  return ({ 'psych-eval':'b-amber', 'monitoring':'b-cyan', 'memetic':'b-red',
+            'amnestic-pending':'b-amber', 'impostor-review':'b-red', 'compromised':'b-red' })[s] || 'b-dim';
+}
+// Severe states that suspend the member's own access until cleared.
+function integrityBlocksAccess(s) { return s === 'compromised' || s === 'impostor-review'; }
+function openAdminNotes(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var rec = allUsers[uid] || {};
+  document.getElementById('adminNotesUid').value = uid;
+  document.getElementById('adminNotesTitle').textContent = 'ADMIN NOTES — EC·' + uid;
+  document.getElementById('adminNotesFlag').value = rec.adminFlag || '';
+  document.getElementById('adminNotesIntegrity').value = rec.integrityStatus || '';
+  document.getElementById('adminNotesSite').value = rec.site || '';
+  // Render the compartment grant checklist
+  var compEl = document.getElementById('adminNotesCompartments');
+  if (compEl) {
+    if (!allCompartments.length) {
+      compEl.innerHTML = '<div style="font-size:.54rem;color:var(--text-faint);">No compartments defined. Create one in the ACCESS COMPARTMENTS section.</div>';
+    } else {
+      var held = Array.isArray(rec.compartments) ? rec.compartments : [];
+      compEl.innerHTML = allCompartments.map(function(c){
+        var on = held.indexOf(c.id) !== -1;
+        return '<label style="display:block;font-size:.56rem;padding:2px 0;cursor:pointer;">'
+          + '<input type="checkbox" class="adminCompartmentCheck" value="' + e(c.id) + '" ' + (on?'checked':'') + ' style="vertical-align:middle;margin-right:.4rem;cursor:pointer;"/>'
+          + '<span style="color:var(--text);">' + e(c.name) + '</span>'
+          + (c.code ? ' <span style="color:var(--text-faint);">[' + e(c.code) + ']</span>' : '')
+          + '</label>';
+      }).join('');
+    }
+  }
+  document.getElementById('adminNotesField').value = '';
+  document.getElementById('adminNotesErr').textContent = '';
+  renderAdminNotesList(uid);
+  document.getElementById('adminNotesModal').classList.add('open');
+}
+function closeAdminNotes() { document.getElementById('adminNotesModal').classList.remove('open'); }
+function renderAdminNotesList(uid) {
+  var rec = allUsers[uid] || {};
+  var notes = Array.isArray(rec.adminNotes) ? rec.adminNotes.slice().sort(function(a,b){ return b.at - a.at; }) : [];
+  var el = document.getElementById('adminNotesList');
+  if (!el) return;
+  if (!notes.length) { el.innerHTML = '<div style="font-size:.58rem;color:var(--text-faint);padding:.3rem;">[ NO NOTES ]</div>'; return; }
+  el.innerHTML = notes.map(function(n) {
+    return '<div style="font-size:.58rem;border-bottom:1px solid var(--border);padding:3px 4px;line-height:1.5;">'
+      + '<div style="color:var(--text);">' + e(n.text) + '</div>'
+      + '<div style="color:var(--text-faint);font-size:.52rem;">EC·' + e(n.by) + ' · ' + safeDateTime(n.at) + ' UTC'
+      + ' <button data-action="del-admin-note" data-uid="' + e(uid) + '" data-at="' + n.at + '" style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:.7rem;float:right;" title="Delete note">×</button>'
+      + '</div></div>';
+  }).join('');
+}
+async function saveAdminNotes() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var uid  = document.getElementById('adminNotesUid').value;
+  var flag = document.getElementById('adminNotesFlag').value;
+  var integrity = document.getElementById('adminNotesIntegrity').value;
+  var site = document.getElementById('adminNotesSite').value;
+  var text = document.getElementById('adminNotesField').value.trim();
+  var errEl = document.getElementById('adminNotesErr');
+  var rec = allUsers[uid] || {};
+  var changed = false;
+  if ((rec.adminFlag || '') !== flag) {
+    rec.adminFlag = flag || null;
+    auditRecord('SET FLAG', 'EC·'+uid+' → '+(flag||'none'));
+    changed = true;
+  }
+  if ((rec.integrityStatus || '') !== integrity) {
+    rec.integrityStatus = integrity || null;
+    auditRecord('SET INTEGRITY STATUS', 'EC·'+uid+' → '+(integrity ? integrityLabel(integrity) : 'CLEAR'));
+    changed = true;
+  }
+  if ((rec.site || '') !== site) {
+    rec.site = site || null;
+    auditRecord('SET HOME SITE', 'EC·'+uid+' → '+(site || 'Unassigned'));
+    changed = true;
+  }
+  // Compartment grants
+  var checks = document.querySelectorAll('#adminNotesCompartments .adminCompartmentCheck');
+  if (checks.length) {
+    var newGrants = [];
+    checks.forEach(function(cb){ if (cb.checked) newGrants.push(cb.value); });
+    var oldGrants = Array.isArray(rec.compartments) ? rec.compartments.slice().sort() : [];
+    var cmpGrants = newGrants.slice().sort();
+    if (oldGrants.join('|') !== cmpGrants.join('|')) {
+      rec.compartments = newGrants;
+      var names = newGrants.map(function(id){ return compartmentName(id) || id; });
+      auditRecord('SET COMPARTMENTS', 'EC·'+uid+' → '+(names.length ? names.join(', ') : 'none'));
+      changed = true;
+    }
+  }
+  if (text) {
+    if (!Array.isArray(rec.adminNotes)) rec.adminNotes = [];
+    rec.adminNotes.push({ text: text, by: currentUser.id, at: Date.now() });
+    auditRecord('ADMIN NOTE', 'EC·'+uid);
+    changed = true;
+  }
+  if (!changed) { closeAdminNotes(); return; }
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    document.getElementById('adminNotesField').value = '';
+    renderAdminNotesList(uid);
+    renderAdminPanel();
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+async function delAdminNote(uid, at) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var rec = allUsers[uid] || {};
+  if (!Array.isArray(rec.adminNotes)) return;
+  rec.adminNotes = rec.adminNotes.filter(function(n){ return String(n.at) !== String(at); });
+  try {
+    await userSet(uid, rec);
+    allUsers[uid] = rec;
+    renderAdminNotesList(uid);
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+// ── Bulk operations (CL5) ──
+var adminDirSelected = new Set();   // displayIds currently selected
+var adminDirVisible = [];           // displayIds currently shown (post-filter)
+
+function toggleDirSelect(uid, checked) {
+  // uid arrives from dataset (HTML-entity-decoded). Match against the real displayId.
+  var realId = adminDirVisible.indexOf(uid) !== -1
+    ? uid
+    : (adminDirVisible.find(function(id){ return e(id) === uid; }) || uid);
+  if (checked) adminDirSelected.add(realId); else adminDirSelected.delete(realId);
+  updateBulkBar();
+}
+function toggleDirSelectAll(checked) {
+  adminDirVisible.forEach(function(id){
+    if (checked) adminDirSelected.add(id); else adminDirSelected.delete(id);
+  });
+  renderAdminPanel();
+}
+function clearDirSelection() {
+  adminDirSelected.clear();
+  var sa = document.getElementById('adminDirSelectAll'); if (sa) sa.checked = false;
+  renderAdminPanel();
+}
+function updateBulkBar() {
+  var bar = document.getElementById('adminBulkBar');
+  var cnt = document.getElementById('adminBulkCount');
+  if (!bar) return;
+  var n = adminDirSelected.size;
+  bar.style.display = n > 0 ? 'flex' : 'none';
+  if (cnt) cnt.textContent = n + ' selected';
+}
+function selectedUserRecs() {
+  return Array.from(adminDirSelected).map(function(id){ return allUsers[id]; }).filter(function(u){ return u && u.displayId; });
+}
+async function bulkApprove() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var recs = selectedUserRecs();
+  var targets = recs.filter(function(u){ return u.status === 'pending' || u.status === 'denied'; });
+  if (!targets.length) { alert('No selected accounts are pending or denied.'); return; }
+  if (!await pfConfirm('APPROVE ' + targets.length + ' selected account(s) at CL3?\n\n(Only pending/denied accounts are affected. Adjust clearances afterward.)')) return;
+  var ok = 0;
+  for (var i=0;i<targets.length;i++) {
+    var u = targets[i]; u.status = 'active'; u.clearance = u.clearance || '3';
+    u.statusReason = null; u.lockedUntil = null; u.failedAttempts = 0;
+    try { await userSet(u.displayId, u); allUsers[u.displayId] = u; ok++; } catch(_) {}
+  }
+  auditRecord('BULK APPROVED', ok + ' account(s)');
+  clearDirSelection(); updateAdminBadge(); renderAdminPanel();
+  alert('Approved ' + ok + ' account(s).');
+}
+async function bulkSetClearance() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var cl = (document.getElementById('bulkClSel')||{}).value || '3';
+  var recs = selectedUserRecs().filter(function(u){ return (u.status||'active') === 'active'; });
+  if (!recs.length) { alert('No active accounts selected.'); return; }
+  if (!await pfConfirm('Set clearance to CL' + cl + ' for ' + recs.length + ' active account(s)?')) return;
+  var ok = 0;
+  for (var i=0;i<recs.length;i++) {
+    var u = recs[i]; u.clearance = cl;
+    try { await userSet(u.displayId, u); allUsers[u.displayId] = u; ok++; } catch(_) {}
+  }
+  auditRecord('BULK SET CLEARANCE', ok + ' account(s) → CL' + cl);
+  clearDirSelection(); renderAdminPanel();
+  alert('Set ' + ok + ' account(s) to CL' + cl + '.');
+}
+async function bulkRetire() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var recs = selectedUserRecs().filter(function(u){ return (u.status||'active') === 'active'; });
+  if (!recs.length) { alert('No active accounts selected.'); return; }
+  if (!await pfConfirm('RETIRE ' + recs.length + ' active account(s)?\n\nThey will be marked inactive (honourable) and unable to log in until restored.')) return;
+  var ok = 0;
+  for (var i=0;i<recs.length;i++) {
+    var u = recs[i]; u.status = 'retired'; u.retiredBy = currentUser.id; u.retiredAt = Date.now();
+    try { await userSet(u.displayId, u); allUsers[u.displayId] = u; ok++; } catch(_) {}
+  }
+  auditRecord('BULK RETIRED', ok + ' account(s)');
+  clearDirSelection(); updateAdminBadge(); renderAdminPanel();
+  alert('Retired ' + ok + ' account(s).');
+}
+async function bulkRevoke() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var recs = selectedUserRecs().filter(function(u){ return (u.status||'active') === 'active'; });
+  if (!recs.length) { alert('No active accounts selected.'); return; }
+  var reason = prompt('Reason for revoking ' + recs.length + ' account(s)? (required, applied to all)');
+  if (reason === null) return;
+  reason = reason.trim();
+  if (!reason) { alert('A reason is required.'); return; }
+  var ok = 0;
+  for (var i=0;i<recs.length;i++) {
+    var u = recs[i]; u.status = 'denied'; u.revokedBy = currentUser.id; u.revokedAt = Date.now(); u.statusReason = reason;
+    try { await userSet(u.displayId, u); allUsers[u.displayId] = u; ok++; } catch(_) {}
+  }
+  auditRecord('BULK REVOKED', ok + ' account(s) — ' + reason);
+  clearDirSelection(); updateAdminBadge(); renderAdminPanel();
+  alert('Revoked ' + ok + ' account(s).');
+}
+
+// ── Access compartment management (CL5) ──
+function renderCompartmentList() {
+  var el = document.getElementById('adminCompartmentList');
+  if (!el) return;
+  if (!allCompartments.length) {
+    el.innerHTML = '<div style="font-size:.58rem;color:var(--text-faint);">[ NO COMPARTMENTS DEFINED ]</div>';
+    return;
+  }
+  el.innerHTML = allCompartments.map(function(c) {
+    // Count how many members hold this grant
+    var holders = Object.values(allUsers).filter(function(u){ return Array.isArray(u.compartments) && u.compartments.indexOf(c.id) !== -1; }).length;
+    return '<div style="border:1px solid var(--border);padding:.4rem .65rem;margin-bottom:2px;font-size:.62rem;display:flex;align-items:center;justify-content:space-between;gap:.4rem;flex-wrap:wrap;">'
+      + '<div><span style="color:var(--green);font-family:\'VT323\',monospace;">' + e(c.name) + '</span>'
+      + (c.code ? ' <span class="badge b-cyan" style="font-size:.5rem;">' + e(c.code) + '</span>' : '')
+      + '<span style="color:var(--text-faint);margin-left:.4rem;font-size:.54rem;">' + holders + ' member' + (holders===1?'':'s') + '</span>'
+      + (c.description ? '<div style="color:var(--text-dim);font-size:.54rem;margin-top:.15rem;">' + e(c.description) + '</div>' : '')
+      + '</div>'
+      + '<button class="rec-btn" data-action="edit-compartment" data-id="' + e(c.id) + '" style="font-size:.53rem;padding:1px 7px;">EDIT</button>'
+      + '</div>';
+  }).join('');
+}
+function openCompartmentModal(id) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var c = id ? allCompartments.find(function(x){ return x.id === id; }) : null;
+  document.getElementById('compartmentModalTitle').textContent = c ? 'EDIT COMPARTMENT' : 'NEW ACCESS COMPARTMENT';
+  document.getElementById('compartmentId').value = c ? c.id : '';
+  document.getElementById('compartmentName').value = c ? (c.name||'') : '';
+  document.getElementById('compartmentCode').value = c ? (c.code||'') : '';
+  document.getElementById('compartmentDesc').value = c ? (c.description||'') : '';
+  document.getElementById('compartmentErr').textContent = '';
+  document.getElementById('compartmentDelBtn').style.display = c ? 'inline-block' : 'none';
+  document.getElementById('compartmentModal').classList.add('open');
+}
+function closeCompartmentModal() { document.getElementById('compartmentModal').classList.remove('open'); }
+async function saveCompartment() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var id   = document.getElementById('compartmentId').value;
+  var name = document.getElementById('compartmentName').value.trim();
+  var code = document.getElementById('compartmentCode').value.trim();
+  var desc = document.getElementById('compartmentDesc').value.trim();
+  var errEl = document.getElementById('compartmentErr');
+  if (!name) { errEl.textContent = '> PROGRAM NAME REQUIRED'; return; }
+  var isNew = !id;
+  if (isNew) id = 'comp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  var rec = { id: id, name: name, code: code || null, description: desc || null,
+              createdBy: (allCompartments.find(function(x){return x.id===id;})||{}).createdBy || currentUser.id,
+              createdAt: (allCompartments.find(function(x){return x.id===id;})||{}).createdAt || Date.now() };
+  try {
+    await compartmentSet(id, rec);
+    auditRecord(isNew ? 'CREATED COMPARTMENT' : 'EDITED COMPARTMENT', name);
+    await loadCompartments();
+    closeCompartmentModal();
+    renderCompartmentList();
+  } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
+}
+async function deleteCompartment() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var id = document.getElementById('compartmentId').value;
+  var c = allCompartments.find(function(x){ return x.id === id; });
+  if (!c) return;
+  var holders = Object.values(allUsers).filter(function(u){ return Array.isArray(u.compartments) && u.compartments.indexOf(id) !== -1; }).length;
+  if (!await pfConfirm('Delete compartment "' + c.name + '"?\n\n' + holders + ' member(s) currently hold this grant — it will be removed from them, and any content tagged with it becomes open at its clearance level.')) return;
+  try {
+    // Remove the grant from any holders
+    var holderRecs = Object.values(allUsers).filter(function(u){ return Array.isArray(u.compartments) && u.compartments.indexOf(id) !== -1; });
+    for (var i=0;i<holderRecs.length;i++) {
+      var u = holderRecs[i];
+      u.compartments = u.compartments.filter(function(x){ return x !== id; });
+      try { await userPatch(u.displayId, { compartments: u.compartments }); } catch(_) {}
+    }
+    await compartmentDel(id);
+    auditRecord('DELETED COMPARTMENT', c.name);
+    await loadCompartments();
+    closeCompartmentModal();
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
+// ── Acknowledge a duress alert (CL5) — Security has responded ──
+async function adminAckDuress(uid) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!await pfConfirm('Acknowledge and clear the DURESS alert for EC·' + uid + '?\n\nOnly do this once Security has verified the member is safe.')) return;
+  var rec = allUsers[uid] || {};
+  rec.duressActive = false;
+  rec.duressAckBy = currentUser.id; rec.duressAckAt = Date.now();
+  try {
+    await userPatch(uid, { duressActive: false, duressAckBy: currentUser.id, duressAckAt: Date.now() });
+    auditRecord('ACK DURESS', 'EC·'+uid+' duress alert cleared');
+    allUsers[uid] = rec;
+    renderAdminPanel();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
+
 // ── Clear an account lockout (CL5) ──
 async function adminUnlock(uid) {
   if (!currentUser || parseInt(currentUser.clearance) < 5) return;
@@ -4091,7 +5384,7 @@ async function savePassReset() {
   if (!newPass || newPass.length < 3) { errEl.textContent = '> PASSPHRASE MUST BE AT LEAST 3 CHARACTERS'; return; }
   var rec = allUsers[uid] || {};
   var cred = await makeCredential(newPass);
-  rec.hash = cred.hash; rec.salt = cred.salt; rec.hashVer = cred.hashVer;
+  applyCredential(rec, cred);
   rec.passResetBy = currentUser.id; rec.passResetAt = Date.now();
   try {
     await userSet(uid, rec);
@@ -4154,18 +5447,9 @@ async function adminSetUnit(uid) {
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
-async function adminRevoke(uid) {
+function adminRevoke(uid) {
   if (!currentUser || parseInt(currentUser.clearance) < 5) return;
-  if (!await pfConfirm('REVOKE ACCESS for EC·' + uid + '?\n\nThey will be unable to log in until restored.')) return;
-  var rec = allUsers[uid] || {};
-  rec.status = 'denied'; rec.revokedBy = currentUser.id;
-  auditRecord('REVOKED ACCESS', 'EC·'+uid); rec.revokedAt = Date.now();
-  try {
-    await userSet(uid, rec);
-    allUsers[uid] = rec;
-    updateAdminBadge();
-    renderAdminPanel();
-  } catch(err) { alert('ERROR: ' + err.message); }
+  openReasonModal('revoke', uid, 'REVOKE ACCESS', 'EC·' + uid + ' will be unable to log in until restored.', 'REASON FOR REVOCATION');
 }
 
 function canEditPersonnel() { return currentUser && parseInt(currentUser.clearance) >= 4; }
@@ -4210,6 +5494,11 @@ function deriveClearance(userRec) {
     if (ef) {
       if (ef.role === 'Chairman' || ef.role === 'Member') fileCl = 5;
       else if (ef.role === 'Assistant') fileCl = 4;
+      else fileCl = 3;
+    } else if (allEthicsPersonnel.length > 0) {
+      // Arrays are loaded but the linked file is gone (deleted) → revoke to baseline.
+      // (If the array is empty, data simply hasn't loaded yet, so we keep `stored`.)
+      fileCl = 3;
     }
   }
   // Omega-1 ranks
@@ -4219,6 +5508,9 @@ function deriveClearance(userRec) {
       var rank = pf.rank;
       if (['Commander','Lieutenant Commander','Major','Captain','Lieutenant'].includes(rank)) fileCl = 4;
       else fileCl = 3;
+    } else if (allPersonnel.length > 0) {
+      // Loaded but file deleted → revoke to baseline.
+      fileCl = 3;
     }
   }
 
@@ -4999,10 +6291,44 @@ document.addEventListener('click', function(ev) {
     case 'admin-unlink-file':  adminUnlinkFile(el.dataset.uid); break;
     case 'admin-reset-pass':   adminResetPass(el.dataset.uid); break;
     case 'admin-unlock':       adminUnlock(el.dataset.uid); break;
+    case 'admin-ack-duress':   adminAckDuress(el.dataset.uid); break;
+    case 'new-compartment':    openCompartmentModal(null); break;
+    case 'edit-compartment':   openCompartmentModal(el.dataset.id); break;
+    case 'close-compartment':  closeCompartmentModal(); break;
+    case 'save-compartment':   saveCompartment(); break;
+    case 'delete-compartment': deleteCompartment(); break;
+    case 'admin-notes':        openAdminNotes(el.dataset.uid); break;
+    case 'dir-select':         toggleDirSelect(el.dataset.uid, el.checked); break;
+    case 'bulk-approve':       bulkApprove(); break;
+    case 'bulk-clearance':     bulkSetClearance(); break;
+    case 'bulk-retire':        bulkRetire(); break;
+    case 'bulk-revoke':        bulkRevoke(); break;
+    case 'bulk-clear':         clearDirSelection(); break;
+    case 'close-admin-notes':  closeAdminNotes(); break;
+    case 'save-admin-notes':   saveAdminNotes(); break;
+    case 'del-admin-note':     delAdminNote(el.dataset.uid, el.dataset.at); break;
+    case 'close-reason':       closeReasonModal(); break;
+    case 'save-reason':        saveReason(); break;
+    case 'export-users':       exportUsersCSV(); break;
+    case 'export-audit':       exportAuditCSV(); break;
+    case 'export-roster-pf':   exportRosterCSV('pf'); break;
+    case 'export-roster-ef':   exportRosterCSV('ef'); break;
     case 'close-pass-reset':   closePassReset(); break;
     case 'save-pass-reset':    savePassReset(); break;
     case 'close-my-account':   closeMyAccount(); break;
     case 'open-change-pass':   openChangePass(); break;
+    case 'session-stay':       sessionStay(); break;
+    case 'session-logout-now': sessionExpire(); break;
+    case 'ack-recovery':       ackRecoveryCodes(); break;
+    case 'copy-recovery':      copyRecoveryCodes(); break;
+    case 'open-forgot':        openForgot(); break;
+    case 'close-forgot':       closeForgot(); break;
+    case 'save-forgot':        saveForgot(); break;
+    case 'regen-recovery':     regenerateRecoveryCodes(); break;
+    case 'open-duress':        openDuressModal(); break;
+    case 'close-duress':       closeDuressModal(); break;
+    case 'save-duress':        saveDuressCode(); break;
+    case 'clear-duress':       clearDuressCode(); break;
     case 'close-change-pass':  closeChangePass(); break;
     case 'save-change-pass':   saveChangePass(); break;
     case 'do-logout':          closeMyAccount(); logout(); break;
