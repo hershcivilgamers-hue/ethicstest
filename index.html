@@ -761,7 +761,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <option value="Site-17">Site-17</option>
         <option value="Site-15">Site-15</option>
         <option value="Site-23">Site-23</option>
-        <option value="Site-64">Site-64</option>
+        <option value="Site-65">Site-65</option>
         <option value="Site-73">Site-73</option>
         <option value="Site-88">Site-88</option>
         <option value="Area-14">Area-14</option>
@@ -1196,6 +1196,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
             <option value="3">VISIBLE: CL3+</option>
             <option value="4">VISIBLE: CL4+</option>
             <option value="5">VISIBLE: CL5 ONLY</option>
+          </select>
+          <select class="order-select" id="ethicsOrderCompartment" title="Restrict to a need-to-know compartment">
+            <option value="">OPEN (no compartment)</option>
           </select>
         </div>
         <input class="order-input" id="ethicsOrderTitle" placeholder="Order designation..." style="width:100%;margin-bottom:.5rem;"/>
@@ -1784,7 +1787,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <option value="Site-17">Site-17</option>
         <option value="Site-15">Site-15</option>
         <option value="Site-23">Site-23</option>
-        <option value="Site-64">Site-64</option>
+        <option value="Site-65">Site-65</option>
         <option value="Site-73">Site-73</option>
         <option value="Site-88">Site-88</option>
         <option value="Area-14">Area-14</option>
@@ -2199,7 +2202,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <option value="Site-17">Site-17</option>
         <option value="Site-15">Site-15</option>
         <option value="Site-23">Site-23</option>
-        <option value="Site-64">Site-64</option>
+        <option value="Site-65">Site-65</option>
         <option value="Site-73">Site-73</option>
         <option value="Site-88">Site-88</option>
         <option value="Area-14">Area-14</option>
@@ -3076,6 +3079,14 @@ function userHasCompartment(compId) {
 function populateCompartmentSelect(selectId, selectedVal) {
   var sel = document.getElementById(selectId);
   if (!sel) return;
+  // Lazy-load the registry if it hasn't been fetched yet this session.
+  if (!allCompartments.length) {
+    loadCompartments().then(function(){ fillCompartmentSelect(sel, selectedVal); });
+    return;
+  }
+  fillCompartmentSelect(sel, selectedVal);
+}
+function fillCompartmentSelect(sel, selectedVal) {
   var cur = selectedVal !== undefined ? selectedVal : sel.value;
   var opts = '<option value="">OPEN (no compartment)</option>';
   allCompartments.forEach(function(c){
@@ -3084,6 +3095,7 @@ function populateCompartmentSelect(selectId, selectedVal) {
   });
   sel.innerHTML = opts;
 }
+
 
 // ================================================================
 //  ORDERS
@@ -4538,7 +4550,7 @@ function switchTab(el, id) {
   });
   if (id === 'matrix')          animateBars();
   if (id === 'orders')          { loadOrders(); populateCompartmentSelect('oCompartment'); }
-  if (id === 'ethics-orders')   loadEthicsOrders();
+  if (id === 'ethics-orders')   { loadEthicsOrders(); populateCompartmentSelect('ethicsOrderCompartment'); }
   if (id === 'ethics-recruit')  loadEthicsRecruit();
   if (id === 'personnel-files') loadPersonnel();
   if (id === 'roster')          { loadPersonnel(); var rb=document.getElementById('exportRosterPfBtn'); if(rb) rb.style.display=(currentUser&&parseInt(currentUser.clearance)>=5)?'inline-block':'none'; }
@@ -5311,6 +5323,9 @@ async function saveCompartment() {
     await loadCompartments();
     closeCompartmentModal();
     renderCompartmentList();
+    // Keep the order-form compartment selectors current
+    populateCompartmentSelect('oCompartment');
+    populateCompartmentSelect('ethicsOrderCompartment');
   } catch(err) { errEl.textContent = '> ERROR: ' + err.message; }
 }
 async function deleteCompartment() {
@@ -5333,6 +5348,8 @@ async function deleteCompartment() {
     await loadCompartments();
     closeCompartmentModal();
     renderAdminPanel();
+    populateCompartmentSelect('oCompartment');
+    populateCompartmentSelect('ethicsOrderCompartment');
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
@@ -5601,6 +5618,45 @@ function getPfReadLevel(p) {
   if (CL4_JUNIOR_RANKS.includes(p.rank)) return 4;
   return 3;
 }
+// ── File ↔ account bridge: integrity status & compartments shown ON personnel files ──
+// Find the user account linked to a given personnel file (by linkedPfId / linkedEfId).
+function userForFile(fileId, unit) {
+  if (!fileId || !allUsers) return null;
+  var key = unit === 'ef' ? 'linkedEfId' : 'linkedPfId';
+  var found = Object.values(allUsers).find(function(u){ return u && u[key] === fileId; });
+  return found || null;
+}
+// Can the current viewer see integrity status on files? Senior CL4 + CL5 only (counterintel).
+function canViewFileIntegrity() {
+  if (!currentUser) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  if (currentUser.linkedPfId) {
+    var pf = allPersonnel.find(function(p){ return p.id === currentUser.linkedPfId; });
+    if (pf && CL4_SENIOR_RANKS.includes(pf.rank)) return true;
+  }
+  if (currentUser.linkedEfId) {
+    var ef = allEthicsPersonnel.find(function(p){ return p.id === currentUser.linkedEfId; });
+    if (ef && (ef.role === 'Chairman' || ef.role === 'Member')) return true; // CL5-equiv EC
+  }
+  return false;
+}
+// Build the integrity badge for a file (only if viewer is authorised and a status is set).
+function fileIntegrityBadge(fileId, unit) {
+  if (!canViewFileIntegrity()) return '';
+  var u = userForFile(fileId, unit);
+  if (!u || !u.integrityStatus) return '';
+  return '<span class="badge ' + integrityClass(u.integrityStatus) + '" style="margin-left:4px;font-size:.5rem;" title="Integrity status (CL4-senior/CL5 only)">⚕ ' + e(integrityLabel(u.integrityStatus)) + '</span>';
+}
+// Build compartment-grant badges for a file (visible per normal file read access).
+function fileCompartmentBadges(fileId, unit) {
+  var u = userForFile(fileId, unit);
+  if (!u || !Array.isArray(u.compartments) || !u.compartments.length) return '';
+  return u.compartments.map(function(id){
+    var nm = compartmentName(id);
+    if (!nm) return '';
+    return '<span class="badge b-dim" style="margin-left:4px;font-size:.5rem;" title="Need-to-know program">▢ ' + e(nm) + '</span>';
+  }).join('');
+}
 function getEfReadLevel(p) {
   if (!p) return 3;
   if (p.role === 'Chairman' || p.role === 'Member') return 6;
@@ -5747,13 +5803,14 @@ list.innerHTML = filtered.map(function(p) {
 var linkedBadge = linkedPfIds.has(p.id) 
     ? '<span class="badge b-green" style="font-size:.5rem; margin-left:4px;">● LINKED</span>' 
     : '';
+    var fileSecBadges = fileIntegrityBadge(p.id, 'pf') + fileCompartmentBadges(p.id, 'pf');
 
     if (!isOpen) {
       return `<div class="pf-card" id="pfcard_${e(p.id)}">
         <div class="pf-card-header" data-action="toggle-pf" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='var(--accent-softer)'" onmouseout="this.style.background=''">
           <div>
             <div class="pf-name">${e(p.name||'—')}${p.nickname?` <span style="color:var(--text-dim);font-size:.75rem;">"${e(p.nickname)}"</span>`:''}</div>
-            <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${tagPills}${linkedBadge}</div>
+            <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${tagPills}${linkedBadge}${fileSecBadges}</div>
           </div>
           <span style="font-size:.62rem;color:var(--text-dim);">▸</span>
         </div>
@@ -5879,7 +5936,7 @@ var linkedBadge = linkedPfIds.has(p.id)
       <div class="pf-card-header" data-action="toggle-pf" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='var(--accent-softer)'" onmouseout="this.style.background=''">
         <div>
           <div class="pf-name">${e(p.name||'—')}${p.nickname?` <span style="color:var(--text-dim);font-size:.75rem;">"${e(p.nickname)}"</span>`:''}</div>
-          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}</div>
+          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${fileSecBadges}</div>
         </div>
         <span style="font-size:.62rem;color:var(--text-dim);">▾</span>
       </div>
@@ -7421,6 +7478,7 @@ async function submitEthicsOrder() {
     priority: document.getElementById('ethicsOrderPriority').value,
     status:   document.getElementById('ethicsOrderStatus').value,
     minClearance: document.getElementById('ethicsOrderMinClearance').value || '3',
+    compartment: (document.getElementById('ethicsOrderCompartment') || {}).value || null,
     author: currentUser.id, clearance: currentUser.clearance, created: Date.now() };
   try {
     await ethicsOrderSet(id, order);
@@ -7585,13 +7643,21 @@ function renderEthicsOrders() {
     if (orderIsRestricted(o)) return buildOrderDeniedCard(o, 'eocard_' + e(o.id));
 
     return '<div class="order-card" id="eocard_' + e(o.id) + '">' +
-      '<div class="order-card-header">' +
-        '<div>' +
-          '<div class="order-card-title">' + e(o.title) + '</div>' +
-          '<div class="order-card-meta">' +
-            ts + ' UTC · EC·' + e(o.author) + ' [L' + e(o.clearance) + '] · ' +
-            '<span class="badge ' + (PBADGE[o.priority]||'b-dim') + '">' + e(o.priority) + '</span>' +
-          '</div>' +
+      '<div class="dir-banner top ' + directiveBannerClass(o.priority) + '">' + directiveClassification(o) + '</div>' +
+      '<div class="dir-letterhead">' +
+        '<div class="dir-seal-mark">' +
+          '<span class="org">◆ ETHICS COMMITTEE</span>' +
+          'O5 OVERSIGHT · CAIRO.AIC TERMINAL' +
+        '</div>' +
+        '<div class="dir-ref">' +
+          '<span class="refno">' + directiveRef(o) + '</span><br>' +
+          ts + ' UTC' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-family:\'Share Tech Mono\',monospace;font-size:.5rem;letter-spacing:.18em;color:var(--text-faint);">ETHICS COMMITTEE DIRECTIVE</div>' +
+          '<div class="dir-title">' + e(o.title) + '</div>' +
         '</div>' +
         '<div class="order-card-actions">' +
           statusCtrl +
@@ -7599,10 +7665,20 @@ function renderEthicsOrders() {
           (canEdit ? '<button class="order-action-btn del-btn" data-action="del-eo" data-id="' + e(o.id) + '">✕</button>' : '') +
         '</div>' +
       '</div>' +
-      (o.body ? '<div class="order-card-desc">' + e(o.body) + '</div>' : '') +
-      (o.editedBy ? '<div style="font-size:.56rem;color:var(--text-faint);margin-top:3px;">✎ last edited by EC·' + e(o.editedBy) + ' · ' + safeDateTime(o.editedAt) + ' UTC</div>' : '') +
+      '<div class="dir-fields">' +
+        '<div class="dir-field"><span class="k">Priority</span><span class="v"><span class="badge ' + (PBADGE[o.priority]||'b-dim') + '">' + e(o.priority) + '</span></span></div>' +
+        '<div class="dir-field"><span class="k">Filed</span><span class="v">' + ts + ' UTC</span></div>' +
+        (o.compartment ? '<div class="dir-field"><span class="k">Program</span><span class="v">▢ ' + e(compartmentName(o.compartment) || 'COMPARTMENTED') + '</span></div>' : '') +
+      '</div>' +
+      (o.body ? '<div class="dir-body">' + e(o.body) + '</div>' : '') +
+      '<div class="dir-authorization">' +
+        '<div class="dir-sig"><span class="by">By order of</span><br><span class="who">EC·' + e(o.author) + '</span> · Clearance L' + e(o.clearance) + '</div>' +
+        '<div class="dir-stamp ' + directiveStamp(o.status).cls + '">' + e(directiveStamp(o.status).label) + '</div>' +
+      '</div>' +
+      (o.editedBy ? '<div style="font-size:.56rem;color:var(--text-faint);margin-top:5px;">✎ last amended by EC·' + e(o.editedBy) + ' · ' + safeDateTime(o.editedAt) + ' UTC</div>' : '') +
       '<div class="comment-toggle" data-action="toggle-eo-comments" data-id="' + e(o.id) + '">' + toggleLabel + '</div>' +
       commentsHtml +
+      '<div class="dir-banner bottom ' + directiveBannerClass(o.priority) + '">' + directiveClassification(o) + '</div>' +
     '</div>';
   }).join('');
 }
@@ -8569,12 +8645,13 @@ function buildEthicsCard(p) {
   var roleBadge   = `<span class="badge ${p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan'}">${e(p.role||'—')}</span>`;
   var statusBadge = pStatus !== 'Active' ? `<span class="badge ${pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span>` : '';
 
+  var efFileSecBadges = fileIntegrityBadge(p.id, 'ef') + fileCompartmentBadges(p.id, 'ef');
   if (!isOpen) {
     return `<div class="pf-card" id="efcard_${e(p.id)}">
       <div class="pf-card-header" data-action="toggle-ef" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='var(--accent-softer)'" onmouseout="this.style.background=''">
         <div>
           <div class="pf-name">${e(p.name||'UNNAMED')}${p.nickname?` <span style="color:var(--text-dim);font-size:.6rem;">"${e(p.nickname)}"</span>`:''}</div>
-          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}</div>
+          <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${efFileSecBadges}</div>
         </div>
         <span style="font-size:.62rem;color:var(--text-dim);">▸</span>
       </div>
@@ -8635,7 +8712,7 @@ function buildEthicsCard(p) {
     <div class="pf-card-header" data-action="toggle-ef" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='var(--accent-softer)'" onmouseout="this.style.background=''">
       <div>
         <div class="pf-name">${e(p.name||'UNNAMED')}${p.nickname?` <span style="color:var(--text-dim);font-size:.6rem;">"${e(p.nickname)}"</span>`:''}</div>
-        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${(Array.isArray(p.tags)&&p.tags.length?p.tags.map(t=>`<span class="badge ${ETHICS_TAG_CLS_MAP[t]||'b-dim'}" style="font-size:.5rem;">${e(t)}</span>`).join(''):'')}</div>
+        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${roleBadge}${statusBadge}${efFileSecBadges}${(Array.isArray(p.tags)&&p.tags.length?p.tags.map(t=>`<span class="badge ${ETHICS_TAG_CLS_MAP[t]||'b-dim'}" style="font-size:.5rem;">${e(t)}</span>`).join(''):'')}</div>
       </div>
       <span style="font-size:.62rem;color:var(--text-dim);">▾</span>
     </div>
