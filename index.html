@@ -208,6 +208,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .nav-standalone-tab{padding:.6rem 1.1rem;font-size:.64rem;letter-spacing:.12em;font-weight:700;color:var(--green-dim);cursor:pointer;border-right:2px solid var(--border2);border-bottom:3px solid transparent;transition:all .15s;user-select:none;display:flex;align-items:center;gap:5px;white-space:nowrap;}
 .nav-standalone-tab:hover{background:var(--accent-soft);color:var(--green);}
 .nav-standalone-tab.active{color:var(--green);border-bottom-color:var(--green);background:var(--accent-soft);}
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.55rem;}
+.ov-card{border:1px solid var(--border2);background:var(--bg3);padding:.7rem .8rem;border-radius:2px;transition:all .15s;}
+.ov-card[onclick]:hover{border-color:var(--green);background:var(--accent-soft);}
+.ov-card.ov-urgent{border-color:var(--red);background:rgba(170,0,0,.06);animation:ovPulse 2s ease-in-out infinite;}
+@keyframes ovPulse{0%,100%{border-color:var(--red);}50%{border-color:rgba(170,0,0,.4);}}
+.ov-val{font-size:1.5rem;font-weight:700;font-family:'VT323',monospace;line-height:1;}
+.ov-title{font-size:.58rem;letter-spacing:.08em;color:var(--text-dim);margin-top:.3rem;text-transform:uppercase;}
+.ov-sub{font-size:.52rem;color:var(--text-faint);margin-top:.15rem;line-height:1.4;}
+.ov-live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:ovLive 1.6s ease-in-out infinite;}
+@keyframes ovLive{0%,100%{opacity:1;box-shadow:0 0 0 0 var(--green);}50%{opacity:.4;}}
 .ng-arrow{font-size:.5rem;transition:transform .2s;display:inline-block;}
 .nav-dd.open .ng-arrow{transform:rotate(180deg);}
 .nav-dd-badge{background:var(--amber);color:#000;border-radius:7px;min-width:14px;height:14px;font-size:.5rem;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;font-weight:700;}
@@ -433,6 +443,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 /* ── Personnel Files ── */
 .pf-toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.9rem;}
 .pf-search{background:var(--bg);border:1px solid var(--border2);color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.65rem;padding:.32rem .6rem;outline:none;flex:1;min-width:140px;}
+.pf-filter{background:var(--bg);border:1px solid var(--border2);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:.06em;padding:.32rem .5rem;outline:none;cursor:pointer;}
+.pf-filter:focus{border-color:var(--green-dim);}
 .pf-search:focus{border-color:var(--green-dim);}
 .pf-btn{background:var(--green-trace);border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.07em;padding:.32rem .9rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .pf-btn:hover{background:var(--accent-soft);}
@@ -727,6 +739,71 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .roster-leave{display:inline-block;padding:0 5px;font-size:.54rem;border-radius:2px;margin-left:4px;vertical-align:middle;}
 .roster-loa{background:#030e14;color:#4488cc;border:1px solid #1a3a5a;}
 .roster-roa{background:#0a0a00;color:#aaaa44;border:1px solid #2a2a00;}
+
+/* ── Mobile / narrow-screen layout (additive; desktop unaffected) ── */
+@media (max-width: 640px) {
+  .header { padding:.5rem .7rem; }
+  .header-title { font-size:1.25rem; letter-spacing:.1em; }
+  .header-sub { font-size:.5rem; }
+  .header-right { gap:.5rem; flex-wrap:wrap; }
+  .tab-content { padding:.8rem .7rem; }
+
+  /* Navigation: let the tab bar scroll horizontally instead of crowding */
+  .nav { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .nav::-webkit-scrollbar { height:3px; }
+  .nav-dd, .nav-standalone-tab { flex:0 0 auto; }
+  .nav-standalone-tab { padding:.55rem .75rem; font-size:.6rem; }
+
+  /* Toolbars: search takes the full row, filters share the next */
+  .pf-toolbar { gap:.4rem; }
+  .pf-search { flex:1 1 100%; min-width:0; }
+  .pf-filter { flex:1 1 auto; min-width:0; }
+  .pf-btn { flex:1 1 100%; }
+
+  /* Modals: use the screen, trim the padding, keep them reachable */
+  .modal-box, .modal-box-2, .pf-modal, .ef-modal {
+    width:96vw !important; max-width:96vw !important; padding:1rem !important;
+    max-height:88vh;
+  }
+
+  /* Dashboard cards: keep them readable on phones */
+  .ov-grid { grid-template-columns:repeat(auto-fill,minmax(125px,1fr)); gap:.45rem; }
+  .ov-val { font-size:1.3rem; }
+
+  /* Wide tables: blacklist still scrolls; roster reflows into cards (see below) */
+  .bl-table { display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+
+  /* Roster tables → stacked cards on mobile (each row a card, cells labelled) */
+  .roster-table thead { display:none; }
+  .roster-table, .roster-table tbody { display:block; width:100%; }
+  .roster-table tr { display:block; margin-bottom:.5rem; border:1px solid var(--border2); border-radius:2px; padding:.2rem .1rem; background:var(--bg3); }
+  .roster-table tr:hover td { background:transparent; }
+  .roster-table td { display:flex; justify-content:space-between; align-items:center; gap:.6rem; border:none !important; padding:.3rem .7rem; text-align:right; white-space:normal; }
+  .roster-table td::before { content:attr(data-label); color:var(--green-dim); font-size:.52rem; letter-spacing:.1em; text-align:left; flex:0 0 auto; }
+  .roster-table td.roster-name { font-size:.78rem; }
+  /* Rank divider rows stay as full-width section headers */
+  .roster-table tr.roster-rank-divider { background:var(--green-trace); padding:0; margin:.6rem 0 .3rem; border:none; }
+  .roster-table tr.roster-rank-divider td { display:block; text-align:left; }
+  .roster-table tr.roster-rank-divider td::before { content:''; }
+  /* Empty-state row */
+  .roster-table td.roster-empty { display:block; text-align:center; }
+  .roster-table td.roster-empty::before { content:''; }
+
+  /* POI list rows: let badges wrap under the name instead of overflowing */
+  .poi-list-item { flex-wrap:wrap; gap:.3rem .5rem; }
+
+  /* Bigger tap targets for the main action buttons */
+  .pf-btn, .modal-save, .modal-cancel, .rec-btn { min-height:32px; }
+
+  /* Order/directive cards: tighten letterhead so it doesn't overflow */
+  .dir-letterhead { flex-wrap:wrap; gap:.3rem; }
+  .dir-fields { grid-template-columns:1fr 1fr; }
+}
+@media (max-width: 380px) {
+  .ov-grid { grid-template-columns:1fr 1fr; }
+  .dir-fields { grid-template-columns:1fr; }
+}
+
 </style>
 </head>
 <body>
@@ -807,6 +884,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
   <div class="nav" style="align-items:stretch;">
 
+    <!-- OVERVIEW (command dashboard) -->
+    <div class="nav-standalone-tab" onclick="switchTab(this,'overview')">▣ OVERVIEW</div>
+
     <!-- CAIRO dropdown -->
     <div class="nav-dd" data-group="cairo">
       <div class="nav-dd-trigger" data-action="toggle-nav-dd" data-group="cairo">
@@ -874,6 +954,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   </div>
   <div id="notifBanner" style="display:none;background:rgba(0,80,40,.1);border-bottom:1px solid var(--border2);color:var(--green);font-size:.6rem;letter-spacing:.05em;padding:.45rem 1.2rem;line-height:1.7;cursor:pointer;" onclick="dismissNotif()" title="Click to dismiss"></div>
   <div class="panel">
+
+    <!-- COMMAND OVERVIEW (dashboard) -->
+    <div class="tab-content" id="tab-overview">
+      <div class="sec">▸ COMMAND OVERVIEW</div>
+      <div id="overviewBody"></div>
+    </div>
 
     <!-- PERSONNEL FILE -->
     <div class="tab-content active" id="tab-personnel">
@@ -1019,7 +1105,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
     <!-- PERSONNEL FILES -->
     <div class="tab-content" id="tab-personnel-files">
-      <div class="sec">▸ OMEGA-1 PERSONNEL FILES — MEMBER RECORDS</div>
+      <div class="sec">▸ OMEGA-1 PERSONNEL FILES — MEMBER RECORDS <span id="pfCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
       <div id="pfAccessNotice" style="display:none;" class="pf-empty">
         [ CLEARANCE LEVEL 4 REQUIRED TO MANAGE RECORDS ]<br>
         <span style="font-size:.58rem;">CL3 members and observers may view files but cannot create, edit or delete records.</span>
@@ -1027,6 +1113,15 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <div class="pf-toolbar">
         <input class="pf-search" id="pfSearch" placeholder="SEARCH BY NAME, NICKNAME OR RANK..."
                oninput="renderPersonnelFiles()"/>
+        <select class="pf-filter" id="pfFilterStatus" onchange="renderPersonnelFiles()" title="Filter by status">
+          <option value="">ALL STATUS</option>
+          <option value="Active">ACTIVE</option>
+          <option value="Retired">RETIRED</option>
+          <option value="Discharged">DISCHARGED</option>
+        </select>
+        <select class="pf-filter" id="pfFilterRank" onchange="renderPersonnelFiles()" title="Filter by rank">
+          <option value="">ALL RANKS</option>
+        </select>
         <button class="pf-btn" id="pfNewBtn" onclick="openPersonnelModal(null)" style="display:none;">
           [ + NEW RECORD ]
         </button>
@@ -1058,7 +1153,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 
     <!-- ETHICS FILES -->
     <div class="tab-content" id="tab-ethics-files">
-      <div class="sec">▸ ETHICS COMMITTEE PERSONNEL FILES</div>
+      <div class="sec">▸ ETHICS COMMITTEE PERSONNEL FILES <span id="efCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
       <div id="efAccessNotice" style="display:none;" class="pf-empty">
         [ CLEARANCE LEVEL 4 REQUIRED TO MANAGE ETHICS RECORDS ]<br>
         <span style="font-size:.58rem;">CL3 members and observers may view files but cannot create, edit or delete records.</span>
@@ -1079,6 +1174,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;">
         <input class="pf-search" id="efSearch" placeholder="SEARCH BY NAME OR NICKNAME..."
                oninput="renderEthicsFiles()"/>
+        <select class="pf-filter" id="efFilterStatus" onchange="renderEthicsFiles()" title="Filter by status">
+          <option value="">ALL STATUS</option>
+          <option value="Active">ACTIVE</option>
+          <option value="Retired">RETIRED</option>
+          <option value="Discharged">DISCHARGED</option>
+        </select>
         <button class="pf-btn" id="efNewBtn" onclick="openEthicsModal(null)" style="display:none;">
           [ + NEW ETHICS RECORD ]
         </button>
@@ -1143,10 +1244,27 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="tab-content" id="tab-poi">
       <!-- List view (shown by default) -->
       <div id="poiListView">
+        <div class="pf-toolbar" style="margin-bottom:.6rem;">
+          <input class="pf-search" id="poiSearch" placeholder="SEARCH POI / TARGETS BY NAME OR NUMBER..."
+                 oninput="renderPoiList()"/>
+          <select class="pf-filter" id="poiFilterStatus" onchange="renderPoiList()" title="Filter by status">
+            <option value="">ALL STATUS</option>
+            <option value="In Progress">IN PROGRESS</option>
+            <option value="Absolved">ABSOLVED</option>
+            <option value="Summoned to Tribunal">SUMMONED</option>
+            <option value="Killed">KILLED</option>
+          </select>
+          <select class="pf-filter" id="poiFilterStanding" onchange="renderPoiList()" title="Filter by standing">
+            <option value="">ALL STANDING</option>
+            <option value="Friend">FRIEND</option>
+            <option value="Neutral">NEUTRAL</option>
+            <option value="Foe">FOE</option>
+          </select>
+        </div>
         <!-- POI section -->
         <div class="poi-list-section">
           <div class="poi-list-header">
-            <div class="poi-list-title">▸ PERSONS OF INTEREST</div>
+            <div class="poi-list-title">▸ PERSONS OF INTEREST <span id="poiCount" style="color:var(--text-faint);font-size:.55rem;letter-spacing:.05em;"></span></div>
             <button class="pf-section-btn" id="newPoiBtn" onclick="openPoiModal(null,'poi')" style="display:none;">[ + NEW POI ]</button>
           </div>
           <div id="poiList"></div>
@@ -1154,7 +1272,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         <!-- Target section -->
         <div class="poi-list-section">
           <div class="poi-list-header">
-            <div class="poi-list-title">▸ TARGETS</div>
+            <div class="poi-list-title">▸ TARGETS <span id="targetCount" style="color:var(--text-faint);font-size:.55rem;letter-spacing:.05em;"></span></div>
             <button class="pf-section-btn" id="newTargetBtn" onclick="openPoiModal(null,'target')" style="display:none;">[ + NEW TARGET ]</button>
           </div>
           <div id="targetList"></div>
@@ -1662,6 +1780,24 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     <div class="modal-actions">
       <button class="rec-btn" data-action="copy-recovery" style="font-size:.6rem;padding:3px 10px;">⧉ COPY ALL</button>
       <button class="modal-save" data-action="ack-recovery">[ I'VE SAVED THESE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROMOTION REQUIREMENTS EDITOR MODAL (CL5) -->
+<div class="modal-overlay-2" id="promoReqModal" style="z-index:1200;">
+  <div class="modal-box-2" style="width:520px;max-height:82vh;overflow-y:auto;">
+    <h3 id="promoReqTitle">EDIT PROMOTION REQUIREMENTS</h3>
+    <input type="hidden" id="promoReqKey"/>
+    <div style="font-size:.55rem;color:var(--text-faint);margin-bottom:.6rem;line-height:1.5;">One requirement per line. These appear on the personnel files of operatives eligible for this promotion. Editing requirements does not reset any operative's existing progress.</div>
+    <div class="modal-group">
+      <label id="promoReqTransLabel">REQUIREMENTS</label>
+      <textarea class="modal-input" id="promoReqText" rows="8" placeholder="One requirement per line..." style="font-size:.62rem;line-height:1.6;"></textarea>
+    </div>
+    <div class="modal-err" id="promoReqErr"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" data-action="close-promoreq">[ CANCEL ]</button>
+      <button class="modal-save" data-action="save-promoreq">[ SAVE ]</button>
     </div>
   </div>
 </div>
@@ -2240,6 +2376,15 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
       <button class="rec-btn" data-action="new-compartment" style="font-size:.53rem;padding:1px 7px;">+ NEW</button>
     </div>
     <div id="adminCompartmentList"></div>
+
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">
+      <span>▸ OMEGA-1 PROMOTION REQUIREMENTS <span style="color:var(--text-faint);font-size:.52rem;">(per rank transition)</span></span>
+    </div>
+    <div id="adminPromoList"></div>
+
+    <div id="recycleBinHdr" style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ RECYCLE BIN (0)</div>
+    <div style="font-size:.52rem;color:var(--text-faint);margin-bottom:.4rem;line-height:1.5;">Deleted files and orders are held here. Restore returns them to active service; purge removes them permanently.</div>
+    <div id="adminRecycleList"></div>
 
     <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
       <span>▸ AUDIT LOG <span style="color:var(--text-faint);font-size:.52rem;">(last 100 actions)</span></span>
@@ -2928,8 +3073,10 @@ async function onLogin() { // Make function async
   loadPersonnel();
   loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
   loadCompartments();
+  loadPromoReqs();
   startPolling();
   setTimeout(showLoginNotifications, 1500); // after data loads
+  setTimeout(function(){ if (document.getElementById('tab-overview') && document.getElementById('tab-overview').classList.contains('active')) renderOverview(); }, 1500);
   if (typeof startSessionTimer === 'function') startSessionTimer();
 }
 
@@ -3002,6 +3149,7 @@ function _onUserActivity() {
 
 function logout() {
   stopPolling();
+  if (typeof stopOverviewHeartbeat === 'function') stopOverviewHeartbeat();
   if (typeof clearSessionTimers === 'function') clearSessionTimers();
   currentUser = null;
   if (typeof adminDirSelected !== 'undefined' && adminDirSelected.clear) adminDirSelected.clear();
@@ -3029,6 +3177,82 @@ function logout() {
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   setLoginMode('login');
+}
+
+// ================================================================
+//  PROMOTION REQUIREMENTS (Omega-1, CL5-editable)
+// ================================================================
+// Requirements are keyed by rank transition "From>To". Each value is an array of
+// { id, text } items. A personnel file tracks which items it has met toward its
+// NEXT rank in p.promoProgress (reset automatically on any rank change).
+var allPromoReqs = null; // map: { "From>To": [ {id,text}, ... ] }
+
+// Ordered low→high rank progression (the order operatives advance through).
+var PROMO_ORDER = ['Private','Specialist','Lance Corporal','Corporal','Sergeant','Command Sergeant','Lieutenant'];
+function promoNextRank(rank) {
+  var i = PROMO_ORDER.indexOf(rank);
+  if (i === -1 || i >= PROMO_ORDER.length - 1) return null;
+  return PROMO_ORDER[i + 1];
+}
+function promoKey(fromRank, toRank) { return fromRank + '>' + toRank; }
+
+// Default requirements (seeded on first load; CL5 can edit/extend afterwards).
+function defaultPromoReqs() {
+  function mk(arr){ return arr.map(function(t,i){ return { id: 'r'+(i+1), text: t }; }); }
+  return {
+    'Private>Specialist': mk([]),
+    'Specialist>Lance Corporal': mk([]),
+    'Lance Corporal>Corporal': mk([
+      'Host a training while being observed by a Lieutenant or above, or a personnel tagged with "Development Manager" or "Development Assistant".',
+      'Complete Personnel File.',
+      'Pass the NCO Questionnaire.'
+    ]),
+    'Corporal>Sergeant': mk([
+      'Lead an Escort while being observed by a Lieutenant or above, or a personnel tagged with "Development Manager" or "Development Assistant".',
+      'Scout 1 Potential New Candidate.',
+      'Join a Squadron.',
+      'Pass the Leadership Questionnaire.'
+    ]),
+    'Sergeant>Command Sergeant': mk([
+      'Mentor a new operative through the ranks of PVT and SPC.',
+      'Host Regular Patrols / Trainings / Scouts.',
+      'Lead or play a Major Role in a Roleplay Scenario while being observed by a Lieutenant or above.'
+    ]),
+    'Command Sergeant>Lieutenant': mk([
+      'Promotions to Lieutenant and above are assessed on a case-by-case basis by command.'
+    ])
+  };
+}
+async function promoReqsGetAll() {
+  if (firebaseReady) { var all = await fbGetAll('/promoReqs'); return all || null; }
+  var raw = lsGet('promoReqs/config');
+  return raw || null;
+}
+async function promoReqsSave() {
+  if (firebaseReady) await fbSet('/promoReqs', allPromoReqs);
+  else lsSet('promoReqs/config', allPromoReqs);
+}
+async function loadPromoReqs() {
+  try {
+    var stored = await promoReqsGetAll();
+    if (stored && typeof stored === 'object') {
+      allPromoReqs = stored;
+      // Backfill any transitions missing from stored config (e.g. after an app update)
+      var defs = defaultPromoReqs(), changed = false;
+      Object.keys(defs).forEach(function(k){ if (!allPromoReqs[k]) { allPromoReqs[k] = defs[k]; changed = true; } });
+      if (changed) { try { await promoReqsSave(); } catch(_){} }
+    } else {
+      allPromoReqs = defaultPromoReqs();
+      try { await promoReqsSave(); } catch(_){}
+    }
+  } catch(e) { allPromoReqs = defaultPromoReqs(); }
+}
+// Requirement items for a file's next promotion (null if top of ladder / none defined).
+function promoReqsFor(rank) {
+  if (!allPromoReqs) return null;
+  var next = promoNextRank(rank);
+  if (!next) return null;
+  return { next: next, items: allPromoReqs[promoKey(rank, next)] || [] };
 }
 
 // ================================================================
@@ -3102,13 +3326,26 @@ function fillCompartmentSelect(sel, selectedVal) {
 //  ORDERS
 // ================================================================
 var allOrders = [], activeFilter = 'ALL', pollTimer = null;
+// ── Soft-delete (recycle bin) ──
+// Deleted records are kept (with deleted/deletedBy/deletedAt) and partitioned out of the
+// live arrays so every existing render automatically excludes them. CL5 can restore or purge.
+var deletedPersonnel = [], deletedEthics = [], deletedOrders = [], deletedEthicsOrders = [];
+// Partition a freshly-loaded record list into [live, deleted], routing deleted ones to a sink.
+function partitionDeleted(records, assignSink) {
+  var live = [], dead = [];
+  (records || []).forEach(function(r){
+    if (r && r.deleted) dead.push(r); else if (r) live.push(r);
+  });
+  if (typeof assignSink === 'function') assignSink(dead);
+  return live;
+}
 var expandedOrders = new Set();   // tracks which order cards are showing comments
 var commentCache   = {};          // orderId → array of comment objects (client cache)
 
 async function loadOrders() {
   try {
     var raw = await ordersGetAll();
-    allOrders = raw.filter(function(o) { return o && o.id; });
+    allOrders = partitionDeleted(raw.filter(function(o) { return o && o.id; }), function(d){ deletedOrders = d; });
     allOrders.sort(function(a, b) { return b.created - a.created; });
     document.getElementById('refreshNote').textContent =
       'last sync ' + new Date().toISOString().slice(11,19) + ' UTC';
@@ -3231,6 +3468,142 @@ async function saveChangePass() {
 }
 
 // ── Login notifications: surface pending actions relevant to the user ──
+// ── Command Overview dashboard ──
+// True when the Overview tab is the one currently displayed.
+function overviewIsActive() {
+  var t = document.getElementById('tab-overview');
+  return !!(t && t.classList.contains('active'));
+}
+// Re-render the dashboard only if it's the active tab (used by live-sync hooks).
+function refreshOverviewIfActive() {
+  if (overviewIsActive()) renderOverview();
+}
+// Lightweight heartbeat so the clock and time-relative figures stay fresh between
+// the 30 s background data polls. Re-renders every 15 s while the tab is open.
+var _overviewHeartbeat = null;
+function startOverviewHeartbeat() {
+  stopOverviewHeartbeat();
+  _overviewHeartbeat = setInterval(function(){
+    if (overviewIsActive()) renderOverview(); else stopOverviewHeartbeat();
+  }, 15000);
+}
+function stopOverviewHeartbeat() {
+  if (_overviewHeartbeat) { clearInterval(_overviewHeartbeat); _overviewHeartbeat = null; }
+}
+// Programmatically activate a tab by id (used by dashboard click-throughs).
+function goToTab(id) {
+  var el = document.querySelector('.nav-tab[onclick*="\'' + id + '\'"], .nav-standalone-tab[onclick*="\'' + id + '\'"]');
+  if (el) { switchTab(el, id); return; }
+  // Fallback: activate the content panel directly if the nav item isn't found.
+  document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+  var tab = document.getElementById('tab-' + id);
+  if (tab) tab.classList.add('active');
+}
+function ovCard(title, value, sub, accent, tab, urgent) {
+  var click = tab ? ' onclick="goToTab(\'' + tab + '\')" style="cursor:pointer;"' : '';
+  return '<div class="ov-card' + (urgent ? ' ov-urgent' : '') + '"' + click + '>'
+    + '<div class="ov-val" style="color:' + (accent || 'var(--green)') + ';">' + value + '</div>'
+    + '<div class="ov-title">' + e(title) + '</div>'
+    + (sub ? '<div class="ov-sub">' + e(sub) + '</div>' : '')
+    + '</div>';
+}
+function renderOverview() {
+  var el = document.getElementById('overviewBody');
+  if (!el) return;
+  if (!currentUser) { el.innerHTML = '<div style="color:var(--text-faint);font-size:.6rem;">Authenticate to view command overview.</div>'; return; }
+  var cl = parseInt(currentUser.clearance || '3');
+  var cards = [];
+  var alerts = [];
+
+  // ── Safety-critical (CL5): active duress signals ──
+  if (cl >= 5) {
+    var duress = Object.values(allUsers || {}).filter(function(u){ return u && u.duressActive; });
+    if (duress.length) {
+      alerts.push(ovCard('ACTIVE DURESS SIGNAL' + (duress.length>1?'S':''), duress.length,
+        duress.map(function(u){ return u.displayId || u.id; }).slice(0,3).join(', '), 'var(--red)', null, true));
+    }
+  }
+
+  // ── Integrity holds (senior CL4 + CL5): compromised / impostor-review ──
+  if (canViewFileIntegrity && canViewFileIntegrity()) {
+    var holds = Object.values(allUsers || {}).filter(function(u){
+      return u && (u.integrityStatus === 'compromised' || u.integrityStatus === 'impostor-review');
+    });
+    if (holds.length) {
+      alerts.push(ovCard('SECURITY HOLDS', holds.length, 'compromised / impostor review', 'var(--red)', null, true));
+    }
+  }
+
+  // ── Pending registrations (CL5) ──
+  if (cl >= 5) {
+    var pending = Object.values(allUsers || {}).filter(function(u){ return u && u.status === 'pending'; }).length;
+    cards.push(ovCard('Registrations Pending', pending, pending ? 'awaiting approval' : 'all clear',
+      pending ? 'var(--amber)' : 'var(--green)', 'log'));
+  }
+
+  // ── Recruitment votes awaiting this user (CL4+) ──
+  if (cl >= 4) {
+    var votesO = (allRecruitment || []).filter(function(r){ return r.stage === 'scouting' && !(r.votes && r.votes[currentUser.id]); }).length;
+    var votesE = (allEthicsRecruit || []).filter(function(r){ return r.stage === 'application' && !(r.votes && r.votes[currentUser.id]); }).length;
+    if (votesO) cards.push(ovCard('Omega-1 Votes', votesO, 'recruits awaiting your vote', 'var(--amber)', 'recruit'));
+    if (votesE) cards.push(ovCard('Ethics Votes', votesE, 'applications awaiting your vote', 'var(--amber)', 'ethics-recruit'));
+  }
+
+  // ── Strike appeals to review (CL5) ──
+  if (cl >= 5) {
+    var appeals = 0;
+    (allPersonnel || []).concat(allEthicsPersonnel || []).forEach(function(p){
+      if (Array.isArray(p.strikes)) appeals += p.strikes.filter(function(s){ return s.status === 'Appealed' && s.appeal && !s.appeal.resolution; }).length;
+    });
+    if (appeals) cards.push(ovCard('Strike Appeals', appeals, 'awaiting review', 'var(--amber)', 'blacklist'));
+  }
+
+  // ── Promotion-ready Omega-1 operatives (CL4+) ──
+  if (cl >= 4 && allPromoReqs) {
+    var ready = (allPersonnel || []).filter(function(p){
+      if (!p || p.status !== 'Active') return false;
+      var info = promoReqsFor(p.rank);
+      if (!info || !info.items || !info.items.length) return false;
+      var prog = (p.promoProgress && typeof p.promoProgress === 'object') ? p.promoProgress : {};
+      return info.items.every(function(it){ return prog[it.id] && prog[it.id].met; });
+    });
+    if (ready.length) {
+      cards.push(ovCard('Promotion-Ready', ready.length, ready.map(function(p){ return p.name; }).slice(0,3).join(', '), 'var(--green)', 'personnel-files'));
+    }
+  }
+
+  // ── Active orders by priority (everyone) ──
+  var liveOrders = (allOrders || []).filter(function(o){ return o.status !== 'CANCELLED' && o.status !== 'ARCHIVED' && !orderIsRestricted(o); });
+  var crit = liveOrders.filter(function(o){ return (o.priority||'').toUpperCase() === 'CRITICAL'; }).length;
+  cards.push(ovCard('Active Directives', liveOrders.length, crit ? crit + ' critical' : 'omega-1 orders', crit ? 'var(--red)' : 'var(--green)', 'orders'));
+
+  // ── Personnel on active leave (CL4+) ──
+  if (cl >= 4) {
+    var onLeave = (allPersonnel || []).filter(function(p){
+      return Array.isArray(p.leave) && p.leave.some(function(l){ return isLeaveActive ? isLeaveActive(l) : (l && l.status === 'active'); });
+    }).length;
+    if (onLeave) cards.push(ovCard('On Leave', onLeave, 'LOA / ROA active', 'var(--text-dim)', 'roster'));
+  }
+
+  // ── Recycle bin (CL5) ──
+  if (cl >= 5) {
+    var binCount = recycleBinCount();
+    if (binCount) cards.push(ovCard('Recycle Bin', binCount, 'deleted items recoverable', 'var(--text-dim)', null));
+  }
+
+  var greeting = '<div style="font-size:.62rem;color:var(--text-dim);margin-bottom:.7rem;line-height:1.5;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">'
+    + '<span>Welcome, <span style="color:var(--green);">EC·' + e(currentUser.id) + '</span> · Clearance Level ' + e(currentUser.clearance)
+    + ' · ' + e(safeDateTime(Date.now())) + ' UTC</span>'
+    + '<span style="font-size:.5rem;letter-spacing:.1em;color:var(--green-dim);border:1px solid var(--border2);border-radius:8px;padding:1px 7px;display:inline-flex;align-items:center;gap:4px;"><span class="ov-live-dot"></span>LIVE</span></div>';
+
+  var alertBlock = alerts.length
+    ? '<div style="font-size:.55rem;letter-spacing:.12em;color:var(--red);margin:.2rem 0 .4rem;">⚠ REQUIRES ATTENTION</div><div class="ov-grid">' + alerts.join('') + '</div>'
+    : '';
+  var cardBlock = '<div class="ov-grid" style="margin-top:.7rem;">' + cards.join('') + '</div>';
+
+  el.innerHTML = greeting + alertBlock + cardBlock;
+}
+
 function showLoginNotifications() {
   if (!currentUser) return;
   var banner = document.getElementById('notifBanner');
@@ -3975,17 +4348,19 @@ function _openSSE(path, callback) {
 
 // ── SSE data callbacks ──
 function _onOrdersSSE(raw) {
-  allOrders = Object.values(raw).filter(function(o){ return o && o.id; })
+  allOrders = partitionDeleted(Object.values(raw).filter(function(o){ return o && o.id; }), function(d){ deletedOrders = d; })
               .sort(function(a,b){ return b.created - a.created; });
   updateOrderBadge();
   _safeRender(renderOrders, 'ordersList');
+  refreshOverviewIfActive();
 }
 
 function _onEthicsOrdersSSE(raw) {
-  allEthicsOrders = Object.values(raw).filter(function(o){ return o && o.id; })
+  allEthicsOrders = partitionDeleted(Object.values(raw).filter(function(o){ return o && o.id; }), function(d){ deletedEthicsOrders = d; })
                     .sort(function(a,b){ return b.created - a.created; });
   updateEthicsOrderBadge();
   _safeRender(renderEthicsOrders, 'ethicsOrdersList');
+  refreshOverviewIfActive();
 }
 
 function _onRecruitSSE(raw) {
@@ -3993,6 +4368,7 @@ function _onRecruitSSE(raw) {
                    .sort(function(a,b){ return b.created - a.created; });
   updateRecruitBadge();
   _safeRender(renderRecruitment, 'recScoutingList');
+  refreshOverviewIfActive();
 }
 
 function _onEthicsRecruitSSE(raw) {
@@ -4000,6 +4376,7 @@ function _onEthicsRecruitSSE(raw) {
                      .sort(function(a,b){ return b.created - a.created; });
   updateEthicsRecruitBadge();
   _safeRender(renderEthicsRecruit, 'ethicsAppList');
+  refreshOverviewIfActive();
 }
 
 // ── Guard against re-rendering while a user is typing in that section ──
@@ -4025,7 +4402,7 @@ async function _bgPoll() {
   if (tabId === 'tab-personnel-files' || tabId === 'tab-roster') {
     try { await loadPersonnel(); } catch(_) {}
   } else {
-    try { allPersonnel = (await personnelGetAll()).filter(function(p){ return p && p.id; }); }
+    try { allPersonnel = partitionDeleted((await personnelGetAll()).filter(function(p){ return p && p.id; }), function(d){ deletedPersonnel = d; }); }
     catch(_) {}
   }
 
@@ -4033,7 +4410,7 @@ async function _bgPoll() {
   if (tabId === 'tab-ethics-files' || tabId === 'tab-ethics-roster') {
     try { await loadEthicsPersonnel(); } catch(_) {}
   } else {
-    try { allEthicsPersonnel = (await ethicsPersonnelGetAll()).filter(function(p){ return p && p.id; }); }
+    try { allEthicsPersonnel = partitionDeleted((await ethicsPersonnelGetAll()).filter(function(p){ return p && p.id; }), function(d){ deletedEthics = d; }); }
     catch(_) {}
   }
 
@@ -4050,6 +4427,9 @@ async function _bgPoll() {
   if (parseInt(currentUser.clearance || 0) >= 5) {
     try { await loadAdminData(); } catch(_) {}
   }
+
+  // Keep the command overview live if it's the active tab
+  refreshOverviewIfActive();
 }
 
 // ── Sync status indicator ──
@@ -4123,9 +4503,15 @@ async function updateOrderStatus(id, status) {
 }
 
 async function deleteOrder(id) {
-  if (!await pfConfirm('CONFIRM: DELETE ORDER?')) return;
-  await orderDel(id);
-  allOrders = allOrders.filter(function(o) { return o.id !== id; });
+  if (!await pfConfirm('Move this order to the recycle bin?\n\nIt can be restored by CL5 command from the admin panel.')) return;
+  var o = allOrders.find(function(x){ return x.id === id; });
+  if (o) {
+    o.deleted = true; o.deletedBy = currentUser.id; o.deletedAt = Date.now();
+    try { await orderSet(id, o); } catch(e) { alert('ERROR: '+e.message); return; }
+    auditRecord('DELETED ORDER', (o.title||id) + ' → recycle bin');
+    allOrders = allOrders.filter(function(x) { return x.id !== id; });
+    if (!deletedOrders.some(function(x){ return x.id===id; })) deletedOrders.push(o);
+  }
   renderOrders();
   updateOrderBadge();
 }
@@ -4639,6 +5025,7 @@ function updateRecruitBadge() {
 
 function switchTab(el, id) {
   document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.nav-standalone-tab').forEach(function(t){ t.classList.remove('active'); });
   document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
   el.classList.add('active');
   var tab = document.getElementById('tab-'+id);
@@ -4651,6 +5038,8 @@ function switchTab(el, id) {
     else d.classList.remove('has-active');
   });
   if (id === 'matrix')          animateBars();
+  if (id === 'overview')        { renderOverview(); startOverviewHeartbeat(); }
+  else                          stopOverviewHeartbeat();
   if (id === 'orders')          { loadOrders(); populateCompartmentSelect('oCompartment'); }
   if (id === 'ethics-orders')   { loadEthicsOrders(); populateCompartmentSelect('ethicsOrderCompartment'); }
   if (id === 'ethics-recruit')  loadEthicsRecruit();
@@ -4874,6 +5263,7 @@ async function openAdminPanel() {
     try { allBlacklistConfigs = await blConfigGetAll(); } catch(_) {}
   }
   await loadCompartments();
+  await loadPromoReqs();
   loadAuditLog();
   renderAdminPanel();
 }
@@ -5066,6 +5456,9 @@ function renderAdminPanel() {
       + '</div>';
   }
   renderCompartmentList();
+  renderPromoReqList();
+  renderRecycleBin();
+  updateRecycleHdr();
 }
 
 async function adminApprove(uid) {
@@ -5407,6 +5800,144 @@ async function bulkRevoke() {
   alert('Revoked ' + ok + ' account(s).');
 }
 
+// ── Recycle bin (soft-delete restore / purge, CL5) ──
+function recycleBinCount() {
+  return deletedPersonnel.length + deletedEthics.length + deletedOrders.length + deletedEthicsOrders.length;
+}
+function renderRecycleBin() {
+  var el = document.getElementById('adminRecycleList');
+  if (!el) return;
+  var groups = [
+    { label:'Omega-1 Files',   arr:deletedPersonnel,     kind:'pf', name:function(r){ return r.name || r.id; } },
+    { label:'Ethics Files',    arr:deletedEthics,        kind:'ef', name:function(r){ return r.name || r.id; } },
+    { label:'Orders',          arr:deletedOrders,        kind:'order', name:function(r){ return r.title || r.id; } },
+    { label:'Ethics Orders',   arr:deletedEthicsOrders,  kind:'eorder', name:function(r){ return r.title || r.id; } }
+  ];
+  var total = recycleBinCount();
+  if (!total) { el.innerHTML = '<div style="font-size:.58rem;color:var(--text-faint);padding:.3rem 0;">Recycle bin is empty.</div>'; return; }
+  var html = '';
+  groups.forEach(function(g){
+    if (!g.arr.length) return;
+    html += '<div style="font-size:.55rem;color:var(--text-faint);letter-spacing:.1em;margin:.5rem 0 .25rem;">' + e(g.label.toUpperCase()) + ' (' + g.arr.length + ')</div>';
+    g.arr.forEach(function(r){
+      html += '<div style="border:1px solid var(--border);padding:.35rem .6rem;margin-bottom:2px;font-size:.58rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">'
+        + '<div style="flex:1;min-width:0;"><span style="color:var(--text);">' + e(g.name(r)) + '</span>'
+        + '<span style="color:var(--text-faint);font-size:.52rem;margin-left:.4rem;">deleted' + (r.deletedBy?' by EC·'+e(r.deletedBy):'') + (r.deletedAt?' · '+safeDate(r.deletedAt):'') + '</span></div>'
+        + '<div style="display:flex;gap:.3rem;flex-shrink:0;">'
+        + '<button class="rec-btn" data-action="restore-rec" data-kind="' + g.kind + '" data-id="' + e(r.id) + '" style="font-size:.52rem;padding:1px 7px;">RESTORE</button>'
+        + '<button class="rec-btn del-btn" data-action="purge-rec" data-kind="' + g.kind + '" data-id="' + e(r.id) + '" style="font-size:.52rem;padding:1px 7px;">PURGE</button>'
+        + '</div></div>';
+    });
+  });
+  el.innerHTML = html;
+}
+async function restoreRecord(kind, id) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var map = {
+    pf:     { sink:deletedPersonnel,    live:allPersonnel,      set:personnelSet,      reRender:function(){ renderPersonnelFiles(); renderRoster(); } },
+    ef:     { sink:deletedEthics,       live:allEthicsPersonnel,set:ethicsPersonnelSet,reRender:function(){ renderEthicsFiles(); renderEthicsRoster(); } },
+    order:  { sink:deletedOrders,       live:allOrders,         set:orderSet,          reRender:function(){ renderOrders(); updateOrderBadge(); } },
+    eorder: { sink:deletedEthicsOrders, live:allEthicsOrders,   set:ethicsOrderSet,    reRender:function(){ renderEthicsOrders(); updateEthicsOrderBadge(); } }
+  };
+  var m = map[kind]; if (!m) return;
+  var idx = m.sink.findIndex(function(r){ return r.id === id; });
+  if (idx === -1) return;
+  var rec = m.sink[idx];
+  delete rec.deleted; delete rec.deletedBy; delete rec.deletedAt;
+  try {
+    await m.set(id, rec);
+    m.sink.splice(idx, 1);
+    if (!m.live.some(function(r){ return r.id===id; })) m.live.push(rec);
+    auditRecord('RESTORED RECORD', (rec.name||rec.title||id) + ' [' + kind + ']');
+    m.reRender();
+    renderRecycleBin();
+    var hdr = document.getElementById('recycleBinHdr'); if (hdr) updateRecycleHdr();
+  } catch(err) { alert('RESTORE ERROR: ' + err.message); }
+}
+async function purgeRecord(kind, id) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!await pfConfirm('PERMANENTLY purge this record?\n\nThis cannot be undone — it is removed from the database entirely.')) return;
+  var map = {
+    pf:     { sink:deletedPersonnel,    del:personnelDel },
+    ef:     { sink:deletedEthics,       del:ethicsPersonnelDel },
+    order:  { sink:deletedOrders,       del:orderDel },
+    eorder: { sink:deletedEthicsOrders, del:ethicsOrderDel }
+  };
+  var m = map[kind]; if (!m) return;
+  var idx = m.sink.findIndex(function(r){ return r.id === id; });
+  if (idx === -1) return;
+  var rec = m.sink[idx];
+  try {
+    await m.del(id);
+    m.sink.splice(idx, 1);
+    auditRecord('PURGED RECORD', (rec.name||rec.title||id) + ' [' + kind + ']');
+    renderRecycleBin();
+    updateRecycleHdr();
+  } catch(err) { alert('PURGE ERROR: ' + err.message); }
+}
+function updateRecycleHdr() {
+  var hdr = document.getElementById('recycleBinHdr');
+  if (hdr) hdr.textContent = '▸ RECYCLE BIN (' + recycleBinCount() + ')';
+}
+
+// ── Omega-1 promotion requirements management (CL5) ──
+function renderPromoReqList() {
+  var el = document.getElementById('adminPromoList');
+  if (!el) return;
+  if (!allPromoReqs) { el.innerHTML = '<div style="font-size:.58rem;color:var(--text-faint);">Loading…</div>'; return; }
+  // Show every transition in ladder order
+  var rows = [];
+  for (var i = 0; i < PROMO_ORDER.length - 1; i++) {
+    var from = PROMO_ORDER[i], to = PROMO_ORDER[i+1];
+    var key = promoKey(from, to);
+    var items = allPromoReqs[key] || [];
+    rows.push('<div style="border:1px solid var(--border);padding:.4rem .65rem;margin-bottom:2px;font-size:.6rem;display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;">'
+      + '<div style="flex:1;min-width:0;">'
+      + '<span style="color:var(--green);font-family:\'VT323\',monospace;">' + e(from) + ' → ' + e(to) + '</span>'
+      + '<span style="color:var(--text-faint);margin-left:.4rem;font-size:.54rem;">' + (items.length ? items.length + ' requirement' + (items.length===1?'':'s') : 'no specific requirements') + '</span>'
+      + (items.length ? '<div style="color:var(--text-dim);font-size:.54rem;margin-top:.25rem;line-height:1.5;">' + items.map(function(it){ return '• ' + e(it.text); }).join('<br>') + '</div>' : '')
+      + '</div>'
+      + '<button class="rec-btn" data-action="edit-promoreq" data-key="' + e(key) + '" style="font-size:.53rem;padding:1px 7px;flex-shrink:0;">EDIT</button>'
+      + '</div>');
+  }
+  el.innerHTML = rows.join('');
+}
+function openPromoReqModal(key) {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!allPromoReqs) return;
+  var parts = key.split('>');
+  document.getElementById('promoReqKey').value = key;
+  document.getElementById('promoReqTitle').textContent = 'REQUIREMENTS · ' + parts[0] + ' → ' + parts[1];
+  document.getElementById('promoReqTransLabel').textContent = 'REQUIREMENTS FOR ' + parts[1].toUpperCase();
+  var items = allPromoReqs[key] || [];
+  document.getElementById('promoReqText').value = items.map(function(it){ return it.text; }).join('\n');
+  document.getElementById('promoReqErr').textContent = '';
+  document.getElementById('promoReqModal').classList.add('open');
+}
+function closePromoReqModal() { document.getElementById('promoReqModal').classList.remove('open'); }
+async function savePromoReq() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  var key = document.getElementById('promoReqKey').value;
+  if (!allPromoReqs || !key) return;
+  var lines = document.getElementById('promoReqText').value.split('\n')
+    .map(function(s){ return s.trim(); }).filter(Boolean);
+  // Preserve existing item ids by position where possible (keeps progress aligned),
+  // assigning fresh ids for new lines.
+  var existing = allPromoReqs[key] || [];
+  var items = lines.map(function(text, idx){
+    var id = existing[idx] ? existing[idx].id : ('r' + (idx+1) + '_' + Date.now().toString(36).slice(-3));
+    return { id: id, text: text };
+  });
+  allPromoReqs[key] = items;
+  try {
+    await promoReqsSave();
+    auditRecord('EDITED PROMOTION REQS', key + ' (' + items.length + ' item' + (items.length===1?'':'s') + ')');
+    closePromoReqModal();
+    renderPromoReqList();
+    if (typeof renderPersonnelFiles === 'function') renderPersonnelFiles();
+  } catch(err) { document.getElementById('promoReqErr').textContent = '> ERROR: ' + err.message; }
+}
+
 // ── Access compartment management (CL5) ──
 function renderCompartmentList() {
   var el = document.getElementById('adminCompartmentList');
@@ -5735,7 +6266,7 @@ async function refreshClearance() {
 async function loadPersonnel() {
   try {
     var raw = await personnelGetAll();
-    allPersonnel = raw.filter(function(p){ return p && p.id; });
+    allPersonnel = partitionDeleted(raw.filter(function(p){ return p && p.id; }), function(d){ deletedPersonnel = d; });
   } catch(e) { allPersonnel = []; }
   await loadSquadrons();
   renderPersonnelFiles();
@@ -5831,6 +6362,46 @@ async function setFileIntegrity(uid, status) {
     if (typeof renderAdminPanel === 'function' && document.getElementById('adminModal') && document.getElementById('adminModal').classList.contains('open')) renderAdminPanel();
   } catch(err) { alert('ERROR: ' + err.message); }
 }
+
+// ── Promotion requirements section (Omega-1 personnel files) ──
+function buildPromoSection(p, canEdit) {
+  if (!allPromoReqs) { return '<div style="font-size:.56rem;color:var(--text-faint);">Loading requirements…</div>'; }
+  var info = promoReqsFor(p.rank);
+  if (!info) {
+    return '<div style="font-size:.58rem;color:var(--text-faint);line-height:1.5;">This operative is at the top of the standard progression. Further advancement is assessed on a case-by-case basis by command.</div>';
+  }
+  var items = info.items || [];
+  var progress = (p.promoProgress && typeof p.promoProgress === 'object') ? p.promoProgress : {};
+  if (!items.length) {
+    return '<div style="font-size:.58rem;color:var(--text-dim);line-height:1.6;">Advancement to <strong style="color:var(--green);">' + e(info.next) + '</strong> — <span style="color:var(--text-faint);">no specific requirements.</span></div>';
+  }
+  var metCount = items.filter(function(it){ return progress[it.id] && progress[it.id].met; }).length;
+  var head = '<div style="font-size:.58rem;color:var(--text-dim);margin-bottom:.5rem;line-height:1.5;">Advancement to <strong style="color:var(--green);">' + e(info.next) + '</strong> · <span style="color:' + (metCount===items.length?'var(--green)':'var(--amber)') + ';">' + metCount + '/' + items.length + ' complete</span></div>';
+  var rows = items.map(function(it){
+    var st = progress[it.id] || {};
+    var done = !!st.met;
+    var box = canEdit
+      ? '<input type="checkbox" ' + (done?'checked':'') + ' onchange="togglePromoReq(\'' + e(p.id) + '\',\'' + e(it.id) + '\',this.checked)" style="margin-top:2px;cursor:pointer;flex-shrink:0;"/>'
+      : '<span style="flex-shrink:0;color:' + (done?'var(--green)':'var(--text-faint)') + ';">' + (done?'☑':'☐') + '</span>';
+    var meta = done && st.metBy ? '<div style="font-size:.5rem;color:var(--text-faint);margin-top:1px;">✓ EC·' + e(st.metBy) + (st.metAt?' · '+safeDate(st.metAt):'') + '</div>' : '';
+    return '<label style="display:flex;gap:.45rem;align-items:flex-start;padding:.25rem 0;font-size:.58rem;line-height:1.5;' + (canEdit?'cursor:pointer;':'') + (done?'color:var(--text);':'color:var(--text-dim);') + '">'
+      + box + '<span>' + e(it.text) + meta + '</span></label>';
+  }).join('');
+  return head + rows;
+}
+async function togglePromoReq(pfId, reqId, met) {
+  var rec = allPersonnel.find(function(x){ return x.id === pfId; });
+  if (!rec) return;
+  if (!canManageFile(rec, 'pf')) { alert('You do not have authority to manage this file.'); renderPersonnelFiles(); return; }
+  if (!rec.promoProgress || typeof rec.promoProgress !== 'object') rec.promoProgress = {};
+  if (met) rec.promoProgress[reqId] = { met: true, metBy: currentUser.id, metAt: Date.now() };
+  else delete rec.promoProgress[reqId];
+  try {
+    await personnelSet(pfId, rec);
+    auditRecord('PROMOTION REQ ' + (met?'MET':'CLEARED'), 'Ω-1 ' + (rec.name||pfId) + ' · ' + reqId);
+    renderPersonnelFiles();
+  } catch(err) { alert('ERROR: ' + err.message); }
+}
 function getEfReadLevel(p) {
   if (!p) return 3;
   if (p.role === 'Chairman' || p.role === 'Member') return 6;
@@ -5892,8 +6463,19 @@ function getUserReadLevel() {
 
 function renderPersonnelFiles() {
   var query = (document.getElementById('pfSearch') && document.getElementById('pfSearch').value || '').toLowerCase();
+  var fStatus = (document.getElementById('pfFilterStatus') && document.getElementById('pfFilterStatus').value) || '';
   var list  = document.getElementById('pfList');
   if (!list) return;
+  // Populate the rank filter once (idempotent), then read the active value so the
+  // selection works regardless of call order.
+  var rankSel = document.getElementById('pfFilterRank');
+  if (rankSel && rankSel.options.length <= 1) {
+    RANKS.forEach(function(rk){
+      var o = document.createElement('option'); o.value = rk; o.textContent = rk.toUpperCase();
+      rankSel.appendChild(o);
+    });
+  }
+  var fRank = (rankSel && rankSel.value) || '';
 
   var canEdit = canEditPersonnel();
   var pfNewBtn = document.getElementById('pfNewBtn');
@@ -5903,11 +6485,22 @@ function renderPersonnelFiles() {
   if (pfNotice) pfNotice.style.display = (!currentUser || !canEdit) && currentUser ? 'block' : 'none';
 
   var filtered = allPersonnel.filter(function(p) {
+    if (fStatus && (p.status || 'Active') !== fStatus) return false;
+    if (fRank && p.rank !== fRank) return false;
     if (!query) return true;
     return (p.name     || '').toLowerCase().includes(query) ||
            (p.nickname || '').toLowerCase().includes(query) ||
            (p.rank     || '').toLowerCase().includes(query);
   });
+
+  // Result count readout (filtered vs total)
+  var pfCountEl = document.getElementById('pfCount');
+  if (pfCountEl) {
+    var anyFilter = !!(query || fStatus || fRank);
+    pfCountEl.textContent = anyFilter
+      ? '(' + filtered.length + ' of ' + allPersonnel.length + ')'
+      : '(' + allPersonnel.length + ')';
+  }
 
   // Access control: hide files of ranks above the current user's level.
   // Users always see their own file regardless of rank.
@@ -6141,6 +6734,16 @@ var linkedBadge = linkedPfIds.has(p.id)
               body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'') },
             { key:'notes',     label:'NOTES ON FILE',        count: ' ('+notes.length+')', body: notesHtml + noteForm },
           ];
+          (function(){
+            var pr = promoReqsFor(p.rank);
+            var cnt = '';
+            if (pr && pr.items && pr.items.length) {
+              var prog = (p.promoProgress && typeof p.promoProgress==='object') ? p.promoProgress : {};
+              var done = pr.items.filter(function(it){ return prog[it.id] && prog[it.id].met; }).length;
+              cnt = ' ('+done+'/'+pr.items.length+')';
+            }
+            sections.push({ key:'promo', label:'▲ PROMOTION REQUIREMENTS', count: cnt, body: buildPromoSection(p, canEdit) });
+          })();
           if (canViewFileIntegrity()) {
             sections.push({ key:'security', label:'⚕ SECURITY STATUS', count:'', body: fileIntegrityControl(p.id, 'pf') });
           }
@@ -6214,25 +6817,25 @@ function renderRoster() {
     if (rosterRedacted.has(p.id)) {
       rows +=
         '<tr style="opacity:.55;">' +
-          '<td class="roster-num">' + counter++ + '</td>' +
-          '<td class="roster-name" style="font-family:\'VT323\',monospace;letter-spacing:.08em;">▨ ' + (p.nickname ? e(p.nickname) : '[ REDACTED ]') + '</td>' +
-          '<td class="roster-nick" style="color:var(--text-faint);">— CLASSIFIED —</td>' +
-          '<td><span class="badge b-dim" style="font-size:.5rem;">●●●</span></td>' +
-          '<td style="font-size:.62rem;color:var(--text-faint);">——</td>' +
+          '<td class="roster-num" data-label="#">' + counter++ + '</td>' +
+          '<td class="roster-name" data-label="NAME" style="font-family:\'VT323\',monospace;letter-spacing:.08em;">▨ ' + (p.nickname ? e(p.nickname) : '[ REDACTED ]') + '</td>' +
+          '<td class="roster-nick" data-label="NICKNAME" style="color:var(--text-faint);">— CLASSIFIED —</td>' +
+          '<td data-label="RANK"><span class="badge b-dim" style="font-size:.5rem;">●●●</span></td>' +
+          '<td data-label="D.O.B" style="font-size:.62rem;color:var(--text-faint);">——</td>' +
         '</tr>';
       return;
     }
     var activeLeavePf = getActiveLeave(p);
     rows +=
       '<tr>' +
-        '<td class="roster-num">' + counter++ + '</td>' +
-        '<td class="roster-name">' + e(p.name || '—') +
+        '<td class="roster-num" data-label="#">' + counter++ + '</td>' +
+        '<td class="roster-name" data-label="NAME">' + e(p.name || '—') +
           ((p.strikes||[]).some(isStrikeActive) ? ' <span class="roster-strike">⚠ ACTIVE STRIKE</span>' : '') +
           (activeLeavePf ? ' <span class="roster-leave roster-' + activeLeavePf.type.toLowerCase() + '">' + activeLeavePf.type.toUpperCase() + '</span>' : '') +
         '</td>' +
-        '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
-        '<td><span class="badge ' + rankBadgeClass(p.rank) + '">' + e(p.rank || '—') + '</span></td>' +
-        '<td style="font-size:.62rem;color:var(--text-dim);">' + formatDob(p.dob) + '</td>' +
+        '<td class="roster-nick" data-label="NICKNAME">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
+        '<td data-label="RANK"><span class="badge ' + rankBadgeClass(p.rank) + '">' + e(p.rank || '—') + '</span></td>' +
+        '<td data-label="D.O.B" style="font-size:.62rem;color:var(--text-dim);">' + formatDob(p.dob) + '</td>' +
       '</tr>';
   });
 
@@ -6241,6 +6844,31 @@ function renderRoster() {
 
 // ── Modal ──
 var pfModalMode = 'new'; // 'new' | 'edit'
+
+// ── Optimistic concurrency (conflict detection on save) ──
+// When an edit modal opens, we remember the record's `updated` stamp. On save we
+// re-fetch the record fresh and, if someone else saved in the meantime, warn before
+// overwriting. The whole check is best-effort and FAILS OPEN — any error lets the
+// save proceed, so the conflict guard can never block a legitimate save.
+var _pfEditBaseStamp = null;   // baseline `updated` of the Omega-1 file being edited
+var _efEditBaseStamp = null;   // baseline `updated` of the Ethics file being edited
+// Returns a warning string if the stored record changed since `baseStamp`, else null.
+async function detectSaveConflict(unit, id, baseStamp) {
+  try {
+    if (baseStamp == null) return null; // no baseline (new record / legacy) → no check
+    var list = unit === 'ef' ? await ethicsPersonnelGetAll() : await personnelGetAll();
+    var cur = (list || []).find(function(r){ return r && r.id === id; });
+    if (!cur) return null; // record gone (deleted/restored) → let save proceed
+    var curStamp = cur.updated || 0;
+    if (curStamp && curStamp > baseStamp) {
+      var who = cur.updatedBy ? ('EC·' + cur.updatedBy) : 'another user';
+      return 'This file was modified by ' + who + ' while you were editing it'
+           + (cur.updated ? ' (' + safeDateTime(cur.updated) + ' UTC)' : '')
+           + '.\n\nSaving now will overwrite their changes. Continue?';
+    }
+  } catch(_) { /* fail open */ }
+  return null;
+}
 
 function openPersonnelModal(id) {
   // Allow opening when triggered from the link-file flow, even if clearance is low
@@ -6251,6 +6879,13 @@ function openPersonnelModal(id) {
     if (editRec && !canManageFile(editRec, 'pf')) { alert('You do not have authority to edit this file.'); return; }
   }
   pfModalMode = id ? 'edit' : 'new';
+  // Capture the file's current version stamp so we can detect a conflicting save later.
+  if (id) {
+    var _baseRec = allPersonnel.find(function(p){ return p.id === id; });
+    _pfEditBaseStamp = _baseRec ? (_baseRec.updated || null) : null;
+  } else {
+    _pfEditBaseStamp = null;
+  }
 
   // During first-time link flow, restrict rank options to those that match the
   // user's approved stored clearance — prevents self-promotion via rank selection.
@@ -6344,6 +6979,8 @@ async function savePersonnelRecord() {
           changedBy: currentUser.id, clearance: currentUser.clearance,
           changedAt: Date.now()
         });
+        // Rank changed → the next-promotion target changed, so reset the requirement checklist.
+        rec.promoProgress = {};
       }
       rec.name      = name;
       rec.nickname  = document.getElementById('pfNick').value.trim();
@@ -6353,6 +6990,11 @@ async function savePersonnelRecord() {
       rec.steamId   = document.getElementById('pfSteamId').value.trim();
       rec.updatedBy = currentUser.id;
       rec.updated   = Date.now();
+      var _conflict = await detectSaveConflict('pf', editId, _pfEditBaseStamp);
+      if (_conflict && !(await pfConfirm(_conflict))) {
+        if (btn) { btn.disabled = false; btn.textContent = '[ SAVE ]'; }
+        return;
+      }
       try { await personnelSet(editId, rec); } catch(err) { alert('SAVE ERROR: ' + err.message); }
     }
   } else {
@@ -6414,6 +7056,62 @@ function efReactivate(id)  { setEthicsStatus(id, 'Active');        }
 
 // ── Universal delegated event handler ──
 // All card interactions use data-action attributes — no JS string quoting issues ever.
+// ── Modal dismissal: Escape key + backdrop click ──
+// Modals that must be acted on explicitly (security / acknowledgement) are never
+// auto-dismissed by Escape or a backdrop click.
+var NON_DISMISSIBLE_MODALS = ['sessionWarnModal', 'recoveryShowModal', 'changePassModal'];
+// Map of confirm-style modals to the button that should fire on Escape (cancel path),
+// so their pending Promise resolves correctly instead of hanging.
+var MODAL_CANCEL_BTN = {
+  pfConfirmModal: 'pfConfirmNo'
+};
+// Return the open modal with the highest z-index (the visually topmost one).
+function topOpenModal() {
+  var open = Array.prototype.slice.call(
+    document.querySelectorAll('.modal-overlay.open, .modal-overlay-2.open'));
+  if (!open.length) return null;
+  open.sort(function(a, b){
+    return (parseInt(getComputedStyle(b).zIndex) || 0) - (parseInt(getComputedStyle(a).zIndex) || 0);
+  });
+  return open[0];
+}
+// Dismiss a specific modal element safely (respecting cancel buttons + the block list).
+function dismissModal(modal) {
+  if (!modal || !modal.id) return false;
+  if (NON_DISMISSIBLE_MODALS.indexOf(modal.id) !== -1) return false;
+  var cancelBtnId = MODAL_CANCEL_BTN[modal.id];
+  if (cancelBtnId) {
+    var btn = document.getElementById(cancelBtnId);
+    if (btn) { btn.click(); return true; } // routes through the modal's own cancel logic
+  }
+  modal.classList.remove('open');
+  return true;
+}
+function dismissTopModal() {
+  var m = topOpenModal();
+  return m ? dismissModal(m) : false;
+}
+document.addEventListener('keydown', function(ev) {
+  if (ev.key === 'Escape' || ev.keyCode === 27) {
+    if (dismissTopModal()) { ev.preventDefault(); ev.stopPropagation(); }
+  }
+});
+// Backdrop click: dismiss only when both press and release land on the overlay
+// itself (prevents accidental dismissal when text selection ends on the backdrop).
+var _backdropDownTarget = null;
+document.addEventListener('mousedown', function(ev) {
+  _backdropDownTarget = ev.target;
+});
+document.addEventListener('mouseup', function(ev) {
+  var t = ev.target;
+  var sameTarget = (t === _backdropDownTarget);
+  _backdropDownTarget = null;
+  if (!sameTarget || !t || !t.classList) return;
+  if ((t.classList.contains('modal-overlay') || t.classList.contains('modal-overlay-2')) && t.classList.contains('open')) {
+    dismissModal(t);
+  }
+});
+
 document.addEventListener('click', function(ev) {
   var el = ev.target.closest('[data-action]');
   if (!el) return;
@@ -6538,6 +7236,11 @@ document.addEventListener('click', function(ev) {
     case 'admin-unlock':       adminUnlock(el.dataset.uid); break;
     case 'admin-ack-duress':   adminAckDuress(el.dataset.uid); break;
     case 'new-compartment':    openCompartmentModal(null); break;
+    case 'edit-promoreq':      openPromoReqModal(el.dataset.key); break;
+    case 'restore-rec':        restoreRecord(el.dataset.kind, el.dataset.id); break;
+    case 'purge-rec':          purgeRecord(el.dataset.kind, el.dataset.id); break;
+    case 'close-promoreq':     closePromoReqModal(); break;
+    case 'save-promoreq':      savePromoReq(); break;
     case 'edit-compartment':   openCompartmentModal(el.dataset.id); break;
     case 'close-compartment':  closeCompartmentModal(); break;
     case 'save-compartment':   saveCompartment(); break;
@@ -6881,11 +7584,11 @@ async function saveStrike() {
     // allPersonnel may be stale — try a fresh fetch
     try {
       if (system === 'ef') {
-        allEthicsPersonnel = (await ethicsPersonnelGetAll()).filter(function(p){ return p && p.id; });
+        allEthicsPersonnel = partitionDeleted((await ethicsPersonnelGetAll()).filter(function(p){ return p && p.id; }), function(d){ deletedEthics = d; });
         srcList = allEthicsPersonnel;
       } else {
         var fresh = await personnelGetAll();
-        allPersonnel = fresh.filter(function(p){ return p && p.id; });
+        allPersonnel = partitionDeleted(fresh.filter(function(p){ return p && p.id; }), function(d){ deletedPersonnel = d; });
         srcList = allPersonnel;
       }
       rec = srcList.find(function(p){ return p.id === pfId; });
@@ -7658,7 +8361,7 @@ var ethicsCommentCache   = {};
 async function loadEthicsOrders() {
   try {
     var raw = await ethicsOrdersGetAll();
-    allEthicsOrders = raw.filter(function(o){return o&&o.id;}).sort(function(a,b){return b.created-a.created;});
+    allEthicsOrders = partitionDeleted(raw.filter(function(o){return o&&o.id;}), function(d){ deletedEthicsOrders = d; }).sort(function(a,b){return b.created-a.created;});
   } catch(e){ allEthicsOrders=[]; }
   renderEthicsOrders();
   updateEthicsOrderBadge();
@@ -7695,11 +8398,19 @@ async function updateEthicsOrderStatus(id, status) {
 }
 
 async function deleteEthicsOrder(id) {
-  if (!await pfConfirm('DELETE THIS ETHICS ORDER?')) return;
-  allEthicsOrders = allEthicsOrders.filter(function(o){return o.id!==id;});
+  if (!await pfConfirm('Move this Ethics order to the recycle bin?\n\nIt can be restored by CL5 command from the admin panel.')) return;
+  var o = allEthicsOrders.find(function(x){ return x.id===id; });
+  if (o) {
+    o.deleted = true; o.deletedBy = currentUser.id; o.deletedAt = Date.now();
+    try { await ethicsOrderSet(id, o); } catch(e){ alert('ERROR: '+e.message); return; }
+    auditRecord('DELETED ETHICS ORDER', (o.title||id) + ' → recycle bin');
+    allEthicsOrders = allEthicsOrders.filter(function(x){return x.id!==id;});
+    if (!deletedEthicsOrders.some(function(x){ return x.id===id; })) deletedEthicsOrders.push(o);
+  }
   ethicsExpandedOrders.delete(id);
   delete ethicsCommentCache[id];
-  try { await ethicsOrderDel(id); renderEthicsOrders(); updateEthicsOrderBadge(); } catch(e){ alert('ERROR: '+e.message); }
+  renderEthicsOrders();
+  updateEthicsOrderBadge();
 }
 
 async function toggleEthicsComments(orderId) {
@@ -8304,6 +9015,31 @@ function renderPoiList() {
   var activeTgt = allTargets.filter(function(t){return !t.closed;});
   var closed    = allPOI.filter(function(p){return p.closed;}).concat(allTargets.filter(function(t){return t.closed;}));
 
+  // Search + filter (applied to the open POI/Target lists)
+  var poiQ = (document.getElementById('poiSearch') && document.getElementById('poiSearch').value || '').trim().toLowerCase();
+  var poiFS = (document.getElementById('poiFilterStatus') && document.getElementById('poiFilterStatus').value) || '';
+  var poiFStand = (document.getElementById('poiFilterStanding') && document.getElementById('poiFilterStanding').value) || '';
+  function poiMatches(r, prefix) {
+    if (poiFS && (r.status || '') !== poiFS) return false;
+    if (poiFStand && (r.standing || '') !== poiFStand) return false;
+    if (!poiQ) return true;
+    var num = prefix + ' ' + String(r.number || '').padStart(3, '0');
+    return (r.name || '').toLowerCase().includes(poiQ) ||
+           num.toLowerCase().includes(poiQ) ||
+           String(r.number || '').includes(poiQ) ||
+           (deptDisplay(r) || '').toLowerCase().includes(poiQ);
+  }
+  active    = active.filter(function(p){ return poiMatches(p, 'POI'); });
+  activeTgt = activeTgt.filter(function(t){ return poiMatches(t, 'TGT'); });
+  // Result counts (open records; filtered vs total when a filter is active)
+  var poiAnyFilter = !!(poiQ || poiFS || poiFStand);
+  var poiCountEl = document.getElementById('poiCount');
+  var tgtCountEl = document.getElementById('targetCount');
+  var totalPoi = allPOI.filter(function(p){ return !p.closed; }).length;
+  var totalTgt = allTargets.filter(function(t){ return !t.closed; }).length;
+  if (poiCountEl) poiCountEl.textContent = poiAnyFilter ? '(' + active.length + ' of ' + totalPoi + ')' : '(' + totalPoi + ')';
+  if (tgtCountEl) tgtCountEl.textContent = poiAnyFilter ? '(' + activeTgt.length + ' of ' + totalTgt + ')' : '(' + totalTgt + ')';
+
   var poiEl = document.getElementById('poiList');
   if (poiEl) poiEl.innerHTML = active.length ? active.map(function(p) {
     return `<div class="poi-list-item" data-action="open-poi-file" data-type="poi" data-id="${e(p.id)}">
@@ -8762,9 +9498,14 @@ async function deletePersonnelRecord(id) {
   if (!canEditPersonnel()) return;
   var rec = allPersonnel.find(function(p){ return p.id === id; });
   if (rec && !canManageFile(rec, 'pf')) { alert('You do not have authority to manage this file.'); return; }
-  if (!await pfConfirm('CONFIRM: DELETE RECORD FOR ' + (rec ? rec.name : id) + '?\n\nThis cannot be undone.')) return;
-  try { await personnelDel(id); } catch(e) {}
-  allPersonnel = allPersonnel.filter(function(p){ return p.id !== id; });
+  if (!await pfConfirm('Move the file for ' + (rec ? rec.name : id) + ' to the recycle bin?\n\nIt can be restored by CL5 command from the admin panel.')) return;
+  if (rec) {
+    rec.deleted = true; rec.deletedBy = currentUser.id; rec.deletedAt = Date.now();
+    try { await personnelSet(id, rec); } catch(e) { alert('ERROR: '+e.message); return; }
+    auditRecord('DELETED OMEGA-1 FILE', (rec.name||id) + ' → recycle bin');
+    allPersonnel = allPersonnel.filter(function(p){ return p.id !== id; });
+    if (!deletedPersonnel.some(function(p){ return p.id===id; })) deletedPersonnel.push(rec);
+  }
   pfExpanded.delete(id);
   renderPersonnelFiles();
   renderRoster();
@@ -8854,6 +9595,7 @@ var efCollapsed = new Set(); // "efId:sectionKey"
 async function loadEthicsPersonnel() {
   try {
     allEthicsPersonnel = await ethicsPersonnelGetAll();
+    allEthicsPersonnel = partitionDeleted(allEthicsPersonnel, function(d){ deletedEthics = d; });
     allEthicsPersonnel.sort(function(a,b){ return ethicsRankIndex(a.role) - ethicsRankIndex(b.role); });
   } catch(err) { allEthicsPersonnel = []; }
   await loadEthicsSquadrons();
@@ -8870,13 +9612,20 @@ async function loadEthicsPersonnel() {
 function renderEthicsFiles() {
   var search = (document.getElementById('efSearch') || {}).value || '';
   var q = search.trim().toLowerCase();
-  var filtered = q
-    ? allEthicsPersonnel.filter(function(p){
-        return (p.name||'').toLowerCase().includes(q) ||
-               (p.nickname||'').toLowerCase().includes(q) ||
-               (p.role||'').toLowerCase().includes(q);
-      })
-    : allEthicsPersonnel;
+  var efStatus = (document.getElementById('efFilterStatus') && document.getElementById('efFilterStatus').value) || '';
+  var filtered = allEthicsPersonnel.filter(function(p){
+    if (efStatus && (p.status || 'Active') !== efStatus) return false;
+    if (!q) return true;
+    return (p.name||'').toLowerCase().includes(q) ||
+           (p.nickname||'').toLowerCase().includes(q) ||
+           (p.role||'').toLowerCase().includes(q);
+  });
+  var efCountEl = document.getElementById('efCount');
+  if (efCountEl) {
+    efCountEl.textContent = (q || efStatus)
+      ? '(' + filtered.length + ' of ' + allEthicsPersonnel.length + ')'
+      : '(' + allEthicsPersonnel.length + ')';
+  }
 
   // Access control: hide files of roles above the current user's level.
   // Users always see their own linked EC file.
@@ -9142,22 +9891,22 @@ function renderEthicsRoster() {
     if (efRosterRedacted.has(p.id)) {
       // Names of EC personnel are visible to all; only DoB is restricted in the roster
       rows += '<tr style="opacity:.8;">' +
-        '<td class="roster-num">' + counter++ + '</td>' +
-        '<td class="roster-name">' + e(p.name||'—') + ' <span class="badge b-dim" style="font-size:.5rem;">RESTRICTED</span></td>' +
-        '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
-        '<td><span class="badge ' + (p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan') + '">' + e(p.role||'—') + '</span></td>' +
-        '<td style="font-size:.62rem;color:var(--text-faint);">[ RESTRICTED ]</td>' +
+        '<td class="roster-num" data-label="#">' + counter++ + '</td>' +
+        '<td class="roster-name" data-label="NAME">' + e(p.name||'—') + ' <span class="badge b-dim" style="font-size:.5rem;">RESTRICTED</span></td>' +
+        '<td class="roster-nick" data-label="NICKNAME">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
+        '<td data-label="ROLE"><span class="badge ' + (p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan') + '">' + e(p.role||'—') + '</span></td>' +
+        '<td data-label="D.O.B" style="font-size:.62rem;color:var(--text-faint);">[ RESTRICTED ]</td>' +
       '</tr>';
       return;
     }
     rows += '<tr>' +
-  '<td class="roster-num">' + counter++ + '</td>' +
-  '<td class="roster-name">' + e(p.name||'—') +
+  '<td class="roster-num" data-label="#">' + counter++ + '</td>' +
+  '<td class="roster-name" data-label="NAME">' + e(p.name||'—') +
     (activeLvEf ? ' <span class="roster-leave roster-' + activeLvEf.type.toLowerCase() + '">' + activeLvEf.type.toUpperCase() + '</span>' : '') +
   '</td>' +
-  '<td class="roster-nick">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
-  '<td><span class="badge ' + (p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan') + '">' + e(p.role||'—') + '</span></td>' +
-  '<td style="font-size:.62rem;color:var(--text-dim);">' + formatDob(p.dob) + '</td>' +
+  '<td class="roster-nick" data-label="NICKNAME">' + (p.nickname ? '"' + e(p.nickname) + '"' : '—') + '</td>' +
+  '<td data-label="ROLE"><span class="badge ' + (p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan') + '">' + e(p.role||'—') + '</span></td>' +
+  '<td data-label="D.O.B" style="font-size:.62rem;color:var(--text-dim);">' + formatDob(p.dob) + '</td>' +
 '</tr>';
   });
   tbody.innerHTML = rows;
@@ -9171,6 +9920,13 @@ function openEthicsModal(id) {
   if (id && !window._awaitingEfLink) {
     var editEf = allEthicsPersonnel.find(function(p){ return p.id === id; });
     if (editEf && !canManageFile(editEf, 'ef')) { alert('You do not have authority to edit this file.'); return; }
+  }
+  // Capture the file's current version stamp for conflict detection on save.
+  if (id) {
+    var _baseEf = allEthicsPersonnel.find(function(p){ return p.id === id; });
+    _efEditBaseStamp = _baseEf ? (_baseEf.updated || null) : null;
+  } else {
+    _efEditBaseStamp = null;
   }
 
   // During first-time link flow, restrict role options to those that match the
@@ -9267,6 +10023,11 @@ async function saveEthicsRecord() {
     existing.role      = role;
     existing.updatedBy = currentUser ? currentUser.id : '';
     existing.updated   = now;
+    var _efConflict = await detectSaveConflict('ef', editId, _efEditBaseStamp);
+    if (_efConflict && !(await pfConfirm(_efConflict))) {
+      if (btn) { btn.disabled = false; btn.textContent = '[ SAVE RECORD ]'; }
+      return;
+    }
     await ethicsPersonnelSet(editId, existing);
   } else {
     var newId = 'ef_' + now + '_' + Math.random().toString(36).slice(2,6);
@@ -9324,9 +10085,14 @@ async function deleteEthicsRecord(id) {
   if (!canEditPersonnel()) return;
   var delRec = allEthicsPersonnel.find(function(p){ return p.id === id; });
   if (delRec && !canManageFile(delRec, 'ef')) { alert('You do not have authority to manage this file.'); return; }
-  if (!await pfConfirm('CONFIRM: PERMANENTLY DELETE THIS ETHICS RECORD?')) return;
-  await ethicsPersonnelDel(id);
-  allEthicsPersonnel = allEthicsPersonnel.filter(function(p){ return p.id !== id; });
+  if (!await pfConfirm('Move this Ethics Committee file to the recycle bin?\n\nIt can be restored by CL5 command from the admin panel.')) return;
+  if (delRec) {
+    delRec.deleted = true; delRec.deletedBy = currentUser.id; delRec.deletedAt = Date.now();
+    try { await ethicsPersonnelSet(id, delRec); } catch(e) { alert('ERROR: '+e.message); return; }
+    auditRecord('DELETED ETHICS FILE', (delRec.name||id) + ' → recycle bin');
+    allEthicsPersonnel = allEthicsPersonnel.filter(function(p){ return p.id !== id; });
+    if (!deletedEthics.some(function(p){ return p.id===id; })) deletedEthics.push(delRec);
+  }
   efExpanded.delete(id);
   renderEthicsFiles();
   renderEthicsRoster();
