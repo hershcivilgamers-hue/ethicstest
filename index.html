@@ -5590,12 +5590,12 @@ function canEditUnitFile(unit) { // unit: 'pf' (Omega-1) or 'ef' (Ethics)
   return false;
 }
 
-// ── Quick-promote authority ──
-// Whether the current user may promote THIS Omega-1 file via the quick-promote
-// control. CL5 may promote anyone. Otherwise the user must be CL4+, assigned to
-// an Omega-1 file, and outrank the target. The ranks they may grant are still
-// bounded by canAssignPfRank (up to one rank below their own). CL3 is read-only
-// and may not promote.
+// ── Quick rank-change authority ──
+// Whether the current user may change THIS Omega-1 file's rank (promote OR
+// demote) via the quick SET RANK control. CL5 may change anyone. Otherwise the
+// user must be CL4+, assigned to an Omega-1 file, and outrank the target. The
+// ranks they may assign are bounded by canAssignPfRank (up to one rank below
+// their own). CL3 is read-only and may not change ranks.
 function canPromoteFile(target) {
   if (!currentUser || !target) return false;
   if (parseInt(currentUser.clearance || '0') >= 5) return true;  // CL5 unrestricted
@@ -5607,28 +5607,33 @@ function canPromoteFile(target) {
   if (myIdx < 0 || tgtIdx < 0) return false;
   return myIdx < tgtIdx;                                          // you must outrank the target
 }
-// The compact promote control shown inside the RANK CHANGE LOG section.
+// The compact rank control shown inside the RANK CHANGE LOG section. Lets an
+// authorised user promote OR demote a subordinate within their authority
+// (any rank up to one below their own, unless CL5).
 function buildPromoteControl(p) {
   if (!canPromoteFile(p)) return '';
   var isCL5  = parseInt(currentUser.clearance || '0') >= 5;
   var curIdx = rankIndex(p.rank);
-  // Ranks this operative can be promoted TO: a higher rank (lower index) than
-  // their current one, and within the user's authority (≤ one below own rank).
+  // Ranks the user may assign to this operative — within authority, excluding
+  // their current rank. Includes both higher (promote) and lower (demote) ranks.
   var options = RANKS.filter(function(rk){
     var idx = rankIndex(rk);
-    if (idx < 0 || idx >= curIdx) return false;          // promotions only
-    return isCL5 || canAssignPfRank(rk, p.rank);         // capped at one below own
+    if (idx < 0 || idx === curIdx) return false;         // skip current (no-op)
+    return isCL5 || canAssignPfRank(rk, p.rank);         // within authority (≤ one below own)
   });
-  if (!options.length) return '';                         // nothing they can promote to
+  if (!options.length) return '';                         // no rank they may assign
   var note = isCL5 ? 'CL5 · unrestricted.'
-                   : 'You may promote up to one rank below your own.';
+                   : 'You may promote or demote within ranks up to one below your own.';
   return '<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem;font-size:.55rem;border:1px solid var(--border2);border-radius:var(--radius);padding:.4rem .55rem;background:var(--bg3);">'
-       +   '<span style="color:var(--green-dim);letter-spacing:.06em;font-weight:700;">▲ PROMOTE ·</span>'
+       +   '<span style="color:var(--green-dim);letter-spacing:.06em;font-weight:700;">⇅ SET RANK ·</span>'
        +   '<select id="promoteSel_' + e(p.id) + '" class="modal-input" style="width:auto;font-size:.55rem;padding:2px 6px;">'
-       +     options.map(function(rk){ return '<option value="' + e(rk) + '">' + e(rk) + '</option>'; }).join('')
+       +     options.map(function(rk){
+               var dir = rankIndex(rk) < curIdx ? ' ↑' : ' ↓';
+               return '<option value="' + e(rk) + '">' + e(rk) + dir + '</option>';
+             }).join('')
        +   '</select>'
        +   '<button class="pf-section-btn" data-action="apply-promote" data-id="' + e(p.id) + '">[ APPLY ]</button>'
-       +   '<span style="color:var(--text-faint);flex-basis:100%;">' + note + ' Current: ' + e(p.rank || '—') + '.</span>'
+       +   '<span style="color:var(--text-faint);flex-basis:100%;">' + note + ' Current: ' + e(p.rank || '—') + '. (↑ promote · ↓ demote)</span>'
        + '</div>';
 }
 async function applyPromote(id) {
@@ -5640,15 +5645,12 @@ async function applyPromote(id) {
   var newRank = sel.value;
   if (newRank === rec.rank) return;
   var isCL5 = parseInt(currentUser.clearance || '0') >= 5;
-  if (rankIndex(newRank) >= rankIndex(rec.rank)) {
-    alert('This control only promotes. Use the file editor to change a rank downward.');
-    return;
-  }
   if (!isCL5 && !canAssignPfRank(newRank, rec.rank)) {
-    alert('PROMOTION DENIED\n\nYou may only assign ranks up to one below your own. CL5 command may override.');
+    alert('RANK CHANGE DENIED\n\nYou may only assign ranks up to one below your own. CL5 command may override.');
     return;
   }
-  if (!(await pfConfirm('Promote ' + (rec.name || 'this operative') + ' from ' + rec.rank + ' to ' + newRank + '?'))) return;
+  var direction = rankIndex(newRank) < rankIndex(rec.rank) ? 'Promote' : 'Demote';
+  if (!(await pfConfirm(direction + ' ' + (rec.name || 'this operative') + ' from ' + rec.rank + ' to ' + newRank + '?'))) return;
   var prevRank = rec.rank, prevProg = rec.promoProgress;
   if (!Array.isArray(rec.rankHistory)) rec.rankHistory = [];
   rec.rankHistory.push({ from: prevRank, to: newRank, changedBy: currentUser.id, clearance: currentUser.clearance, changedAt: Date.now() });
