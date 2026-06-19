@@ -748,11 +748,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   .header-right { gap:.5rem; flex-wrap:wrap; }
   .tab-content { padding:.8rem .7rem; }
 
-  /* Navigation: let the tab bar scroll horizontally instead of crowding */
-  .nav { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .nav::-webkit-scrollbar { height:3px; }
+  /* Navigation: wrap onto multiple rows on small screens.
+     NB: a horizontal-scroll bar (overflow-x:auto) clips the absolutely-
+     positioned dropdown menus, because overflow-x:auto forces overflow-y to
+     compute as auto — so the menu drops below the bar and gets cut off.
+     Wrapping keeps overflow visible and lets the menus open normally. */
+  .nav { flex-wrap:wrap; overflow:visible; }
   .nav-dd, .nav-standalone-tab { flex:0 0 auto; }
   .nav-standalone-tab { padding:.55rem .75rem; font-size:.6rem; }
+  .nav-dd-trigger { padding:.55rem .8rem; font-size:.6rem; }
+  /* Let an open dropdown's menu span comfortably without overflowing the screen */
+  .nav-dd-menu { min-width:160px; max-width:min(78vw,260px); }
 
   /* Toolbars: search takes the full row, filters share the next */
   .pf-toolbar { gap:.4rem; }
@@ -2382,6 +2388,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
     </div>
     <div id="adminPromoList"></div>
 
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">
+      <span>▸ ACTIVITY REQUIREMENTS <span style="color:var(--text-faint);font-size:.52rem;">(configurable thresholds)</span></span>
+    </div>
+    <div id="adminActivityReqs" style="font-size:.62rem;"></div>
+
+
     <div id="recycleBinHdr" style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ RECYCLE BIN (0)</div>
     <div style="font-size:.52rem;color:var(--text-faint);margin-bottom:.4rem;line-height:1.5;">Deleted files and orders are held here. Restore returns them to active service; purge removes them permanently.</div>
     <div id="adminRecycleList"></div>
@@ -3074,6 +3086,7 @@ async function onLogin() { // Make function async
   loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
   loadCompartments();
   loadPromoReqs();
+  loadActivityReqs();
   startPolling();
   setTimeout(showLoginNotifications, 1500); // after data loads
   setTimeout(function(){ if (document.getElementById('tab-overview') && document.getElementById('tab-overview').classList.contains('active')) renderOverview(); }, 1500);
@@ -3177,6 +3190,332 @@ function logout() {
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   setLoginMode('login');
+}
+
+// ================================================================
+//  ACTIVITY TRACKING (Omega-1 & Ethics — requirements, logs, status)
+// ================================================================
+// Configurable activity requirements, editable by CL5 in the admin panel.
+// Personnel log activity entries (hours + note + tagged contributions); the system
+// derives an activity status (Active / Semi-Active / Inactive) and flags breaches.
+var allActivityReqs = null; // { omega:{weeklyHours,monthlyHours}, ethicsAssistant:{weeklyHours,requireInteraction} }
+
+function defaultActivityReqs() {
+  return {
+    omega:           { weeklyHours: 5,  monthlyHours: 25 },
+    ethicsAssistant: { weeklyHours: 1,  requireInteraction: true }
+  };
+}
+async function activityReqsGetAll() {
+  if (firebaseReady) { var all = await fbGetAll('/activityReqs'); return all || null; }
+  return lsGet('activityReqs/config') || null;
+}
+async function activityReqsSave() {
+  if (firebaseReady) await fbSet('/activityReqs', allActivityReqs);
+  else lsSet('activityReqs/config', allActivityReqs);
+}
+async function loadActivityReqs() {
+  try {
+    var stored = await activityReqsGetAll();
+    if (stored && typeof stored === 'object' && stored.omega) {
+      allActivityReqs = stored;
+      // Backfill any missing keys after an app update
+      var d = defaultActivityReqs(), changed = false;
+      if (!allActivityReqs.ethicsAssistant) { allActivityReqs.ethicsAssistant = d.ethicsAssistant; changed = true; }
+      if (changed) { try { await activityReqsSave(); } catch(_){} }
+    } else {
+      allActivityReqs = defaultActivityReqs();
+      try { await activityReqsSave(); } catch(_){}
+    }
+  } catch(e) { allActivityReqs = defaultActivityReqs(); }
+}
+
+// ── Time-period helpers (UTC week starting Monday; calendar month) ──
+function _startOfWeek(ts) {
+  var d = new Date(ts); d.setUTCHours(0,0,0,0);
+  var day = d.getUTCDay();            // 0=Sun..6=Sat
+  var diff = (day === 0 ? 6 : day - 1); // days since Monday
+  d.setUTCDate(d.getUTCDate() - diff);
+  return d.getTime();
+}
+function _startOfMonth(ts) {
+  var d = new Date(ts);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+}
+// Sum logged hours for a record within [since, now].
+function activityHoursSince(rec, since) {
+  if (!rec || !Array.isArray(rec.activityLog)) return 0;
+  return rec.activityLog.reduce(function(sum, a){
+    if (a && a.at >= since && typeof a.hours === 'number') return sum + a.hours;
+    return sum;
+  }, 0);
+}
+function activityHoursThisWeek(rec)  { return activityHoursSince(rec, _startOfWeek(Date.now())); }
+function activityHoursThisMonth(rec) { return activityHoursSince(rec, _startOfMonth(Date.now())); }
+// Count of activity entries this week (used for Ethics interaction requirement).
+function activityEntriesThisWeek(rec) {
+  if (!rec || !Array.isArray(rec.activityLog)) return 0;
+  var since = _startOfWeek(Date.now());
+  return rec.activityLog.filter(function(a){ return a && a.at >= since; }).length;
+}
+function activityHasContributionThisWeek(rec) {
+  if (!rec || !Array.isArray(rec.activityLog)) return false;
+  var since = _startOfWeek(Date.now());
+  return rec.activityLog.some(function(a){
+    return a && a.at >= since && (
+      (Array.isArray(a.tags) && a.tags.length) || (a.note && a.note.trim())
+    );
+  });
+}
+
+// The weekly hours requirement that applies to a given Omega-1 file.
+function omegaWeeklyReq() { return (allActivityReqs && allActivityReqs.omega && allActivityReqs.omega.weeklyHours) || 0; }
+function omegaMonthlyReq(){ return (allActivityReqs && allActivityReqs.omega && allActivityReqs.omega.monthlyHours) || 0; }
+
+// ── Derived activity status ──
+// Returns { key:'active'|'semi'|'inactive'|'leave'|'manual', label, auto, manual }
+// LoA/RoA always reports 'leave'. A manual override (set by senior command) wins
+// over the auto-derivation but is surfaced as such.
+function activityStatus(rec, unit) {
+  unit = unit || 'pf';
+  if (!rec) return { key:'inactive', label:'INACTIVE', auto:true };
+  // Authorised absence overrides everything
+  if (getActiveLeave(rec)) {
+    var lv = getActiveLeave(rec);
+    return { key:'leave', label:(lv && lv.type ? lv.type.toUpperCase() : 'ON LEAVE'), auto:true, onLeave:true };
+  }
+  // Manual override by command
+  if (rec.activityOverride && rec.activityOverride.status) {
+    return { key:rec.activityOverride.status,
+             label:_activityLabel(rec.activityOverride.status),
+             manual:true, by:rec.activityOverride.by, at:rec.activityOverride.at };
+  }
+  // Auto-derive from logged activity vs the requirement
+  var req, weekHours, met, some;
+  if (unit === 'ef') {
+    // Only Assistants carry an activity requirement on the Ethics side
+    if (rec.role !== 'Assistant') return { key:'active', label:'ACTIVE', auto:true, exempt:true };
+    req = (allActivityReqs && allActivityReqs.ethicsAssistant) || {};
+    weekHours = activityHoursThisWeek(rec);
+    met = weekHours >= (req.weeklyHours || 0) && (!req.requireInteraction || activityHasContributionThisWeek(rec));
+    some = weekHours > 0 || activityEntriesThisWeek(rec) > 0;
+  } else {
+    weekHours = activityHoursThisWeek(rec);
+    met = weekHours >= omegaWeeklyReq();
+    some = weekHours > 0 || activityEntriesThisWeek(rec) > 0;
+  }
+  if (met) return { key:'active', label:'ACTIVE', auto:true };
+  if (some) return { key:'semi', label:'SEMI-ACTIVE', auto:true };
+  return { key:'inactive', label:'INACTIVE', auto:true };
+}
+function _activityLabel(key) {
+  return key === 'active' ? 'ACTIVE' : key === 'semi' ? 'SEMI-ACTIVE' : key === 'inactive' ? 'INACTIVE' : key.toUpperCase();
+}
+function activityStatusClass(key) {
+  return key === 'active' ? 'b-green' : key === 'semi' ? 'b-amber' : key === 'leave' ? 'b-cyan' : 'b-red';
+}
+// True if the file is in breach (under requirement and not on leave). Exempt: on leave,
+// or Ethics non-Assistants, or when requirements aren't configured.
+function activityInBreach(rec, unit) {
+  if (!rec || !allActivityReqs) return false;
+  if (getActiveLeave(rec)) return false;
+  var st = activityStatus(rec, unit);
+  // A manual 'active' override clears breach; otherwise breach = not active
+  if (st.exempt) return false;
+  if (st.manual) return st.key !== 'active';
+  return st.key !== 'active';
+}
+
+// ── Activity section UI (Omega-1 + Ethics-Assistant personnel files) ──
+function _fmtHrs(h) {
+  if (typeof h !== 'number' || isNaN(h)) h = 0;
+  return (Math.round(h * 100) / 100) + ' h';
+}
+// Short status label used in the collapsible section header.
+function activityHdrLabel(rec, unit) {
+  if (unit === 'ef' && rec.role !== 'Assistant') return '';
+  var st = activityStatus(rec, unit);
+  return ' · ' + st.label;
+}
+function buildActivitySection(p, unit) {
+  unit = unit || 'pf';
+  if (unit === 'ef' && p.role !== 'Assistant') {
+    return '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ ' + e((p.role || 'EC').toUpperCase()) + ' ROLES ARE EXEMPT FROM ACTIVITY REQUIREMENTS ]</div>';
+  }
+  var st       = activityStatus(p, unit);
+  var inBreach = activityInBreach(p, unit);
+  var wk       = activityHoursThisWeek(p);
+  var mo       = activityHoursThisMonth(p);
+  var canLog   = canManageFile(p, unit);     // own file or senior staff
+  var canCmd   = canViewFileIntegrity();     // Sr CL4 / CL5 / senior EC
+  var log      = Array.isArray(p.activityLog)
+                   ? p.activityLog.slice().sort(function(a, b){ return (b.at || 0) - (a.at || 0); })
+                   : [];
+
+  var reqWk, reqMo, reqLine;
+  if (unit === 'ef') {
+    var ea = (allActivityReqs && allActivityReqs.ethicsAssistant) || {};
+    reqWk = ea.weeklyHours || 0; reqMo = 0;
+    reqLine = 'REQUIREMENT · ' + reqWk + ' h/week' + (ea.requireInteraction ? ' + at least one logged contribution' : '');
+  } else {
+    reqWk = omegaWeeklyReq(); reqMo = omegaMonthlyReq();
+    reqLine = 'REQUIREMENT · ' + reqWk + ' h/week · ' + reqMo + ' h/month';
+  }
+  var wkColor = wk >= reqWk ? 'green' : 'amber';
+  var moColor = mo >= reqMo ? 'green' : 'amber';
+
+  var html = '';
+  // Status + figures
+  html += '<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.4rem;">'
+        +   '<span class="badge ' + activityStatusClass(st.key) + '" style="font-size:.55rem;">' + e(st.label) + '</span>'
+        +   (st.manual ? '<span style="font-size:.5rem;color:var(--amber);">MANUAL OVERRIDE · EC·' + e(st.by || '—') + (st.at ? ' · ' + safeDate(st.at) : '') + '</span>' : '')
+        +   (st.onLeave ? '<span style="font-size:.5rem;color:var(--text-faint);">authorised absence — requirement suspended</span>' : '')
+        +   '<span style="font-size:.55rem;color:var(--text-dim);margin-left:auto;">'
+        +     '<span style="color:var(--' + wkColor + ');">' + _fmtHrs(wk) + '</span> wk'
+        +     (unit === 'ef' ? '' : ' · <span style="color:var(--' + moColor + ');">' + _fmtHrs(mo) + '</span> mo')
+        +   '</span>'
+        + '</div>';
+  html += '<div style="font-size:.5rem;color:var(--text-faint);margin-bottom:.5rem;letter-spacing:.04em;">' + reqLine + '</div>';
+  if (inBreach) {
+    html += '<div style="border:1px solid #5a2a14;background:rgba(120,50,20,.18);color:var(--amber);font-size:.55rem;padding:.4rem .5rem;border-radius:var(--radius);margin-bottom:.5rem;">⚠ BELOW REQUIREMENT — operative is in breach of the current activity threshold.</div>';
+  }
+
+  // Command override controls
+  if (canCmd) {
+    html += '<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.55rem;font-size:.55rem;">'
+          +   '<span style="color:var(--text-faint);">OVERRIDE ·</span>'
+          +   '<select id="actOverride_' + e(p.id) + '" class="modal-input" style="width:auto;font-size:.55rem;padding:2px 6px;">'
+          +     '<option value="">— set status —</option>'
+          +     '<option value="active"'   + (st.manual && st.key === 'active'   ? ' selected' : '') + '>Active</option>'
+          +     '<option value="semi"'     + (st.manual && st.key === 'semi'     ? ' selected' : '') + '>Semi-Active</option>'
+          +     '<option value="inactive"' + (st.manual && st.key === 'inactive' ? ' selected' : '') + '>Inactive</option>'
+          +   '</select>'
+          +   '<button class="pf-section-btn" data-action="set-activity-override" data-id="' + e(p.id) + '" data-unit="' + unit + '">[ APPLY ]</button>'
+          +   (st.manual ? '<button class="pf-section-btn" data-action="clear-activity-override" data-id="' + e(p.id) + '" data-unit="' + unit + '" style="opacity:.85;">[ CLEAR ]</button>' : '')
+          + '</div>';
+  }
+
+  // Log-entry form
+  if (canLog) {
+    html += '<div style="display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;margin-bottom:.55rem;">'
+          +   '<input id="actHours_' + e(p.id) + '" type="number" min="0" step="0.5" class="modal-input" placeholder="hrs" style="width:62px;font-size:.58rem;padding:3px 6px;"/>'
+          +   '<input id="actNote_' + e(p.id) + '" class="modal-input" placeholder="What was done (op, patrol, training, contribution)..." style="flex:1;min-width:140px;font-size:.58rem;padding:3px 6px;"/>'
+          +   '<input id="actTags_' + e(p.id) + '" class="modal-input" placeholder="tags (comma-sep)" style="width:120px;font-size:.58rem;padding:3px 6px;"/>'
+          +   '<button class="pf-btn" data-action="add-activity" data-id="' + e(p.id) + '" data-unit="' + unit + '">[ LOG ]</button>'
+          + '</div>';
+  }
+
+  // Log entries (most recent first)
+  if (!log.length) {
+    html += '<div style="font-size:.58rem;color:var(--text-faint);padding:3px 0;">[ NO ACTIVITY LOGGED ]</div>';
+  } else {
+    html += log.slice(0, 40).map(function(a){
+      var tagHtml = (Array.isArray(a.tags) && a.tags.length)
+        ? ' ' + a.tags.map(function(t){ return '<span class="badge b-cyan" style="font-size:.45rem;">' + e(t) + '</span>'; }).join(' ')
+        : '';
+      var del = canCmd
+        ? '<button class="pf-section-btn" data-action="del-activity" data-id="' + e(p.id) + '" data-unit="' + unit + '" data-actid="' + e(a.id || '') + '" style="border-color:#4a1414;color:#dd4444;font-size:.45rem;padding:1px 5px;" title="Remove entry">✕</button>'
+        : '';
+      return '<div style="display:flex;justify-content:space-between;gap:.5rem;align-items:flex-start;border-bottom:1px solid var(--border);padding:.3rem 0;font-size:.58rem;">'
+           +   '<span style="flex:1;"><span style="color:var(--green);font-family:\'VT323\',monospace;">' + _fmtHrs(a.hours || 0) + '</span> · '
+           +     (a.note ? e(a.note) : '<span style="color:var(--text-faint);">no description</span>') + tagHtml
+           +     '<br><span style="font-size:.48rem;color:var(--text-faint);">' + safeDateTime(a.at) + ' · logged by EC·' + e(a.by || '—') + '</span></span>'
+           +   del
+           + '</div>';
+    }).join('');
+    if (log.length > 40) html += '<div style="font-size:.5rem;color:var(--text-faint);padding-top:.3rem;">… showing 40 most recent of ' + log.length + ' entries</div>';
+  }
+  return html;
+}
+
+// ── Activity logging actions (unit-generic: 'pf' = Omega-1, 'ef' = Ethics) ──
+function _activityRec(id, unit) {
+  var arr = unit === 'ef' ? allEthicsPersonnel : allPersonnel;
+  return (arr || []).find(function(p){ return p.id === id; });
+}
+function _activityPersist(rec, unit) {
+  return unit === 'ef' ? ethicsPersonnelSet(rec.id, rec) : personnelSet(rec.id, rec);
+}
+function _activityReRender(unit) {
+  if (unit === 'ef') renderEthicsFiles(); else renderPersonnelFiles();
+  try { renderOverview(); } catch (_) {}
+}
+async function addActivityEntry(id, unit) {
+  unit = unit || 'pf';
+  var rec = _activityRec(id, unit);
+  if (!rec) return;
+  if (!canManageFile(rec, unit)) { alert('You do not have authority to log activity on this file.'); return; }
+  var hEl = document.getElementById('actHours_' + id);
+  var nEl = document.getElementById('actNote_'  + id);
+  var tEl = document.getElementById('actTags_'  + id);
+  if (!hEl) return;
+  var hours = parseFloat(hEl.value);
+  if (isNaN(hours) || hours <= 0) { alert('Enter a positive number of hours.'); return; }
+  if (hours > 168)               { alert('Hours per entry cannot exceed 168 (one week).'); return; }
+  hours = Math.round(hours * 100) / 100;
+  var note = (nEl ? nEl.value : '').trim();
+  var tags = (tEl ? tEl.value : '').split(',').map(function(s){ return s.trim(); }).filter(Boolean).slice(0, 8);
+  var entry = {
+    id:    'act_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+    at:    Date.now(),
+    hours: hours,
+    note:  note,
+    tags:  tags,
+    by:    currentUser.id
+  };
+  if (!Array.isArray(rec.activityLog)) rec.activityLog = [];
+  rec.activityLog.push(entry);
+  hEl.disabled = true;
+  try {
+    await _activityPersist(rec, unit);
+    auditRecord('LOGGED ACTIVITY', (unit === 'ef' ? 'EC·' : 'Ω·') + (rec.name || rec.id) + ' · ' + hours + 'h' + (note ? ' · ' + note : ''));
+  } catch (err) { rec.activityLog.pop(); alert('ERROR: ' + err.message); }
+  hEl.disabled = false;
+  _activityReRender(unit);
+}
+async function removeActivityEntry(id, unit, actId) {
+  unit = unit || 'pf';
+  var rec = _activityRec(id, unit);
+  if (!rec || !Array.isArray(rec.activityLog)) return;
+  if (!canViewFileIntegrity()) { alert('Senior command authority required to remove activity entries.'); return; }
+  if (!(await pfConfirm('Remove this activity entry? This cannot be undone.'))) return;
+  var idx = rec.activityLog.findIndex(function(a){ return a && a.id === actId; });
+  if (idx < 0) return;
+  var removed = rec.activityLog.splice(idx, 1)[0];
+  try {
+    await _activityPersist(rec, unit);
+    auditRecord('REMOVED ACTIVITY', (unit === 'ef' ? 'EC·' : 'Ω·') + (rec.name || rec.id) + ' · ' + (removed.hours || 0) + 'h');
+  } catch (err) { rec.activityLog.splice(idx, 0, removed); alert('ERROR: ' + err.message); }
+  _activityReRender(unit);
+}
+async function setActivityOverride(id, unit) {
+  unit = unit || 'pf';
+  var rec = _activityRec(id, unit);
+  if (!rec) return;
+  if (!canViewFileIntegrity()) { alert('Senior command authority required.'); return; }
+  var sel = document.getElementById('actOverride_' + id);
+  if (!sel || !sel.value) return;
+  var status = sel.value;
+  var prev = rec.activityOverride;
+  rec.activityOverride = { status: status, by: currentUser.id, at: Date.now() };
+  try {
+    await _activityPersist(rec, unit);
+    auditRecord('SET ACTIVITY OVERRIDE', (unit === 'ef' ? 'EC·' : 'Ω·') + (rec.name || rec.id) + ' → ' + status.toUpperCase());
+  } catch (err) { rec.activityOverride = prev; alert('ERROR: ' + err.message); }
+  _activityReRender(unit);
+}
+async function clearActivityOverride(id, unit) {
+  unit = unit || 'pf';
+  var rec = _activityRec(id, unit);
+  if (!rec || !rec.activityOverride) return;
+  if (!canViewFileIntegrity()) { alert('Senior command authority required.'); return; }
+  var prev = rec.activityOverride;
+  delete rec.activityOverride;
+  try {
+    await _activityPersist(rec, unit);
+    auditRecord('CLEARED ACTIVITY OVERRIDE', (unit === 'ef' ? 'EC·' : 'Ω·') + (rec.name || rec.id));
+  } catch (err) { rec.activityOverride = prev; alert('ERROR: ' + err.message); }
+  _activityReRender(unit);
 }
 
 // ================================================================
@@ -5264,6 +5603,7 @@ async function openAdminPanel() {
   }
   await loadCompartments();
   await loadPromoReqs();
+  await loadActivityReqs();
   loadAuditLog();
   renderAdminPanel();
 }
@@ -5457,6 +5797,7 @@ function renderAdminPanel() {
   }
   renderCompartmentList();
   renderPromoReqList();
+  renderActivityReqs();
   renderRecycleBin();
   updateRecycleHdr();
 }
@@ -5878,6 +6219,54 @@ async function purgeRecord(kind, id) {
 function updateRecycleHdr() {
   var hdr = document.getElementById('recycleBinHdr');
   if (hdr) hdr.textContent = '▸ RECYCLE BIN (' + recycleBinCount() + ')';
+}
+
+// ── Activity requirements config (CL5) ──
+function renderActivityReqs() {
+  var el = document.getElementById('adminActivityReqs');
+  if (!el) return;
+  if (!allActivityReqs) { el.innerHTML = '<div style="color:var(--text-faint);">Loading…</div>'; return; }
+  var o = allActivityReqs.omega || {};
+  var ea = allActivityReqs.ethicsAssistant || {};
+  var isCL5 = currentUser && parseInt(currentUser.clearance) >= 5;
+  var dis = isCL5 ? '' : 'disabled';
+  el.innerHTML =
+    '<div style="border:1px solid var(--border2);padding:.55rem .7rem;margin-bottom:.4rem;">'
+    + '<div style="color:var(--green);font-family:\'VT323\',monospace;letter-spacing:.06em;margin-bottom:.4rem;">OMEGA-1</div>'
+    + '<div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">'
+    +   '<label style="display:flex;align-items:center;gap:.4rem;">Weekly hours <input type="number" min="0" step="0.5" id="actOmegaWeekly" value="' + e(o.weeklyHours != null ? o.weeklyHours : 5) + '" ' + dis + ' style="width:60px;background:var(--bg);border:1px solid var(--border2);color:var(--amber);padding:.2rem .4rem;font-family:inherit;"/></label>'
+    +   '<label style="display:flex;align-items:center;gap:.4rem;">Monthly hours <input type="number" min="0" step="1" id="actOmegaMonthly" value="' + e(o.monthlyHours != null ? o.monthlyHours : 25) + '" ' + dis + ' style="width:60px;background:var(--bg);border:1px solid var(--border2);color:var(--amber);padding:.2rem .4rem;font-family:inherit;"/></label>'
+    + '</div></div>'
+    + '<div style="border:1px solid var(--border2);padding:.55rem .7rem;margin-bottom:.4rem;">'
+    + '<div style="color:var(--green);font-family:\'VT323\',monospace;letter-spacing:.06em;margin-bottom:.4rem;">ETHICS COMMITTEE — ASSISTANTS</div>'
+    + '<div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">'
+    +   '<label style="display:flex;align-items:center;gap:.4rem;">Weekly hours <input type="number" min="0" step="0.5" id="actEfWeekly" value="' + e(ea.weeklyHours != null ? ea.weeklyHours : 1) + '" ' + dis + ' style="width:60px;background:var(--bg);border:1px solid var(--border2);color:var(--amber);padding:.2rem .4rem;font-family:inherit;"/></label>'
+    +   '<label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;"><input type="checkbox" id="actEfInteraction" ' + (ea.requireInteraction ? 'checked' : '') + ' ' + dis + '/> Require an order interaction / RP note</label>'
+    + '</div>'
+    + '<div style="font-size:.52rem;color:var(--text-faint);margin-top:.35rem;line-height:1.5;">Other EC roles (Chairman / Member) are exempt from activity requirements.</div>'
+    + '</div>'
+    + (isCL5 ? '<button class="modal-save" data-action="save-activity-reqs" style="font-size:.6rem;">[ SAVE REQUIREMENTS ]</button>' : '<div style="font-size:.52rem;color:var(--text-faint);">CL5 required to edit.</div>');
+}
+async function saveActivityReqs() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!allActivityReqs) return;
+  function num(id, def){ var v = parseFloat((document.getElementById(id)||{}).value); return isNaN(v) || v < 0 ? def : v; }
+  allActivityReqs.omega = {
+    weeklyHours:  num('actOmegaWeekly', 5),
+    monthlyHours: num('actOmegaMonthly', 25)
+  };
+  allActivityReqs.ethicsAssistant = {
+    weeklyHours:        num('actEfWeekly', 1),
+    requireInteraction: !!(document.getElementById('actEfInteraction') && document.getElementById('actEfInteraction').checked)
+  };
+  try {
+    await activityReqsSave();
+    auditRecord('EDITED ACTIVITY REQS', 'Ω-1 ' + allActivityReqs.omega.weeklyHours + 'h/wk · ' + allActivityReqs.omega.monthlyHours + 'h/mo · EC-Asst ' + allActivityReqs.ethicsAssistant.weeklyHours + 'h/wk');
+    renderActivityReqs();
+    if (typeof renderPersonnelFiles === 'function') renderPersonnelFiles();
+    if (typeof renderRoster === 'function') renderRoster();
+    alert('Activity requirements saved.');
+  } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 // ── Omega-1 promotion requirements management (CL5) ──
@@ -6744,6 +7133,7 @@ var linkedBadge = linkedPfIds.has(p.id)
             }
             sections.push({ key:'promo', label:'▲ PROMOTION REQUIREMENTS', count: cnt, body: buildPromoSection(p, canEdit) });
           })();
+          sections.push({ key:'activity', label:'◷ ACTIVITY', count: activityHdrLabel(p, 'pf'), body: buildActivitySection(p, 'pf') });
           if (canViewFileIntegrity()) {
             sections.push({ key:'security', label:'⚕ SECURITY STATUS', count:'', body: fileIntegrityControl(p.id, 'pf') });
           }
@@ -7181,6 +7571,10 @@ document.addEventListener('click', function(ev) {
     case 'edit-pf':          ev.stopPropagation(); openPersonnelModal(id); break;
     case 'delete-pf':        ev.stopPropagation(); deletePersonnelRecord(id); break;
     case 'add-pf-note':      ev.stopPropagation(); addPersonnelNote(id); break;
+    case 'add-activity':            ev.stopPropagation(); addActivityEntry(id, el.dataset.unit || 'pf'); break;
+    case 'del-activity':            ev.stopPropagation(); removeActivityEntry(id, el.dataset.unit || 'pf', el.dataset.actid); break;
+    case 'set-activity-override':   ev.stopPropagation(); setActivityOverride(id, el.dataset.unit || 'pf'); break;
+    case 'clear-activity-override': ev.stopPropagation(); clearActivityOverride(id, el.dataset.unit || 'pf'); break;
     case 'status-pf':        ev.stopPropagation(); setPersonnelStatus(id, status); break;
     case 'award-pf':         ev.stopPropagation(); openAwardModal(id); break;
     case 'del-award':        ev.stopPropagation(); removeAward(id, el.dataset.awardid); break;
@@ -7237,6 +7631,7 @@ document.addEventListener('click', function(ev) {
     case 'admin-ack-duress':   adminAckDuress(el.dataset.uid); break;
     case 'new-compartment':    openCompartmentModal(null); break;
     case 'edit-promoreq':      openPromoReqModal(el.dataset.key); break;
+    case 'save-activity-reqs': saveActivityReqs(); break;
     case 'restore-rec':        restoreRecord(el.dataset.kind, el.dataset.id); break;
     case 'purge-rec':          purgeRecord(el.dataset.kind, el.dataset.id); break;
     case 'close-promoreq':     closePromoReqModal(); break;
@@ -9791,6 +10186,10 @@ function buildEthicsCard(p) {
         <span>▸ LEAVE (LOA / ROA) (${(p.leaves||[]).filter(isLeaveActive).length} active)</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':leave')?'-90':'0'}deg)">▾</span>
       </div>
       <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':leave')?'none':'block'};padding:0 .1rem .4rem;">${buildLeaveSection(p,'ef')}</div>
+      ${p.role==='Assistant' ? `<div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="activity">
+        <span>▸ ◷ ACTIVITY${activityHdrLabel(p,'ef')}</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':activity')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':activity')?'none':'block'};padding:0 .1rem .4rem;">${buildActivitySection(p,'ef')}</div>` : ''}
       <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="squadrons">
         <span>▸ SQUADRON ASSIGNMENTS</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':squadrons')?'-90':'0'}deg)">▾</span>
       </div>
