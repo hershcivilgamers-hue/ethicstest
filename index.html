@@ -3337,6 +3337,44 @@ function activityHdrLabel(rec, unit) {
   var st = activityStatus(rec, unit);
   return ' · ' + st.label;
 }
+// ── Activity permission gates ──
+// Who may LOG activity hours on a file: CL5 (command), the user linked to the
+// file (their own activity), Senior CL4 (Omega-1 files), or Senior EC
+// Chairman/Member (Ethics files). NOT junior members, and not other people's files.
+function canLogActivity(p, unit) {
+  if (!currentUser || !p) return false;
+  if (parseInt(currentUser.clearance || '0') >= 5) return true;             // CL5 / command
+  if (unit === 'pf' && currentUser.linkedPfId === p.id) return true;        // own Omega-1 file
+  if (unit === 'ef' && currentUser.linkedEfId === p.id) return true;        // own Ethics file
+  if (unit === 'pf' && currentUser.linkedPfId) {                            // Senior CL4 (Omega-1)
+    var me = allPersonnel.find(function(x){ return x.id === currentUser.linkedPfId; });
+    if (me && CL4_SENIOR_RANKS.includes(me.rank)) return true;
+  }
+  if (unit === 'ef') {                                                      // Senior EC (Ethics)
+    var role = currentEfRole();
+    if (role === 'Chairman' || role === 'Member') return true;
+  }
+  return false;
+}
+// Who may manually SET / clear / remove activity STATUS: Senior CL4 or CL5 only
+// (Senior EC Chairman/Member for Ethics files). A user may NOT set the status on
+// their own file below CL5 — status is a command assessment, not self-declared.
+function canSetActivityStatus(p, unit) {
+  if (!currentUser || !p) return false;
+  var cl = parseInt(currentUser.clearance || '0');
+  if (cl >= 5) return true;                                                 // CL5 unrestricted
+  if (unit === 'pf' && currentUser.linkedPfId === p.id) return false;       // no self-setting
+  if (unit === 'ef' && currentUser.linkedEfId === p.id) return false;       // no self-setting
+  if (unit === 'pf' && currentUser.linkedPfId) {                            // Senior CL4 (Omega-1)
+    var me = allPersonnel.find(function(x){ return x.id === currentUser.linkedPfId; });
+    if (me && CL4_SENIOR_RANKS.includes(me.rank)) return true;
+  }
+  if (unit === 'ef') {                                                      // Senior EC (Ethics)
+    var role = currentEfRole();
+    if (role === 'Chairman' || role === 'Member') return true;
+  }
+  return false;
+}
 function buildActivitySection(p, unit) {
   unit = unit || 'pf';
   if (unit === 'ef' && p.role !== 'Assistant') {
@@ -3346,8 +3384,8 @@ function buildActivitySection(p, unit) {
   var inBreach = activityInBreach(p, unit);
   var wk       = activityHoursThisWeek(p);
   var mo       = activityHoursThisMonth(p);
-  var canLog   = canManageFile(p, unit);     // own file or senior staff
-  var canCmd   = canViewFileIntegrity();     // Sr CL4 / CL5 / senior EC
+  var canLog   = canLogActivity(p, unit);        // Sr CL4 / CL5 / linked user
+  var canCmd   = canSetActivityStatus(p, unit);  // Sr CL4 / CL5 (not own file below CL5)
   var log      = Array.isArray(p.activityLog)
                    ? p.activityLog.slice().sort(function(a, b){ return (b.at || 0) - (a.at || 0); })
                    : [];
@@ -3444,7 +3482,7 @@ async function addActivityEntry(id, unit) {
   unit = unit || 'pf';
   var rec = _activityRec(id, unit);
   if (!rec) return;
-  if (!canManageFile(rec, unit)) { alert('You do not have authority to log activity on this file.'); return; }
+  if (!canLogActivity(rec, unit)) { alert('You do not have authority to log activity on this file.'); return; }
   var hEl = document.getElementById('actHours_' + id);
   var nEl = document.getElementById('actNote_'  + id);
   var tEl = document.getElementById('actTags_'  + id);
@@ -3477,7 +3515,7 @@ async function removeActivityEntry(id, unit, actId) {
   unit = unit || 'pf';
   var rec = _activityRec(id, unit);
   if (!rec || !Array.isArray(rec.activityLog)) return;
-  if (!canViewFileIntegrity()) { alert('Senior command authority required to remove activity entries.'); return; }
+  if (!canSetActivityStatus(rec, unit)) { alert('Senior command authority (Sr CL4 / CL5) required to remove activity entries.'); return; }
   if (!(await pfConfirm('Remove this activity entry? This cannot be undone.'))) return;
   var idx = rec.activityLog.findIndex(function(a){ return a && a.id === actId; });
   if (idx < 0) return;
@@ -3492,7 +3530,7 @@ async function setActivityOverride(id, unit) {
   unit = unit || 'pf';
   var rec = _activityRec(id, unit);
   if (!rec) return;
-  if (!canViewFileIntegrity()) { alert('Senior command authority required.'); return; }
+  if (!canSetActivityStatus(rec, unit)) { alert('Only Sr CL4 / CL5 may set activity status. You cannot set your own.'); return; }
   var sel = document.getElementById('actOverride_' + id);
   if (!sel || !sel.value) return;
   var status = sel.value;
@@ -3508,7 +3546,7 @@ async function clearActivityOverride(id, unit) {
   unit = unit || 'pf';
   var rec = _activityRec(id, unit);
   if (!rec || !rec.activityOverride) return;
-  if (!canViewFileIntegrity()) { alert('Senior command authority required.'); return; }
+  if (!canSetActivityStatus(rec, unit)) { alert('Only Sr CL4 / CL5 may change activity status.'); return; }
   var prev = rec.activityOverride;
   delete rec.activityOverride;
   try {
@@ -3559,7 +3597,21 @@ function defaultPromoReqs() {
     ]),
     'Command Sergeant>Lieutenant': mk([
       'Promotions to Lieutenant and above are assessed on a case-by-case basis by command.'
-    ])
+    ]),
+    __meta: {
+      caseByCaseFrom: 'Lieutenant',
+      caseByCaseNote: 'This operative is at the top of the standard progression. Further advancement is assessed on a case-by-case basis by command.'
+    }
+  };
+}
+// Configurable case-by-case threshold (CL5-editable in the admin menu).
+// Ranks at or above caseByCaseFrom (by seniority) are command-discretion: they
+// show caseByCaseNote instead of a requirements checklist.
+function getPromoMeta() {
+  var m = (allPromoReqs && allPromoReqs.__meta) || {};
+  return {
+    caseByCaseFrom: m.caseByCaseFrom || 'Lieutenant',
+    caseByCaseNote: m.caseByCaseNote || 'This operative is at the top of the standard progression. Further advancement is assessed on a case-by-case basis by command.'
   };
 }
 async function promoReqsGetAll() {
@@ -4737,17 +4789,31 @@ async function _bgPoll() {
   var active = document.querySelector('.tab-content.active');
   if (active) tabId = active.id || '';
 
-  // Personnel — full reload if on tab, else just update state silently
+  // Personnel — full reload if on tab, else just update state silently.
+  // Re-render goes through _safeRender so a 30s poll never wipes text a user is
+  // mid-way through typing in a file (e.g. logging activity hours / a note).
   if (tabId === 'tab-personnel-files' || tabId === 'tab-roster') {
-    try { await loadPersonnel(); } catch(_) {}
+    try {
+      allPersonnel = partitionDeleted((await personnelGetAll()).filter(function(p){ return p && p.id; }), function(d){ deletedPersonnel = d; });
+      await loadSquadrons();
+      _safeRender(renderPersonnelFiles, 'pfList');
+      _safeRender(renderRoster, 'rosterBody');
+      refreshClearance();
+    } catch(_) {}
   } else {
     try { allPersonnel = partitionDeleted((await personnelGetAll()).filter(function(p){ return p && p.id; }), function(d){ deletedPersonnel = d; }); }
     catch(_) {}
   }
 
-  // Ethics personnel
+  // Ethics personnel — same guarded re-render
   if (tabId === 'tab-ethics-files' || tabId === 'tab-ethics-roster') {
-    try { await loadEthicsPersonnel(); } catch(_) {}
+    try {
+      allEthicsPersonnel = partitionDeleted(await ethicsPersonnelGetAll(), function(d){ deletedEthics = d; });
+      allEthicsPersonnel.sort(function(a,b){ return ethicsRankIndex(a.role) - ethicsRankIndex(b.role); });
+      await loadEthicsSquadrons();
+      _safeRender(renderEthicsFiles, 'tab-ethics-files');
+      _safeRender(renderEthicsRoster, 'ethicsRosterBody');
+    } catch(_) {}
   } else {
     try { allEthicsPersonnel = partitionDeleted((await ethicsPersonnelGetAll()).filter(function(p){ return p && p.id; }), function(d){ deletedEthics = d; }); }
     catch(_) {}
@@ -5523,6 +5589,84 @@ function canEditUnitFile(unit) { // unit: 'pf' (Omega-1) or 'ef' (Ethics)
   if (unit === 'ef') return !!currentUser.linkedEfId; // must be an Ethics member
   return false;
 }
+
+// ── Quick-promote authority ──
+// Whether the current user may promote THIS Omega-1 file via the quick-promote
+// control. CL5 may promote anyone. Otherwise the user must be CL4+, assigned to
+// an Omega-1 file, and outrank the target. The ranks they may grant are still
+// bounded by canAssignPfRank (up to one rank below their own). CL3 is read-only
+// and may not promote.
+function canPromoteFile(target) {
+  if (!currentUser || !target) return false;
+  if (parseInt(currentUser.clearance || '0') >= 5) return true;  // CL5 unrestricted
+  if (parseInt(currentUser.clearance || '0') < 4) return false;  // CL3 read-only
+  if (!currentUser.linkedPfId) return false;                     // must be assigned to a record
+  var me = allPersonnel.find(function(p){ return p.id === currentUser.linkedPfId; });
+  if (!me || me.id === target.id) return false;                  // not your own file
+  var myIdx = rankIndex(me.rank), tgtIdx = rankIndex(target.rank);
+  if (myIdx < 0 || tgtIdx < 0) return false;
+  return myIdx < tgtIdx;                                          // you must outrank the target
+}
+// The compact promote control shown inside the RANK CHANGE LOG section.
+function buildPromoteControl(p) {
+  if (!canPromoteFile(p)) return '';
+  var isCL5  = parseInt(currentUser.clearance || '0') >= 5;
+  var curIdx = rankIndex(p.rank);
+  // Ranks this operative can be promoted TO: a higher rank (lower index) than
+  // their current one, and within the user's authority (≤ one below own rank).
+  var options = RANKS.filter(function(rk){
+    var idx = rankIndex(rk);
+    if (idx < 0 || idx >= curIdx) return false;          // promotions only
+    return isCL5 || canAssignPfRank(rk, p.rank);         // capped at one below own
+  });
+  if (!options.length) return '';                         // nothing they can promote to
+  var note = isCL5 ? 'CL5 · unrestricted.'
+                   : 'You may promote up to one rank below your own.';
+  return '<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem;font-size:.55rem;border:1px solid var(--border2);border-radius:var(--radius);padding:.4rem .55rem;background:var(--bg3);">'
+       +   '<span style="color:var(--green-dim);letter-spacing:.06em;font-weight:700;">▲ PROMOTE ·</span>'
+       +   '<select id="promoteSel_' + e(p.id) + '" class="modal-input" style="width:auto;font-size:.55rem;padding:2px 6px;">'
+       +     options.map(function(rk){ return '<option value="' + e(rk) + '">' + e(rk) + '</option>'; }).join('')
+       +   '</select>'
+       +   '<button class="pf-section-btn" data-action="apply-promote" data-id="' + e(p.id) + '">[ APPLY ]</button>'
+       +   '<span style="color:var(--text-faint);flex-basis:100%;">' + note + ' Current: ' + e(p.rank || '—') + '.</span>'
+       + '</div>';
+}
+async function applyPromote(id) {
+  var rec = allPersonnel.find(function(p){ return p.id === id; });
+  if (!rec) return;
+  if (!canPromoteFile(rec)) { alert('You do not have authority to change this operative\'s rank.'); return; }
+  var sel = document.getElementById('promoteSel_' + id);
+  if (!sel || !sel.value) return;
+  var newRank = sel.value;
+  if (newRank === rec.rank) return;
+  var isCL5 = parseInt(currentUser.clearance || '0') >= 5;
+  if (rankIndex(newRank) >= rankIndex(rec.rank)) {
+    alert('This control only promotes. Use the file editor to change a rank downward.');
+    return;
+  }
+  if (!isCL5 && !canAssignPfRank(newRank, rec.rank)) {
+    alert('PROMOTION DENIED\n\nYou may only assign ranks up to one below your own. CL5 command may override.');
+    return;
+  }
+  if (!(await pfConfirm('Promote ' + (rec.name || 'this operative') + ' from ' + rec.rank + ' to ' + newRank + '?'))) return;
+  var prevRank = rec.rank, prevProg = rec.promoProgress;
+  if (!Array.isArray(rec.rankHistory)) rec.rankHistory = [];
+  rec.rankHistory.push({ from: prevRank, to: newRank, changedBy: currentUser.id, clearance: currentUser.clearance, changedAt: Date.now() });
+  rec.rank          = newRank;
+  rec.promoProgress = {};                 // next-promotion target changed → reset checklist (mirrors the editor)
+  rec.updatedBy     = currentUser.id;
+  rec.updated       = Date.now();
+  try {
+    await personnelSet(id, rec);
+    auditRecord('RANK CHANGE', 'Ω·' + (rec.name || id) + ' · ' + prevRank + ' → ' + newRank);
+  } catch(err) {
+    rec.rank = prevRank; rec.promoProgress = prevProg;
+    if (rec.rankHistory.length) rec.rankHistory.pop();
+    alert('ERROR: ' + err.message);
+  }
+  renderPersonnelFiles();
+  try { renderOverview(); } catch(_) {}
+}
 // The current user's Ethics Committee role ('Chairman' | 'Member' | 'Assistant' | null).
 function currentEfRole() {
   if (!currentUser || !currentUser.linkedEfId) return null;
@@ -6290,8 +6434,21 @@ function renderPromoReqList() {
       + '</div>');
   }
   el.innerHTML = rows.join('');
-}
-function openPromoReqModal(key) {
+  // Prepend the configurable case-by-case threshold control.
+  var meta = getPromoMeta();
+  var isCL5 = currentUser && parseInt(currentUser.clearance) >= 5;
+  var dis = isCL5 ? '' : 'disabled';
+  var rankOpts = RANKS.map(function(rk){ return '<option value="' + e(rk) + '"' + (rk === meta.caseByCaseFrom ? ' selected' : '') + '>' + e(rk) + '</option>'; }).join('');
+  var cfg = '<div style="border:1px solid var(--border2);padding:.55rem .7rem;margin-bottom:.55rem;">'
+    + '<div style="color:var(--green);font-family:\'VT323\',monospace;letter-spacing:.06em;margin-bottom:.35rem;">CASE-BY-CASE THRESHOLD</div>'
+    + '<div style="font-size:.52rem;color:var(--text-faint);margin-bottom:.45rem;line-height:1.5;">Files at or above this rank are command-discretion: they show the note below instead of a requirements checklist.</div>'
+    + '<label style="display:flex;align-items:center;gap:.4rem;font-size:.6rem;margin-bottom:.4rem;">Case-by-case from rank '
+    +   '<select id="promoCaseByCaseFrom" ' + dis + ' style="background:var(--bg);border:1px solid var(--border2);color:var(--amber);padding:.2rem .4rem;font-family:inherit;font-size:.6rem;">' + rankOpts + '</select></label>'
+    + '<label style="display:block;font-size:.6rem;margin-bottom:.25rem;">Note shown for those ranks</label>'
+    + '<textarea id="promoCaseByCaseNote" ' + dis + ' rows="2" style="width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:.3rem .45rem;font-family:inherit;font-size:.58rem;box-sizing:border-box;margin-bottom:.45rem;line-height:1.5;">' + e(meta.caseByCaseNote) + '</textarea>'
+    + (isCL5 ? '<button class="modal-save" data-action="save-promo-meta" style="font-size:.6rem;">[ SAVE THRESHOLD ]</button>' : '<div style="font-size:.52rem;color:var(--text-faint);">CL5 required to edit.</div>')
+    + '</div>';
+  el.innerHTML = cfg + el.innerHTML;
   if (!currentUser || parseInt(currentUser.clearance) < 5) return;
   if (!allPromoReqs) return;
   var parts = key.split('>');
@@ -6325,6 +6482,25 @@ async function savePromoReq() {
     renderPromoReqList();
     if (typeof renderPersonnelFiles === 'function') renderPersonnelFiles();
   } catch(err) { document.getElementById('promoReqErr').textContent = '> ERROR: ' + err.message; }
+}
+// Save the configurable case-by-case threshold (CL5 only).
+async function savePromoMeta() {
+  if (!currentUser || parseInt(currentUser.clearance) < 5) return;
+  if (!allPromoReqs) return;
+  var fromSel = document.getElementById('promoCaseByCaseFrom');
+  var noteEl  = document.getElementById('promoCaseByCaseNote');
+  if (!fromSel) return;
+  allPromoReqs.__meta = {
+    caseByCaseFrom: fromSel.value || 'Lieutenant',
+    caseByCaseNote: (noteEl && noteEl.value.trim()) || 'This operative is at the top of the standard progression. Further advancement is assessed on a case-by-case basis by command.'
+  };
+  try {
+    await promoReqsSave();
+    auditRecord('EDITED PROMOTION THRESHOLD', 'Case-by-case from ' + allPromoReqs.__meta.caseByCaseFrom);
+    renderPromoReqList();
+    if (typeof renderPersonnelFiles === 'function') renderPersonnelFiles();
+    alert('Promotion threshold saved.');
+  } catch(err) { alert('ERROR: ' + err.message); }
 }
 
 // ── Access compartment management (CL5) ──
@@ -6755,9 +6931,16 @@ async function setFileIntegrity(uid, status) {
 // ── Promotion requirements section (Omega-1 personnel files) ──
 function buildPromoSection(p, canEdit) {
   if (!allPromoReqs) { return '<div style="font-size:.56rem;color:var(--text-faint);">Loading requirements…</div>'; }
+  var meta  = getPromoMeta();
+  var cbIdx = rankIndex(meta.caseByCaseFrom);
+  var myIdx = rankIndex(p.rank);
+  // Ranks at or above the configured threshold are command-discretion (no checklist).
+  if (cbIdx >= 0 && myIdx >= 0 && myIdx <= cbIdx) {
+    return '<div style="font-size:.58rem;color:var(--text-faint);line-height:1.5;">' + e(meta.caseByCaseNote) + '</div>';
+  }
   var info = promoReqsFor(p.rank);
   if (!info) {
-    return '<div style="font-size:.58rem;color:var(--text-faint);line-height:1.5;">This operative is at the top of the standard progression. Further advancement is assessed on a case-by-case basis by command.</div>';
+    return '<div style="font-size:.58rem;color:var(--text-faint);line-height:1.5;">' + e(meta.caseByCaseNote) + '</div>';
   }
   var items = info.items || [];
   var progress = (p.promoProgress && typeof p.promoProgress === 'object') ? p.promoProgress : {};
@@ -7118,7 +7301,7 @@ var linkedBadge = linkedPfIds.has(p.id)
             { key:'awards',    label:'AWARDS & DECORATIONS', count: ' ('+awards.length+')', body: awardsHtml },
             { key:'strikes',   label:'STRIKES',              count: ' ('+strikes.length+')', btn: strikesHeader, body: strikesHtml },
             { key:'leave',     label:'LEAVE (LOA / ROA)',    count: ' ('+activeLv.length+' active)', body: buildLeaveSection(p, 'pf') },
-            { key:'ranks',     label:'RANK CHANGE LOG',      count: ' ('+history.length+')',body: histHtml },
+            { key:'ranks',     label:'RANK CHANGE LOG',      count: ' ('+history.length+')',body: buildPromoteControl(p) + histHtml },
             { key:'squadrons', label:'SQUADRON ASSIGNMENTS',  count:'',
               body: sqdHtml + (canEdit?`<button class="pf-section-btn" data-action="create-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:'') },
             { key:'notes',     label:'NOTES ON FILE',        count: ' ('+notes.length+')', body: notesHtml + noteForm },
@@ -7571,6 +7754,7 @@ document.addEventListener('click', function(ev) {
     case 'edit-pf':          ev.stopPropagation(); openPersonnelModal(id); break;
     case 'delete-pf':        ev.stopPropagation(); deletePersonnelRecord(id); break;
     case 'add-pf-note':      ev.stopPropagation(); addPersonnelNote(id); break;
+    case 'apply-promote':    ev.stopPropagation(); applyPromote(id); break;
     case 'add-activity':            ev.stopPropagation(); addActivityEntry(id, el.dataset.unit || 'pf'); break;
     case 'del-activity':            ev.stopPropagation(); removeActivityEntry(id, el.dataset.unit || 'pf', el.dataset.actid); break;
     case 'set-activity-override':   ev.stopPropagation(); setActivityOverride(id, el.dataset.unit || 'pf'); break;
@@ -7631,6 +7815,7 @@ document.addEventListener('click', function(ev) {
     case 'admin-ack-duress':   adminAckDuress(el.dataset.uid); break;
     case 'new-compartment':    openCompartmentModal(null); break;
     case 'edit-promoreq':      openPromoReqModal(el.dataset.key); break;
+    case 'save-promo-meta':    savePromoMeta(); break;
     case 'save-activity-reqs': saveActivityReqs(); break;
     case 'restore-rec':        restoreRecord(el.dataset.kind, el.dataset.id); break;
     case 'purge-rec':          purgeRecord(el.dataset.kind, el.dataset.id); break;
