@@ -6880,8 +6880,12 @@ async function trainingSet(id, data) {
   if (firebaseReady) await fbSet('/trainings/' + id, data); else lsSet('trainings/' + id, data);
 }
 
-// Only a member linked to an Omega-1 personnel file may log trainings.
-function canLogTraining() { return !!(currentUser && currentUser.linkedPfId); }
+// A member linked to an Omega-1 file may log trainings; CL5 command may always log.
+function canLogTraining() {
+  if (!currentUser) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  return !!currentUser.linkedPfId;
+}
 // The conductor (or CL5 command) may edit/delete a record.
 function canManageTraining(t) {
   if (!currentUser || !t) return false;
@@ -6950,8 +6954,10 @@ function renderTrainings() {
 
 function buildTrainingCard(t) {
   var dateStr = formatDob(t.date);
-  var conductor = '<span class="person-link" data-action="open-pf-from-training" data-pfid="' + e(t.conductedByPfId) + '">'
-    + e(trnPfName(t.conductedByPfId, t.conductedByName)) + '</span>';
+  var conductorName = e(trnPfName(t.conductedByPfId, t.conductedByName));
+  var conductor = (t.conductedByPfId && allPersonnel.some(function(p){ return p.id === t.conductedByPfId; }))
+    ? '<span class="person-link" data-action="open-pf-from-training" data-pfid="' + e(t.conductedByPfId) + '">' + conductorName + '</span>'
+    : conductorName;
   var attendees = (t.attendees || []);
   var attHtml = attendees.length
     ? attendees.map(function(a){
@@ -7069,8 +7075,8 @@ async function saveTraining() {
       title: document.getElementById('trnTitle').value.trim(),
       notes: notes,
       attendees: _trnAttendees.slice(),
-      conductedByPfId: currentUser.linkedPfId,
-      conductedByName: trnPfName(currentUser.linkedPfId, currentUser.id),
+      conductedByPfId: currentUser.linkedPfId || null,
+      conductedByName: currentUser.linkedPfId ? trnPfName(currentUser.linkedPfId, currentUser.id) : ('EC·' + currentUser.id),
       conductedByUserId: currentUser.id,
       createdAt: Date.now(),
       deleted: false
