@@ -477,7 +477,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .pf-empty{color:var(--text-faint);font-size:.65rem;text-align:center;padding:2rem;border:1px dashed var(--border);}
 
 /* ── Personnel Form Modal ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(4,10,6,.92);z-index:600;display:flex;align-items:center;justify-content:center;}
+.modal-overlay{position:fixed;inset:0;background:rgba(4,10,6,.92);z-index:600;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
 .modal-box{border:1px solid var(--border2);background:var(--bg2);padding:1.6rem;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto;animation:slideIn .25s ease;border-radius:var(--radius-lg);box-shadow:0 12px 40px rgba(0,0,0,.5);}
 .modal-title{font-family:'VT323',monospace;font-size:1.3rem;color:var(--green);letter-spacing:.1em;margin-bottom:1rem;}
 .modal-field{margin-bottom:.75rem;}
@@ -595,7 +596,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .ethics-sec-header:first-child{margin-top:0;}
 
 /* ── Ethics modal ── */
-.ef-modal-bg{position:fixed;inset:0;background:rgba(4,10,6,.92);z-index:800;display:flex;align-items:center;justify-content:center;}
+.ef-modal-bg{position:fixed;inset:0;background:rgba(4,10,6,.92);z-index:800;display:none;align-items:center;justify-content:center;}
+.ef-modal-bg.open{display:flex;}
 .ef-modal{border:1px solid var(--border2);background:var(--bg2);padding:1.5rem;width:420px;max-width:95vw;animation:slideIn .25s ease;max-height:90vh;overflow-y:auto;}
 .ef-modal-title{font-family:'VT323',monospace;font-size:1.3rem;color:var(--green);letter-spacing:.1em;margin-bottom:1rem;}
 .ef-form-label{font-size:.6rem;color:var(--text-dim);letter-spacing:.1em;display:block;margin-bottom:3px;}
@@ -810,6 +812,20 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   .dir-fields { grid-template-columns:1fr; }
 }
 
+/* ── Trainings ── */
+.trn-card{border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg2);padding:.6rem .75rem;margin-bottom:.55rem;}
+.trn-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;}
+.trn-date{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--amber);letter-spacing:.05em;}
+.trn-title{font-size:.74rem;color:var(--text);font-weight:600;margin-top:1px;}
+.trn-meta{font-size:.58rem;color:var(--text-dim);letter-spacing:.04em;margin-top:3px;line-height:1.7;}
+.trn-notes{font-size:.66rem;color:var(--text);line-height:1.6;margin-top:.45rem;white-space:pre-wrap;border-top:1px dashed var(--border);padding-top:.4rem;}
+.person-link{color:var(--cyan);cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--cyan);}
+.person-link:hover{color:var(--text);}
+.trn-attendee{display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:1px 7px;margin:2px 3px 2px 0;font-size:.58rem;color:var(--text);}
+.trn-attendee .x{cursor:pointer;color:var(--text-faint);font-weight:700;}
+.trn-attendee .x:hover{color:#dd6666;}
+.trn-empty{font-size:.62rem;color:var(--text-faint);letter-spacing:.05em;padding:.8rem;text-align:center;border:1px dashed var(--border2);border-radius:var(--radius);}
+
 </style>
 </head>
 <body>
@@ -924,6 +940,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         </div>
         <div class="nav-tab" onclick="switchTab(this,'orders')">ORDERS
           <span id="orderBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
+        <div class="nav-tab" onclick="switchTab(this,'trainings')">TRAININGS
+          <span id="trainingBadge" style="display:none;" class="badge b-amber">0</span>
         </div>
       </div>
     </div>
@@ -1155,6 +1174,23 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
         </thead>
         <tbody id="rosterBody"></tbody>
       </table>
+    </div>
+
+    <!-- OMEGA-1 TRAININGS -->
+    <div class="tab-content" id="tab-trainings">
+      <div class="sec">▸ OMEGA-1 TRAINING LOG <span id="trnCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
+      <div id="trnAccessNotice" style="display:none;" class="trn-empty"></div>
+      <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+        <input class="pf-search" id="trnSearch" placeholder="SEARCH BY CONDUCTOR, ATTENDEE OR NOTES..."
+               oninput="renderTrainings()" style="flex:1;min-width:180px;"/>
+        <select class="pf-filter" id="trnFilterScope" onchange="renderTrainings()" title="Filter scope">
+          <option value="all">ALL TRAININGS</option>
+          <option value="mine">CONDUCTED BY ME</option>
+          <option value="involving-me">INVOLVING ME</option>
+        </select>
+        <button class="pf-btn" id="trnNewBtn" onclick="openTrainingModal(null)" style="display:none;">[ + LOG TRAINING ]</button>
+      </div>
+      <div id="trnList"></div>
     </div>
 
     <!-- ETHICS FILES -->
@@ -1436,7 +1472,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 </div><!-- /shell -->
 
 <!-- PERSONNEL MODAL — must be before the script block so DOM exists when script runs -->
-<div class="modal-overlay" id="pfModal" style="display:none;">
+<div class="modal-overlay" id="pfModal">
   <div class="modal-box">
     <div class="modal-title" id="pfModalTitle">NEW PERSONNEL RECORD</div>
     <input type="hidden" id="pfEditId"/>
@@ -1484,7 +1520,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 </div>
 
 <!-- ETHICS MODAL — before script so DOM exists when script runs -->
-<div class="ef-modal-bg" id="efModal" style="display:none;">
+<div class="ef-modal-bg" id="efModal">
   <div class="ef-modal">
     <div class="ef-modal-title" id="efModalTitle">NEW ETHICS RECORD</div>
     <input type="hidden" id="efEditId"/>
@@ -2409,6 +2445,38 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
   </div>
 </div>
 
+<!-- TRAINING LOG MODAL -->
+<div class="modal-overlay-2" id="trainingModal" style="z-index:1150;">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title" id="trainingModalTitle">LOG TRAINING</div>
+    <input type="hidden" id="trnEditId"/>
+    <div class="modal-field">
+      <label class="modal-label">DATE OF TRAINING</label>
+      <input class="modal-input" type="date" id="trnDate"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">TRAINING TYPE / TITLE <span style="color:var(--text-faint);">(optional)</span></label>
+      <input class="modal-input" id="trnTitle" placeholder="e.g. Breach Drill, Marksmanship, CQC..."/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">NOTES — WHAT WAS CONDUCTED</label>
+      <textarea class="modal-input" id="trnNotes" rows="4" placeholder="Describe the session, objectives, outcomes..." style="resize:vertical;min-height:70px;font-family:inherit;"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">PERSONNEL INVOLVED <span style="color:var(--text-faint);">(tag attendees)</span></label>
+      <select class="modal-input" id="trnAttendeePicker" onchange="addTrainingAttendee(this.value)">
+        <option value="">+ ADD PERSONNEL...</option>
+      </select>
+      <div id="trnAttendeeList" style="margin-top:.4rem;"></div>
+    </div>
+    <div class="modal-err" id="trnErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="modal-cancel" data-action="close-training-modal">[ CANCEL ]</button>
+      <button class="modal-btn" id="trnSaveBtn" onclick="saveTraining()">[ SAVE TRAINING ]</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ================================================================
 //  FIREBASE REST HELPERS
@@ -3083,6 +3151,7 @@ async function onLogin() { // Make function async
 
   loadOrders();
   loadPersonnel();
+  loadTrainings();
   loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
   loadCompartments();
   loadPromoReqs();
@@ -3178,7 +3247,7 @@ function logout() {
   document.getElementById('userPill').style.display = 'none';
   var nb = document.getElementById('notifBanner'); if (nb) nb.style.display = 'none';
   // Close any open modal so none is orphaned over the login screen after logout/expiry
-  Array.prototype.forEach.call(document.querySelectorAll('.modal-overlay.open, .modal-overlay-2.open'), function(el){
+  Array.prototype.forEach.call(document.querySelectorAll('.modal-overlay.open, .modal-overlay-2.open, .ef-modal-bg.open'), function(el){
     el.classList.remove('open');
   });
   var adminBtn = document.getElementById('adminBtn');
@@ -5453,6 +5522,7 @@ function switchTab(el, id) {
   if (id === 'ethics-files')    loadEthicsPersonnel();
   if (id === 'ethics-roster')   { loadEthicsPersonnel(); var rbe=document.getElementById('exportRosterEfBtn'); if(rbe) rbe.style.display=(currentUser&&parseInt(currentUser.clearance)>=5)?'inline-block':'none'; }
   if (id === 'poi')             loadPOIData();
+  if (id === 'trainings')       loadTrainings();
   if (id === 'blacklist')       loadBlacklist();
   if (id === 'recruit') {
     if (!currentUser || parseInt(currentUser.clearance) < 4) {
@@ -6792,6 +6862,276 @@ async function personnelDel(id) {
   else lsDel('personnel/' + id);
 }
 
+// ================================================================
+//  OMEGA-1 TRAININGS
+//  A linked Omega-1 member logs a training session: date, notes,
+//  and tagged attendees. Records link back to personnel files.
+//  Firebase path: /trainings/{id}
+// ================================================================
+var allTrainings     = [];   // live training records
+var deletedTrainings = [];    // soft-deleted (recycle bin)
+var _trnAttendees    = [];    // working set of {pfId,name} while the modal is open
+
+async function trainingsGetAll() {
+  if (firebaseReady) { var all = await fbGetAll('/trainings'); return all ? Object.values(all) : []; }
+  return Object.values(lsAll('trainings/'));
+}
+async function trainingSet(id, data) {
+  if (firebaseReady) await fbSet('/trainings/' + id, data); else lsSet('trainings/' + id, data);
+}
+
+// Only a member linked to an Omega-1 personnel file may log trainings.
+function canLogTraining() { return !!(currentUser && currentUser.linkedPfId); }
+// The conductor (or CL5 command) may edit/delete a record.
+function canManageTraining(t) {
+  if (!currentUser || !t) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  if (currentUser.linkedPfId && t.conductedByPfId === currentUser.linkedPfId) return true;
+  return currentUser.id === t.conductedByUserId;
+}
+// Resolve a personnel name from an id (falls back to a snapshot/placeholder).
+function trnPfName(pfId, fallback) {
+  var p = allPersonnel.find(function(x){ return x.id === pfId; });
+  return p ? (p.name || p.nickname || pfId) : (fallback || '[removed file]');
+}
+
+async function loadTrainings() {
+  try {
+    var raw = await trainingsGetAll();
+    allTrainings = partitionDeleted(raw.filter(function(t){ return t && t.id; }), function(d){ deletedTrainings = d; });
+  } catch(e) { allTrainings = []; }
+  // newest first
+  allTrainings.sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0); });
+  var newBtn = document.getElementById('trnNewBtn');
+  if (newBtn) newBtn.style.display = canLogTraining() ? 'inline-block' : 'none';
+  var notice = document.getElementById('trnAccessNotice');
+  if (notice) {
+    if (!canLogTraining()) {
+      notice.style.display = 'block';
+      notice.textContent = currentUser
+        ? 'Link your account to an Omega-1 personnel file (via your account menu) to log trainings. You may still view the log below.'
+        : 'Observer mode — training log is read-only.';
+    } else notice.style.display = 'none';
+  }
+  renderTrainings();
+}
+
+function renderTrainings() {
+  var list = document.getElementById('trnList');
+  if (!list) return;
+  var q = (document.getElementById('trnSearch') || {}).value || '';
+  q = q.trim().toLowerCase();
+  var scope = (document.getElementById('trnFilterScope') || {}).value || 'all';
+  var mine = currentUser && currentUser.linkedPfId;
+
+  var rows = allTrainings.filter(function(t){
+    if (scope === 'mine' && t.conductedByPfId !== mine) return false;
+    if (scope === 'involving-me') {
+      var involved = t.conductedByPfId === mine ||
+        (Array.isArray(t.attendees) && t.attendees.some(function(a){ return a.pfId === mine; }));
+      if (!involved) return false;
+    }
+    if (!q) return true;
+    var hay = [t.title, t.notes, trnPfName(t.conductedByPfId, t.conductedByName)]
+      .concat((t.attendees||[]).map(function(a){ return trnPfName(a.pfId, a.name); }))
+      .join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+
+  var cnt = document.getElementById('trnCount');
+  if (cnt) cnt.textContent = rows.length ? '(' + rows.length + ')' : '';
+
+  if (!rows.length) {
+    list.innerHTML = '<div class="trn-empty">NO TRAINING RECORDS' + (q || scope!=='all' ? ' MATCH THE CURRENT FILTER.' : ' LOGGED YET.') + '</div>';
+    return;
+  }
+  list.innerHTML = rows.map(buildTrainingCard).join('');
+}
+
+function buildTrainingCard(t) {
+  var dateStr = formatDob(t.date);
+  var conductor = '<span class="person-link" data-action="open-pf-from-training" data-pfid="' + e(t.conductedByPfId) + '">'
+    + e(trnPfName(t.conductedByPfId, t.conductedByName)) + '</span>';
+  var attendees = (t.attendees || []);
+  var attHtml = attendees.length
+    ? attendees.map(function(a){
+        return '<span class="trn-attendee"><span class="person-link" data-action="open-pf-from-training" data-pfid="'
+          + e(a.pfId) + '">' + e(trnPfName(a.pfId, a.name)) + '</span></span>';
+      }).join('')
+    : '<span style="color:var(--text-faint);">none tagged</span>';
+  var manage = canManageTraining(t)
+    ? '<div style="display:flex;gap:.35rem;">'
+      + '<button class="pf-section-btn" data-action="edit-training" data-id="' + e(t.id) + '" style="font-size:.52rem;padding:1px 7px;">EDIT</button>'
+      + '<button class="pf-section-btn" data-action="delete-training" data-id="' + e(t.id) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">DELETE</button>'
+      + '</div>'
+    : '';
+  return '<div class="trn-card">'
+    + '<div class="trn-card-top">'
+    + '<div><div class="trn-date">' + e(dateStr) + '</div>'
+    + (t.title ? '<div class="trn-title">' + e(t.title) + '</div>' : '')
+    + '</div>' + manage + '</div>'
+    + '<div class="trn-meta">CONDUCTED BY · ' + conductor + '<br>PERSONNEL INVOLVED · ' + attHtml + '</div>'
+    + (t.notes ? '<div class="trn-notes">' + e(t.notes) + '</div>' : '')
+    + '</div>';
+}
+
+// ── Modal ──
+function openTrainingModal(id) {
+  if (!id && !canLogTraining()) { alert('LINK REQUIRED\n\nYou must be linked to an Omega-1 personnel file to log a training.'); return; }
+  var editing = !!id;
+  var rec = editing ? allTrainings.find(function(t){ return t.id === id; }) : null;
+  if (editing && !canManageTraining(rec)) { alert('You do not have authority to edit this training record.'); return; }
+
+  document.getElementById('trainingModalTitle').textContent = editing ? 'EDIT TRAINING' : 'LOG TRAINING';
+  document.getElementById('trnEditId').value = id || '';
+  document.getElementById('trnErr').style.display = 'none';
+
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('trnDate').value  = rec ? (rec.date || today) : today;
+  document.getElementById('trnTitle').value = rec ? (rec.title || '') : '';
+  document.getElementById('trnNotes').value = rec ? (rec.notes || '') : '';
+  _trnAttendees = rec && Array.isArray(rec.attendees)
+    ? rec.attendees.map(function(a){ return { pfId: a.pfId, name: a.name }; })
+    : [];
+
+  renderTrnAttendeeList();
+  populateTrainingPicker();
+  document.getElementById('trainingModal').classList.add('open');
+}
+function closeTrainingModal() {
+  document.getElementById('trainingModal').classList.remove('open');
+  _trnAttendees = [];
+}
+function populateTrainingPicker() {
+  var sel = document.getElementById('trnAttendeePicker');
+  if (!sel) return;
+  var selfId = currentUser && currentUser.linkedPfId;
+  var taken = {};
+  _trnAttendees.forEach(function(a){ taken[a.pfId] = true; });
+  if (selfId) taken[selfId] = true; // the conductor is implicit, not an attendee
+  var opts = ['<option value="">+ ADD PERSONNEL...</option>'];
+  allPersonnel.slice()
+    .filter(function(p){ return p.id && !taken[p.id]; })
+    .sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); })
+    .forEach(function(p){
+      opts.push('<option value="' + e(p.id) + '">' + e(p.name || p.nickname || p.id) + (p.rank ? ' · ' + e(p.rank) : '') + '</option>');
+    });
+  sel.innerHTML = opts.join('');
+}
+function addTrainingAttendee(pfId) {
+  if (!pfId) return;
+  if (_trnAttendees.some(function(a){ return a.pfId === pfId; })) return;
+  var p = allPersonnel.find(function(x){ return x.id === pfId; });
+  _trnAttendees.push({ pfId: pfId, name: p ? (p.name || p.nickname || pfId) : pfId });
+  renderTrnAttendeeList();
+  populateTrainingPicker();
+}
+function removeTrainingAttendee(pfId) {
+  _trnAttendees = _trnAttendees.filter(function(a){ return a.pfId !== pfId; });
+  renderTrnAttendeeList();
+  populateTrainingPicker();
+}
+function renderTrnAttendeeList() {
+  var box = document.getElementById('trnAttendeeList');
+  if (!box) return;
+  if (!_trnAttendees.length) { box.innerHTML = '<span style="font-size:.58rem;color:var(--text-faint);">No personnel tagged yet.</span>'; return; }
+  box.innerHTML = _trnAttendees.map(function(a){
+    return '<span class="trn-attendee">' + e(a.name)
+      + '<span class="x" data-action="remove-trn-attendee" data-pfid="' + e(a.pfId) + '">×</span></span>';
+  }).join('');
+}
+async function saveTraining() {
+  var notes = document.getElementById('trnNotes').value.trim();
+  var date  = document.getElementById('trnDate').value;
+  var errEl = document.getElementById('trnErr');
+  function fail(msg){ errEl.textContent = msg; errEl.style.display = 'block'; }
+  if (!date)  { fail('A training date is required.'); return; }
+  if (!notes) { fail('Notes are required — describe what was conducted.'); return; }
+
+  var editId = document.getElementById('trnEditId').value;
+  var existing = editId ? allTrainings.find(function(t){ return t.id === editId; }) : null;
+  if (editId && !canManageTraining(existing)) { fail('You do not have authority to edit this record.'); return; }
+  if (!editId && !canLogTraining()) { fail('You must be linked to an Omega-1 file to log a training.'); return; }
+
+  var btn = document.getElementById('trnSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '[ SAVING... ]'; }
+
+  var rec;
+  if (existing) {
+    rec = existing;
+    rec.date = date; rec.title = document.getElementById('trnTitle').value.trim();
+    rec.notes = notes; rec.attendees = _trnAttendees.slice();
+    rec.updatedBy = currentUser.id; rec.updatedAt = Date.now();
+  } else {
+    rec = {
+      id: 'trn_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+      date: date,
+      title: document.getElementById('trnTitle').value.trim(),
+      notes: notes,
+      attendees: _trnAttendees.slice(),
+      conductedByPfId: currentUser.linkedPfId,
+      conductedByName: trnPfName(currentUser.linkedPfId, currentUser.id),
+      conductedByUserId: currentUser.id,
+      createdAt: Date.now(),
+      deleted: false
+    };
+  }
+  try { await trainingSet(rec.id, rec); }
+  catch(err) { if (btn){ btn.disabled=false; btn.textContent='[ SAVE TRAINING ]'; } fail('SAVE ERROR: ' + err.message); return; }
+  if (typeof auditRecord === 'function') auditRecord(existing ? 'EDITED TRAINING' : 'LOGGED TRAINING', (rec.title || 'Session') + ' · ' + formatDob(rec.date));
+
+  if (btn) { btn.disabled = false; btn.textContent = '[ SAVE TRAINING ]'; }
+  closeTrainingModal();
+  await loadTrainings();
+  // refresh personnel cards so their TRAININGS section reflects the change
+  if (document.getElementById('tab-personnel-files') && document.getElementById('tab-personnel-files').classList.contains('active')) renderPersonnelFiles();
+}
+async function deleteTraining(id) {
+  var rec = allTrainings.find(function(t){ return t.id === id; });
+  if (!canManageTraining(rec)) { alert('You do not have authority to delete this record.'); return; }
+  if (!await pfConfirm('Move this training record to the recycle bin?\n\n' + (rec ? ((rec.title||'Session') + ' · ' + formatDob(rec.date)) : ''))) return;
+  if (rec) {
+    rec.deleted = true; rec.deletedBy = currentUser.id; rec.deletedAt = Date.now();
+    try { await trainingSet(id, rec); } catch(e){ alert('ERROR: ' + e.message); return; }
+    if (typeof auditRecord === 'function') auditRecord('DELETED TRAINING', (rec.title||'Session') + ' → recycle bin');
+    allTrainings = allTrainings.filter(function(t){ return t.id !== id; });
+    if (!deletedTrainings.some(function(t){ return t.id===id; })) deletedTrainings.push(rec);
+  }
+  renderTrainings();
+}
+// Jump from a training record to a personnel file.
+function openPersonnelFromTraining(pfId) {
+  if (!pfId) return;
+  var navEl = document.querySelector('#ngt-omega1 .nav-tab[onclick*="personnel-files"]');
+  if (navEl) navEl.click(); else if (typeof switchTab === 'function') switchTab(document.createElement('div'), 'personnel-files');
+  setTimeout(function(){
+    if (typeof pfExpanded !== 'undefined' && pfExpanded.add) pfExpanded.add(pfId);
+    if (typeof renderPersonnelFiles === 'function') renderPersonnelFiles();
+    var card = document.getElementById('pfcard_' + pfId);
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 120);
+}
+// Section shown inside a personnel card linking back to that member's trainings.
+function buildTrainingSection(p) {
+  var conducted = allTrainings.filter(function(t){ return t.conductedByPfId === p.id; });
+  var attended  = allTrainings.filter(function(t){
+    return t.conductedByPfId !== p.id && Array.isArray(t.attendees) && t.attendees.some(function(a){ return a.pfId === p.id; });
+  });
+  if (!conducted.length && !attended.length) {
+    return '<div style="font-size:.6rem;color:var(--text-faint);padding:.3rem 0;">No training records.</div>';
+  }
+  function row(t, role){
+    return '<div style="display:flex;justify-content:space-between;gap:.5rem;padding:2px 0;border-bottom:1px solid var(--border);font-size:.62rem;">'
+      + '<span><span class="person-link" data-action="open-training-tab" data-trnid="' + e(t.id) + '">'
+      + e(formatDob(t.date)) + (t.title ? ' · ' + e(t.title) : '') + '</span></span>'
+      + '<span style="color:var(--text-dim);font-size:.55rem;letter-spacing:.05em;">' + role + '</span></div>';
+  }
+  var html = '';
+  if (conducted.length) html += conducted.map(function(t){ return row(t, 'CONDUCTED'); }).join('');
+  if (attended.length)  html += attended.map(function(t){ return row(t, 'ATTENDED'); }).join('');
+  return html;
+}
+
 // ── Re-derive clearance once personnel data is in memory ──
 // Called at the end of loadPersonnel / loadEthicsPersonnel so any
 // stored-vs-file-rank discrepancy (e.g. from a promotion/demotion) is
@@ -6931,6 +7271,26 @@ async function setFileIntegrity(uid, status) {
 }
 
 // ── Promotion requirements section (Omega-1 personnel files) ──
+// Who may tick off PROMOTION REQUIREMENTS on an Omega-1 file. CL5 and senior
+// staff (Sr CL4 / senior EC) may mark any file. Junior CL4 (Captain / Lieutenant)
+// may mark OTHERS' requirements but NOT their own (no self-certification). CL3 is
+// read-only.
+function canMarkPromoReq(rec) {
+  if (!currentUser || !rec) return false;
+  var cl = parseInt(currentUser.clearance || '0');
+  if (cl >= 5) return true;                                       // CL5 — any
+  if (cl < 4) return false;                                       // CL3 read-only
+  var role = currentEfRole();
+  if (role === 'Chairman' || role === 'Member') return true;      // senior EC — any
+  if (currentUser.linkedPfId) {
+    var me = allPersonnel.find(function(x){ return x.id === currentUser.linkedPfId; });
+    if (me && CL4_SENIOR_RANKS.includes(me.rank)) return true;    // Sr CL4 — any (incl. own)
+    if (me && CL4_JUNIOR_RANKS.includes(me.rank)) {
+      return currentUser.linkedPfId !== rec.id;                   // Jr CL4 — others only, not own
+    }
+  }
+  return false;
+}
 function buildPromoSection(p, canEdit) {
   if (!allPromoReqs) { return '<div style="font-size:.56rem;color:var(--text-faint);">Loading requirements…</div>'; }
   var meta  = getPromoMeta();
@@ -6966,7 +7326,7 @@ function buildPromoSection(p, canEdit) {
 async function togglePromoReq(pfId, reqId, met) {
   var rec = allPersonnel.find(function(x){ return x.id === pfId; });
   if (!rec) return;
-  if (!canManageFile(rec, 'pf')) { alert('You do not have authority to manage this file.'); renderPersonnelFiles(); return; }
+  if (!canMarkPromoReq(rec)) { alert('You do not have authority to mark this file\'s promotion requirements.'); renderPersonnelFiles(); return; }
   if (!rec.promoProgress || typeof rec.promoProgress !== 'object') rec.promoProgress = {};
   if (met) rec.promoProgress[reqId] = { met: true, metBy: currentUser.id, metAt: Date.now() };
   else delete rec.promoProgress[reqId];
@@ -7316,9 +7676,16 @@ var linkedBadge = linkedPfIds.has(p.id)
               var done = pr.items.filter(function(it){ return prog[it.id] && prog[it.id].met; }).length;
               cnt = ' ('+done+'/'+pr.items.length+')';
             }
-            sections.push({ key:'promo', label:'▲ PROMOTION REQUIREMENTS', count: cnt, body: buildPromoSection(p, canEdit) });
+            sections.push({ key:'promo', label:'▲ PROMOTION REQUIREMENTS', count: cnt, body: buildPromoSection(p, canMarkPromoReq(p)) });
           })();
           sections.push({ key:'activity', label:'◷ ACTIVITY', count: activityHdrLabel(p, 'pf'), body: buildActivitySection(p, 'pf') });
+          (function(){
+            var tc = allTrainings.filter(function(t){
+              return t.conductedByPfId === p.id ||
+                (Array.isArray(t.attendees) && t.attendees.some(function(a){ return a.pfId === p.id; }));
+            }).length;
+            sections.push({ key:'trainings', label:'⌖ TRAININGS', count: ' ('+tc+')', body: buildTrainingSection(p) });
+          })();
           if (canViewFileIntegrity()) {
             sections.push({ key:'security', label:'⚕ SECURITY STATUS', count:'', body: fileIntegrityControl(p.id, 'pf') });
           }
@@ -7507,12 +7874,12 @@ function openPersonnelModal(id) {
     document.getElementById('pfSteamId').value   = '';
   }
 
-  document.getElementById('pfModal').style.display = 'flex';
+  document.getElementById('pfModal').classList.add('open');
   document.getElementById('pfName').focus();
 }
 
 function closePersonnelModal() {
-  document.getElementById('pfModal').style.display = 'none';
+  document.getElementById('pfModal').classList.remove('open');
 }
 
 async function savePersonnelRecord() {
@@ -7640,10 +8007,17 @@ var NON_DISMISSIBLE_MODALS = ['sessionWarnModal', 'recoveryShowModal', 'changePa
 var MODAL_CANCEL_BTN = {
   pfConfirmModal: 'pfConfirmNo'
 };
+// Modals that manage their own teardown (form reset etc.): route Escape/backdrop
+// through the dedicated close function rather than just stripping the .open class.
+var MODAL_CLOSE_FN = {
+  pfModal: 'closePersonnelModal',
+  efModal: 'closeEthicsModal',
+  linkPersonnelModal: 'closeLinkPersonnelModal'
+};
 // Return the open modal with the highest z-index (the visually topmost one).
 function topOpenModal() {
   var open = Array.prototype.slice.call(
-    document.querySelectorAll('.modal-overlay.open, .modal-overlay-2.open'));
+    document.querySelectorAll('.modal-overlay.open, .modal-overlay-2.open, .ef-modal-bg.open'));
   if (!open.length) return null;
   open.sort(function(a, b){
     return (parseInt(getComputedStyle(b).zIndex) || 0) - (parseInt(getComputedStyle(a).zIndex) || 0);
@@ -7658,6 +8032,12 @@ function dismissModal(modal) {
   if (cancelBtnId) {
     var btn = document.getElementById(cancelBtnId);
     if (btn) { btn.click(); return true; } // routes through the modal's own cancel logic
+  }
+  var closeFn = MODAL_CLOSE_FN[modal.id];
+  if (closeFn && typeof window[closeFn] === 'function') {
+    window[closeFn]();           // dedicated teardown (also removes .open via its own logic)
+    modal.classList.remove('open');
+    return true;
   }
   modal.classList.remove('open');
   return true;
@@ -7682,7 +8062,7 @@ document.addEventListener('mouseup', function(ev) {
   var sameTarget = (t === _backdropDownTarget);
   _backdropDownTarget = null;
   if (!sameTarget || !t || !t.classList) return;
-  if ((t.classList.contains('modal-overlay') || t.classList.contains('modal-overlay-2')) && t.classList.contains('open')) {
+  if ((t.classList.contains('modal-overlay') || t.classList.contains('modal-overlay-2') || t.classList.contains('ef-modal-bg')) && t.classList.contains('open')) {
     dismissModal(t);
   }
 });
@@ -7695,6 +8075,13 @@ document.addEventListener('click', function(ev) {
   var status = el.dataset.status;
 
   switch (action) {
+    // Omega-1 trainings
+    case 'close-training-modal':   closeTrainingModal(); break;
+    case 'edit-training':          openTrainingModal(el.dataset.id); break;
+    case 'delete-training':        deleteTraining(el.dataset.id); break;
+    case 'open-pf-from-training':  openPersonnelFromTraining(el.dataset.pfid); break;
+    case 'remove-trn-attendee':    removeTrainingAttendee(el.dataset.pfid); break;
+    case 'open-training-tab':      { var tn=document.querySelector('#ngt-omega1 .nav-tab[onclick*="trainings"]'); if(tn) tn.click(); break; }
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
@@ -10550,12 +10937,12 @@ function openEthicsModal(id) {
     document.getElementById('efDob').value     = '';
     document.getElementById('efRole').value    = '';
   }
-  document.getElementById('efModal').style.display = 'flex';
+  document.getElementById('efModal').classList.add('open');
   document.getElementById('efName').focus();
 }
 
 function closeEthicsModal() {
-  document.getElementById('efModal').style.display = 'none';
+  document.getElementById('efModal').classList.remove('open');
 }
 
 async function saveEthicsRecord() {
@@ -11109,12 +11496,12 @@ function openLinkPersonnelModal() {
       }
     });
 
-    document.getElementById('linkPersonnelModal').style.display = 'flex';
+    document.getElementById('linkPersonnelModal').classList.add('open');
   });
 }
 
 function closeLinkPersonnelModal() {
-  document.getElementById('linkPersonnelModal').style.display = 'none';
+  document.getElementById('linkPersonnelModal').classList.remove('open');
 }
 
 // Called directly from button onclick attributes in the modal HTML below.
