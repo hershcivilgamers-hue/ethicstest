@@ -806,3 +806,12 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .trn-attendee .x:hover{color:#dd6666;}
 .trn-empty{font-size:.62rem;color:var(--text-faint);letter-spacing:.05em;padding:.8rem;text-align:center;border:1px dashed var(--border2);border-radius:var(--radius);}
 
+/* ── Service Record timeline ── */
+.svc-timeline{display:flex;flex-direction:column;}
+.svc-row{display:grid;grid-template-columns:18px 82px 1fr;gap:.45rem;align-items:baseline;padding:3px 0;border-bottom:1px solid var(--border);font-size:.62rem;}
+.svc-row:last-child{border-bottom:none;}
+.svc-icon{text-align:center;font-size:.7rem;line-height:1;}
+.svc-date{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--amber);letter-spacing:.02em;white-space:nowrap;}
+.svc-label{color:var(--text);}
+.svc-detail{color:var(--text-faint);}
+

@@ -4659,6 +4659,107 @@ function buildTrainingSection(p) {
   return html;
 }
 
+// ================================================================
+//  SERVICE RECORD — unified chronological history of a member.
+//  Aggregates every dated event already stored on the file
+//  (enrolment, rank changes, awards, strikes, leave, activity,
+//  notes) plus trainings, into one timeline. No new data model —
+//  this is a read-only view over fields the app already records.
+// ================================================================
+function buildServiceRecord(p) {
+  var ev = [];
+  function add(ts, dateStr, type, icon, color, label, detail) {
+    if (ts == null && !dateStr) return;
+    var sortTs = (ts != null) ? ts : (Date.parse((dateStr || '') + 'T00:00:00') || 0);
+    var shownDate = dateStr || (ts != null ? new Date(ts).toISOString().slice(0,10) : '');
+    ev.push({ ts: sortTs, date: shownDate, type: type, icon: icon, color: color, label: label, detail: detail || '' });
+  }
+  // Enrolment
+  if (p.created) add(p.created, null, 'enlist', '✦', 'var(--cyan)', 'ENROLLED · personnel file created', '');
+  // Rank changes
+  (p.rankHistory || []).forEach(function(r){
+    add(r.changedAt, null, 'rank', '▲', 'var(--amber)',
+        (r.from ? 'RANK CHANGE · ' + r.from + ' → ' + r.to : 'RANK SET · ' + r.to),
+        r.changedBy ? 'by ' + r.changedBy : '');
+  });
+  // Awards
+  (p.awards || []).forEach(function(a){
+    add(a.created || null, a.date || null, 'award', '✪', '#5fb87a',
+        'AWARD · ' + (a.name || '—') + (a.tier ? ' (' + a.tier + ')' : ''),
+        a.awardedBy ? 'by ' + a.awardedBy : '');
+  });
+  // Strikes
+  (p.strikes || []).forEach(function(s){
+    add(s.issuedAt, null, 'strike', '⚠', '#dd6666',
+        'STRIKE · ' + (s.reason || '—') + (s.status && s.status !== 'Active' ? ' [' + s.status + ']' : ''),
+        s.issuedBy ? 'by ' + s.issuedBy : '');
+  });
+  // Leave (LOA / ROA)
+  (p.leaves || p.leave || []).forEach(function(l){
+    add(l.issuedAt || null, l.startDate || null, 'leave', '◷', 'var(--text-dim)',
+        'LEAVE · ' + (l.type || 'LOA') + ' ' + (l.startDate || '') + (l.endDate ? '–' + l.endDate : '') + (l.ended ? ' [ended]' : ''),
+        l.reason || '');
+  });
+  // Activity entries
+  (p.activityLog || []).forEach(function(a){
+    add(a.at, null, 'activity', '▣', 'var(--text-faint)',
+        'ACTIVITY · ' + (a.hours != null ? a.hours + 'h' : '') + (a.note ? ' — ' + a.note : ''),
+        (a.tags && a.tags.length) ? a.tags.join(', ') : '');
+  });
+  // File notes / annotations
+  (p.notes || []).forEach(function(n){
+    add(n.created, null, 'note', '✎', 'var(--text-faint)',
+        'NOTE · ' + (n.text || ''), n.author ? 'by ' + n.author : '');
+  });
+  // Trainings (from the global log)
+  (typeof allTrainings !== 'undefined' ? allTrainings : []).forEach(function(t){
+    var role = (t.conductedByPfId === p.id) ? 'CONDUCTED'
+      : (Array.isArray(t.attendees) && t.attendees.some(function(x){ return x.pfId === p.id; }) ? 'ATTENDED' : null);
+    if (!role) return;
+    add(null, t.date, 'training', '⌖', 'var(--cyan)', 'TRAINING ' + role + (t.title ? ' · ' + t.title : ''), '');
+  });
+  ev.sort(function(a,b){ return b.ts - a.ts; }); // newest first
+  return ev;
+}
+
+function renderServiceTimeline(events, limit) {
+  if (!events || !events.length) {
+    return '<div style="font-size:.6rem;color:var(--text-faint);padding:.4rem 0;">No service record entries yet.</div>';
+  }
+  var rows = (limit ? events.slice(0, limit) : events).map(function(x){
+    return '<div class="svc-row">'
+      + '<span class="svc-icon" style="color:' + x.color + '">' + x.icon + '</span>'
+      + '<span class="svc-date">' + e(formatDob(x.date)) + '</span>'
+      + '<span><span class="svc-label">' + e(x.label) + '</span>'
+      + (x.detail ? '<span class="svc-detail"> · ' + e(x.detail) + '</span>' : '')
+      + '</span></div>';
+  }).join('');
+  return '<div class="svc-timeline">' + rows + '</div>';
+}
+
+// Compact card section: milestones only (excludes routine activity/notes), capped.
+function buildServiceSection(p) {
+  var full = buildServiceRecord(p);
+  var milestones = full.filter(function(x){ return x.type !== 'activity' && x.type !== 'note'; });
+  var body = renderServiceTimeline(milestones, 6);
+  if (full.length > Math.min(milestones.length, 6)) {
+    body += '<button class="pf-section-btn" data-action="open-service-record" data-pfid="' + e(p.id)
+         + '" style="margin-top:.45rem;font-size:.55rem;padding:2px 9px;">VIEW FULL SERVICE RECORD (' + full.length + ') →</button>';
+  }
+  return body;
+}
+
+function openServiceRecord(pfId) {
+  var p = (allPersonnel || []).find(function(x){ return x.id === pfId; });
+  if (!p) return;
+  document.getElementById('serviceRecordTitle').textContent = 'SERVICE RECORD · ' + (p.name || p.nickname || pfId);
+  document.getElementById('serviceRecordBody').innerHTML = renderServiceTimeline(buildServiceRecord(p));
+  document.getElementById('serviceRecordModal').classList.add('open');
+}
+function closeServiceRecord() {
+  document.getElementById('serviceRecordModal').classList.remove('open');
+}
+
 // ── Re-derive clearance once personnel data is in memory ──
 // Called at the end of loadPersonnel / loadEthicsPersonnel so any
 // stored-vs-file-rank discrepancy (e.g. from a promotion/demotion) is
@@ -5213,6 +5314,10 @@ var linkedBadge = linkedPfIds.has(p.id)
             }).length;
             sections.push({ key:'trainings', label:'⌖ TRAININGS', count: ' ('+tc+')', body: buildTrainingSection(p) });
           })();
+          (function(){
+            var svcAll = buildServiceRecord(p);
+            sections.push({ key:'service', label:'◳ SERVICE RECORD', count:' ('+svcAll.length+')', body: buildServiceSection(p) });
+          })();
           if (canViewFileIntegrity()) {
             sections.push({ key:'security', label:'⚕ SECURITY STATUS', count:'', body: fileIntegrityControl(p.id, 'pf') });
           }
@@ -5609,6 +5714,8 @@ document.addEventListener('click', function(ev) {
     case 'open-pf-from-training':  openPersonnelFromTraining(el.dataset.pfid); break;
     case 'remove-trn-attendee':    removeTrainingAttendee(el.dataset.pfid); break;
     case 'open-training-tab':      { var tn=document.querySelector('#ngt-omega1 .nav-tab[onclick*="trainings"]'); if(tn) tn.click(); break; }
+    case 'open-service-record':    openServiceRecord(el.dataset.pfid); break;
+    case 'close-service-record':   closeServiceRecord(); break;
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
