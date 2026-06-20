@@ -141,6 +141,9 @@
         <div class="nav-tab" onclick="switchTab(this,'ethics-cases')">CASE DOCKET
           <span id="ethicsCaseBadge" style="display:none;" class="badge b-amber">0</span>
         </div>
+        <div class="nav-tab" onclick="switchTab(this,'ethics-tribunals')">TRIBUNALS
+          <span id="ethicsTribBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ROSTER</div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-recruit')">RECRUIT
           <span id="ethicsRecruitBadge" style="display:none;" class="badge b-amber">0</span>
@@ -411,6 +414,26 @@
           [ + NEW ETHICS RECORD ]
         </button>
       </div>
+    </div>
+
+    <!-- ETHICS TRIBUNALS -->
+    <div class="tab-content" id="tab-ethics-tribunals">
+      <div class="sec">▸ ETHICS COMMITTEE TRIBUNALS <span id="tribCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
+      <div id="tribAccessNotice" style="display:none;" class="trn-empty"></div>
+      <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+        <input class="pf-search" id="tribSearch" placeholder="SEARCH BY REF, DEFENDANT, CHARGE OR JUDGE..." oninput="renderTribunals()" style="flex:1;min-width:180px;"/>
+        <select class="pf-filter" id="tribFilterStatus" onchange="renderTribunals()" title="Filter by status">
+          <option value="">ALL STATUSES</option>
+          <option value="Submitted">SUBMITTED</option>
+          <option value="Accepted">ACCEPTED</option>
+          <option value="Scheduled">SCHEDULED</option>
+          <option value="Concluded">CONCLUDED</option>
+          <option value="Appealed">APPEALED</option>
+          <option value="Denied">DENIED</option>
+        </select>
+        <button class="pf-btn" id="tribNewBtn" onclick="openTribunalModal()" style="display:none;">[ + SUBMIT TRIBUNAL ]</button>
+      </div>
+      <div id="tribList"></div>
     </div>
 
     <!-- ETHICS CASE DOCKET -->
@@ -1633,6 +1656,11 @@
     </div>
     <div id="adminActivityReqs" style="font-size:.62rem;"></div>
 
+    <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">
+      <span>▸ TRIBUNAL SETTINGS <span style="color:var(--text-faint);font-size:.52rem;">(appeal window)</span></span>
+    </div>
+    <div id="adminTribunalCfg" style="font-size:.62rem;"></div>
+
 
     <div id="recycleBinHdr" style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ RECYCLE BIN (0)</div>
     <div style="font-size:.52rem;color:var(--text-faint);margin-bottom:.4rem;line-height:1.5;">Deleted files and orders are held here. Restore returns them to active service; purge removes them permanently.</div>
@@ -1690,6 +1718,92 @@
     <div style="display:flex;justify-content:space-between;margin-top:.6rem;gap:.5rem;flex-wrap:wrap;">
       <button class="modal-btn" data-action="export-jacket" title="Download a print-ready Foundation-styled personnel file">[ ⎙ EXPORT FILE ]</button>
       <button class="modal-cancel" data-action="close-service-record">[ CLOSE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRIBUNAL SUBMISSION MODAL -->
+<div class="modal-overlay-2" id="tribunalModal" style="z-index:1150;">
+  <div class="modal-box" style="max-width:600px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title">SUBMIT TRIBUNAL REQUEST</div>
+    <input type="hidden" id="tribEditId"/>
+    <div style="font-size:.55rem;color:var(--text-faint);letter-spacing:.05em;margin:-.3rem 0 .6rem;">Any personnel may submit. The Ethics Committee will review and assign a presiding judge.</div>
+    <div style="font-size:.58rem;letter-spacing:.1em;color:var(--text-dim);border-bottom:1px solid var(--border2);padding-bottom:.2rem;margin-bottom:.4rem;">DEFENDANT</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:140px;"><label class="modal-label">DEPARTMENT</label><input class="modal-input" id="tribDefDept" placeholder="e.g. Research"/></div>
+      <div class="modal-field" style="flex:1;min-width:120px;"><label class="modal-label">RANK</label><input class="modal-input" id="tribDefRank" placeholder="e.g. Junior Researcher"/></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">NAME</label><input class="modal-input" id="tribDefName" placeholder="Defendant full name"/></div>
+
+    <div style="font-size:.58rem;letter-spacing:.1em;color:var(--text-dim);border-bottom:1px solid var(--border2);padding-bottom:.2rem;margin:.6rem 0 .4rem;">PROSECUTION</div>
+    <div class="modal-field"><label class="modal-label">LEAD COUNSEL — INTERNAL SECURITY DEPARTMENT</label><input class="modal-input" id="tribLeadCounsel" placeholder="Lead counsel name (must be ISD)"/></div>
+    <label style="display:flex;align-items:center;gap:.4rem;font-size:.6rem;color:var(--text-dim);margin-bottom:.5rem;cursor:pointer;">
+      <input type="checkbox" id="tribIsdConfirm"/> I confirm the Lead Counsel is a member of the Internal Security Department.
+    </label>
+    <div class="modal-field"><label class="modal-label">CO-COUNSEL <span style="color:var(--text-faint);">(optional)</span></label>
+      <div style="display:flex;gap:.35rem;"><input class="modal-input" id="tribProsecutorInput" placeholder="Add prosecutor..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addTribItem('prosecutor');}"/><button class="pf-section-btn" data-action="add-trib-item" data-kind="prosecutor">ADD</button></div>
+      <div id="tribProsecutorList" style="margin-top:.35rem;"></div>
+    </div>
+
+    <div style="font-size:.58rem;letter-spacing:.1em;color:var(--text-dim);border-bottom:1px solid var(--border2);padding-bottom:.2rem;margin:.6rem 0 .4rem;">CHARGES &amp; WITNESSES</div>
+    <div class="modal-field"><label class="modal-label">FLC CHARGES</label>
+      <div style="display:flex;gap:.35rem;"><input class="modal-input" id="tribChargeInput" placeholder="Add charge..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addTribItem('charge');}"/><button class="pf-section-btn" data-action="add-trib-item" data-kind="charge">ADD</button></div>
+      <div id="tribChargeList" style="margin-top:.35rem;"></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">WITNESSES <span style="color:var(--text-faint);">(optional)</span></label>
+      <div style="display:flex;gap:.35rem;"><input class="modal-input" id="tribWitnessInput" placeholder="Add witness..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addTribItem('witness');}"/><button class="pf-section-btn" data-action="add-trib-item" data-kind="witness">ADD</button></div>
+      <div id="tribWitnessList" style="margin-top:.35rem;"></div>
+    </div>
+
+    <div class="modal-err" id="tribErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="modal-cancel" data-action="close-tribunal-modal">[ CANCEL ]</button>
+      <button class="modal-btn" id="tribSaveBtn" onclick="saveTribunal()">[ SUBMIT REQUEST ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRIBUNAL OUTCOME MODAL -->
+<div class="modal-overlay-2" id="tribunalOutcomeModal" style="z-index:1160;">
+  <div class="modal-box" style="max-width:540px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title">DELIVER VERDICT</div>
+    <input type="hidden" id="outcomeTribId"/>
+    <div class="modal-field"><label class="modal-label">OUTCOME</label>
+      <select class="modal-input" id="outcomeType" onchange="syncOutcomeFields()">
+        <option value="plea">Plea Deal</option>
+        <option value="guilty-all">Guilty — all counts</option>
+        <option value="guilty-partial">Guilty — partial charges</option>
+        <option value="not-guilty">Not Guilty — released</option>
+      </select>
+    </div>
+    <div id="outcomePleaRow">
+      <div class="modal-field"><label class="modal-label">PLEADED GUILTY TO</label><input class="modal-input" id="outcomePleaCharges" placeholder="Charges pleaded to"/></div>
+      <div class="modal-field"><label class="modal-label">DISPOSITION / PUNISHMENT</label><textarea class="modal-input" id="outcomePleaPunish" rows="2" style="font-family:inherit;resize:vertical;"></textarea></div>
+    </div>
+    <div id="outcomeAllRow" style="display:none;">
+      <div class="modal-field"><label class="modal-label">SENTENCE (ALL COUNTS)</label><textarea class="modal-input" id="outcomeAllPunish" rows="2" style="font-family:inherit;resize:vertical;"></textarea></div>
+    </div>
+    <div id="outcomePartRow" style="display:none;">
+      <div class="modal-field"><label class="modal-label">FOUND GUILTY ON</label><input class="modal-input" id="outcomePartCharges" placeholder="Which charges"/></div>
+      <div class="modal-field"><label class="modal-label">SENTENCE</label><textarea class="modal-input" id="outcomePartPunish" rows="2" style="font-family:inherit;resize:vertical;"></textarea></div>
+    </div>
+    <div id="outcomeNotGuiltyNote" style="display:none;font-size:.62rem;color:#5fb87a;padding:.4rem;border:1px dashed var(--border2);border-radius:3px;margin-bottom:.5rem;">Defendant found not guilty on all charges and released.</div>
+    <div class="modal-err" id="outcomeErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="modal-cancel" data-action="close-outcome-modal">[ CANCEL ]</button>
+      <button class="modal-btn" onclick="saveTribunalOutcome()">[ RECORD VERDICT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARED REASON MODAL (deny / appeal) -->
+<div class="modal-overlay-2" id="tribReasonModal" style="z-index:1170;">
+  <div class="modal-box" style="max-width:460px;">
+    <div class="modal-title" id="tribReasonTitle">REASON</div>
+    <div class="modal-field"><textarea class="modal-input" id="tribReasonInput" rows="3" style="font-family:inherit;resize:vertical;" placeholder="Enter reason..."></textarea></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button class="modal-cancel" data-action="close-reason-modal">[ CANCEL ]</button>
+      <button class="modal-btn" data-action="submit-reason-modal">[ SUBMIT ]</button>
     </div>
   </div>
 </div>

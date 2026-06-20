@@ -675,6 +675,7 @@ async function onLogin() { // Make function async
   loadTrainings();
   loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
   loadEthicsCases();
+  loadTribunals();
   loadCompartments();
   loadPromoReqs();
   loadActivityReqs();
@@ -3046,6 +3047,7 @@ function switchTab(el, id) {
   if (id === 'poi')             loadPOIData();
   if (id === 'trainings')       loadTrainings();
   if (id === 'ethics-cases')    loadEthicsCases();
+  if (id === 'ethics-tribunals') loadTribunals();
   if (id === 'blacklist')       loadBlacklist();
   if (id === 'recruit') {
     if (!currentUser || parseInt(currentUser.clearance) < 4) {
@@ -3962,6 +3964,7 @@ function updateRecycleHdr() {
 
 // ── Activity requirements config (CL5) ──
 function renderActivityReqs() {
+  if (typeof renderTribunalCfgAdmin === 'function') renderTribunalCfgAdmin();
   var el = document.getElementById('adminActivityReqs');
   if (!el) return;
   if (!allActivityReqs) { el.innerHTML = '<div style="color:var(--text-faint);">Loading…</div>'; return; }
@@ -5207,6 +5210,542 @@ function openFileFromCase(pfId, sys) {
   }
 }
 
+// ================================================================
+//  TRIBUNAL SYSTEM
+//  Any personnel may submit a tribunal request. Ethics Committee
+//  personnel (Assistant / Member / Chairman) accept or deny; the
+//  acceptor becomes the presiding Judge. Accepted tribunals can be
+//  scheduled via a thread, exported as a Foundation document, and
+//  concluded with a structured verdict. Verdicts may be appealed
+//  within a configurable window, escalating to the next EC tier.
+//  Firebase path: /tribunals/{id} ; config: /tribunalConfig
+// ================================================================
+var TRIBUNAL_STATUSES = ['Submitted','Accepted','Scheduled','Concluded','Appealed','Denied'];
+var allTribunals      = [];
+var deletedTribunals  = [];
+var tribunalConfig    = { appealWindowDays: 5 };
+var expandedTribunals = (typeof Set !== 'undefined') ? new Set() : null;
+var _tribCharges      = [];
+var _tribWitnesses    = [];
+var _tribProsecutors  = [];
+var _reasonCb         = null; // callback for the shared reason modal
+
+async function tribunalsGetAll() {
+  if (firebaseReady) { var all = await fbGetAll('/tribunals'); return all ? Object.values(all) : []; }
+  return Object.values(lsAll('tribunals/'));
+}
+async function tribunalSet(id, data) {
+  if (firebaseReady) await fbSet('/tribunals/' + id, data); else lsSet('tribunals/' + id, data);
+}
+async function tribunalConfigGet() {
+  if (firebaseReady) { var c = await fbGetAll('/tribunalConfig'); return c || null; }
+  return lsGet('tribunalConfig/config') || null;
+}
+async function tribunalConfigSave() {
+  if (firebaseReady) await fbSet('/tribunalConfig', tribunalConfig);
+  else lsSet('tribunalConfig/config', tribunalConfig);
+}
+
+// ── Roles & permissions ──
+function ecRoleOf(u) {
+  u = u || currentUser;
+  if (!u || !u.linkedEfId) return null;
+  var ef = (typeof allEthicsPersonnel !== 'undefined' ? allEthicsPersonnel : []).find(function(x){ return x.id === u.linkedEfId; });
+  return ef ? (ef.role || 'Assistant') : null;
+}
+function ecFileName(u) {
+  u = u || currentUser;
+  if (!u || !u.linkedEfId) return (u ? u.id : '—');
+  var ef = (typeof allEthicsPersonnel !== 'undefined' ? allEthicsPersonnel : []).find(function(x){ return x.id === u.linkedEfId; });
+  return ef ? (ef.name || ef.nickname || u.id) : u.id;
+}
+function ecRoleRank(r) { return r === 'Chairman' ? 3 : r === 'Member' ? 2 : r === 'Assistant' ? 1 : 0; }
+function nextEcRole(r) { return r === 'Assistant' ? 'Member' : r === 'Member' ? 'Chairman' : null; }
+function isEthicsPersonnel() { return !!ecRoleOf(currentUser); }
+function canSubmitTribunal() { return !!currentUser; }
+function isTribunalJudge(t) { return !!(currentUser && t && t.judgeId === currentUser.id); }
+
+// ── Storage load / render ──
+async function loadTribunals() {
+  try {
+    var raw = await tribunalsGetAll();
+    allTribunals = partitionDeleted(raw.filter(function(t){ return t && t.id; }), function(d){ deletedTribunals = d; });
+  } catch(e) { allTribunals = []; }
+  allTribunals.sort(function(a,b){ return (b.submittedAt || 0) - (a.submittedAt || 0); });
+  try { var cfg = await tribunalConfigGet(); if (cfg && cfg.appealWindowDays != null) tribunalConfig.appealWindowDays = cfg.appealWindowDays; } catch(e){}
+  var newBtn = document.getElementById('tribNewBtn');
+  if (newBtn) newBtn.style.display = canSubmitTribunal() ? 'inline-block' : 'none';
+  var notice = document.getElementById('tribAccessNotice');
+  if (notice) {
+    if (!currentUser) { notice.style.display = 'block'; notice.textContent = 'Observer mode — tribunal docket is read-only.'; }
+    else notice.style.display = 'none';
+  }
+  renderTribunals();
+}
+
+function appealWindowDays() { return parseInt(tribunalConfig.appealWindowDays) || 5; }
+function appealAllowed(t) {
+  if (!t || t.status !== 'Concluded' || !t.outcome || !t.outcome.deliveredAt) return false;
+  if (!nextEcRole(t.judgeRole)) return false; // Chairman verdict is final
+  return Date.now() < (t.outcome.deliveredAt + appealWindowDays() * 86400000);
+}
+function tribStatusBadge(s) {
+  return s === 'Concluded' ? 'b-green' : s === 'Scheduled' ? 'b-cyan'
+    : s === 'Accepted' ? 'b-cyan' : s === 'Denied' ? 'b-retired'
+    : s === 'Appealed' ? 'b-red' : 'b-amber';
+}
+
+function renderTribunals() {
+  var list = document.getElementById('tribList');
+  if (!list) return;
+  var q = ((document.getElementById('tribSearch') || {}).value || '').trim().toLowerCase();
+  var fStatus = (document.getElementById('tribFilterStatus') || {}).value || '';
+  var rows = allTribunals.filter(function(t){
+    if (fStatus && (t.status || 'Submitted') !== fStatus) return false;
+    if (!q) return true;
+    var d = t.defendant || {};
+    var hay = [t.ref, d.name, d.rank, d.department, t.judgeName, (t.charges||[]).join(' '), (t.leadCounsel&&t.leadCounsel.name)].join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  var cnt = document.getElementById('tribCount');
+  if (cnt) cnt.textContent = rows.length ? '(' + rows.length + ')' : '';
+  if (!rows.length) {
+    list.innerHTML = '<div class="trn-empty">NO TRIBUNALS' + (q || fStatus ? ' MATCH THE CURRENT FILTER.' : ' ON THE DOCKET YET.') + '</div>';
+    return;
+  }
+  list.innerHTML = rows.map(buildTribunalCard).join('');
+}
+
+function outcomeText(o) {
+  if (!o) return '';
+  if (o.type === 'not-guilty') return 'NOT GUILTY on all charges — defendant released.';
+  if (o.type === 'guilty-all') return 'GUILTY on all counts. Sentence: ' + (o.punishment || '—');
+  if (o.type === 'guilty-partial') return 'GUILTY on: ' + (o.partialCharges || '—') + '. Sentence: ' + (o.partialPunishment || '—');
+  if (o.type === 'plea') return 'PLEA DEAL — pleaded guilty to: ' + (o.pleaCharges || '—') + '. Disposition: ' + (o.pleaPunishment || '—');
+  return '';
+}
+
+function buildTribunalCard(t) {
+  var d = t.defendant || {};
+  var status = t.status || 'Submitted';
+  var statusB = '<span class="badge ' + tribStatusBadge(status) + '">' + e(status.toUpperCase()) + '</span>';
+  var isEC = isEthicsPersonnel();
+  var judge = isTribunalJudge(t);
+  var expanded = expandedTribunals && expandedTribunals.has(t.id);
+
+  // Roster blocks
+  var charges = (t.charges || []).length ? '<ol style="margin:.2rem 0 0 1.1rem;padding:0;">' + t.charges.map(function(c){ return '<li>' + e(c) + '</li>'; }).join('') + '</ol>' : '<span style="color:var(--text-faint);">none listed</span>';
+  var prosec = '<div>Lead Counsel (ISD): <strong>' + e((t.leadCounsel && t.leadCounsel.name) || '—') + '</strong></div>'
+    + ((t.prosecutors || []).length ? '<div style="color:var(--text-dim);">Co-counsel: ' + t.prosecutors.map(function(p){ return e(p.name || p); }).join(', ') + '</div>' : '');
+  var witnesses = (t.witnesses || []).length ? t.witnesses.map(function(w){ return e(w); }).join(', ') : '<span style="color:var(--text-faint);">none</span>';
+
+  // Action buttons by state
+  var actions = [];
+  if (status === 'Submitted' && isEC) {
+    actions.push('<button class="pf-section-btn" data-action="accept-tribunal" data-id="' + e(t.id) + '" style="color:#5fb87a;">ACCEPT (PRESIDE)</button>');
+    actions.push('<button class="pf-section-btn" data-action="deny-tribunal" data-id="' + e(t.id) + '" style="color:#dd6666;">DENY</button>');
+  }
+  if (status === 'Accepted' || status === 'Scheduled') {
+    if (judge) actions.push('<button class="pf-section-btn" data-action="open-outcome" data-id="' + e(t.id) + '">DELIVER VERDICT</button>');
+    actions.push('<button class="pf-section-btn" data-action="export-tribunal" data-id="' + e(t.id) + '">⎙ EXPORT</button>');
+  }
+  if (status === 'Concluded') {
+    actions.push('<button class="pf-section-btn" data-action="export-tribunal" data-id="' + e(t.id) + '">⎙ EXPORT</button>');
+    if (appealAllowed(t)) actions.push('<button class="pf-section-btn" data-action="file-appeal" data-id="' + e(t.id) + '" style="color:var(--amber);">FILE APPEAL</button>');
+  }
+  if (status === 'Appealed') {
+    actions.push('<button class="pf-section-btn" data-action="export-tribunal" data-id="' + e(t.id) + '">⎙ EXPORT</button>');
+    var esc = t.appeal && t.appeal.escalatedToRole;
+    if (esc && ecRoleRank(ecRoleOf(currentUser)) >= ecRoleRank(esc)) {
+      actions.push('<button class="pf-section-btn" data-action="take-appeal" data-id="' + e(t.id) + '" style="color:#5fb87a;">TAKE APPEAL (PRESIDE)</button>');
+    }
+  }
+  var manageDel = (isTribunalJudge(t) || (currentUser && parseInt(currentUser.clearance) >= 5) || (currentUser && t.submittedBy === currentUser.id && status === 'Submitted'))
+    ? '<button class="pf-section-btn" data-action="delete-tribunal" data-id="' + e(t.id) + '" style="color:#dd6666;font-size:.5rem;">DELETE</button>' : '';
+
+  // Judge / schedule / thread (visible once accepted)
+  var procBlock = '';
+  if (status !== 'Submitted' && status !== 'Denied') {
+    var dateLine = t.hearingDate ? safeDateTime(t.hearingDate) + ' UTC' : '<span style="color:var(--amber);">to be scheduled</span>';
+    var judgeCtrl = judge
+      ? '<div style="display:flex;gap:.35rem;align-items:center;margin-top:.35rem;flex-wrap:wrap;">'
+        + '<input type="datetime-local" id="tribDate_' + e(t.id) + '" class="modal-input" style="width:auto;font-size:.6rem;padding:2px 6px;"/>'
+        + '<button class="pf-section-btn" data-action="set-hearing-date" data-id="' + e(t.id) + '">SET HEARING DATE</button></div>'
+      : '';
+    var thread = (t.thread || []);
+    var threadHtml = expanded
+      ? '<div style="margin-top:.4rem;border-top:1px dashed var(--border);padding-top:.4rem;">'
+        + (thread.length ? thread.map(function(m){
+            return '<div style="font-size:.6rem;margin-bottom:.3rem;"><span style="color:var(--cyan);">' + e(m.author) + '</span> <span style="color:var(--text-faint);">· ' + e(safeDateTime(m.created)) + '</span><br><span>' + e(m.text) + '</span></div>';
+          }).join('') : '<div style="font-size:.58rem;color:var(--text-faint);">[ no scheduling messages yet ]</div>')
+        + (currentUser ? '<div style="display:flex;gap:.35rem;margin-top:.3rem;"><input id="tribMsg_' + e(t.id) + '" class="modal-input" placeholder="Propose a date / discuss..." style="flex:1;font-size:.6rem;padding:2px 6px;"/><button class="pf-section-btn" data-action="post-tribunal-msg" data-id="' + e(t.id) + '">POST</button></div>' : '')
+        + '</div>'
+      : '';
+    procBlock = '<div class="case-block"><span class="lbl">Presiding Judge</span><span class="txt">' + e(t.judgeName || '—') + (t.judgeRole ? ' (' + e(t.judgeRole) + ')' : '') + '</span></div>'
+      + '<div class="case-block"><span class="lbl">Hearing</span><span class="txt">' + dateLine + '</span>' + judgeCtrl + '</div>'
+      + '<div class="case-block"><span class="lbl">Scheduling Thread</span>'
+      + '<button class="pf-section-btn" data-action="toggle-tribunal-thread" data-id="' + e(t.id) + '" style="font-size:.5rem;padding:1px 7px;">' + (expanded ? '▾ hide' : '▸ open') + ' (' + (t.thread || []).length + ')</button>'
+      + threadHtml + '</div>';
+  }
+
+  var outcomeBlock = (status === 'Concluded' || status === 'Appealed') && t.outcome
+    ? '<div class="case-block case-ruling"><span class="lbl">Verdict</span><span class="txt">' + e(outcomeText(t.outcome)) + '</span></div>'
+    : '';
+  var appealBlock = status === 'Appealed' && t.appeal
+    ? '<div class="case-block"><span class="lbl">Appeal</span><span class="txt">Escalated to ' + e(t.appeal.escalatedToRole || '—') + '. Grounds: ' + e(t.appeal.reason || '—') + '</span></div>'
+    : '';
+  var denyBlock = status === 'Denied'
+    ? '<div class="case-block"><span class="lbl">Denied</span><span class="txt">' + e(t.denyReason || 'No reason recorded.') + ' (EC·' + e(t.deniedBy || '—') + ')</span></div>'
+    : '';
+
+  return '<div class="case-card">'
+    + '<div class="case-top"><div><div class="case-ref">' + e(t.ref || '—') + '</div>'
+    + '<div class="case-title">TRIBUNAL · ' + e(d.name || 'Unnamed defendant') + '</div>'
+    + '<div class="case-badges" style="margin-top:4px;">' + statusB + (d.department ? '<span class="badge b-dim">' + e(d.department) + '</span>' : '') + '</div></div>'
+    + '<div style="display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end;">' + actions.join('') + manageDel + '</div></div>'
+    + '<div class="case-block"><span class="lbl">Defendant</span><span class="txt">' + e(d.rank || '') + ' ' + e(d.name || '') + (d.department ? ' · ' + e(d.department) : '') + '</span></div>'
+    + '<div class="case-block"><span class="lbl">FLC Charges</span><span class="txt">' + charges + '</span></div>'
+    + '<div class="case-block"><span class="lbl">Prosecution</span><span class="txt">' + prosec + '</span></div>'
+    + '<div class="case-block"><span class="lbl">Witnesses</span><span class="txt">' + witnesses + '</span></div>'
+    + procBlock + outcomeBlock + appealBlock + denyBlock
+    + '<div style="font-size:.5rem;color:var(--text-faint);letter-spacing:.04em;margin-top:.5rem;">FILED ' + e(safeDate(t.submittedAt)) + ' · ' + e(t.submittedBy || '—') + '</div>'
+    + '</div>';
+}
+
+// ── Submission modal ──
+function openTribunalModal() {
+  if (!canSubmitTribunal()) { alert('You must be signed in to submit a tribunal request.'); return; }
+  document.getElementById('tribEditId').value = '';
+  document.getElementById('tribErr').style.display = 'none';
+  ['tribDefDept','tribDefRank','tribDefName','tribLeadCounsel'].forEach(function(idf){ var el=document.getElementById(idf); if(el) el.value=''; });
+  document.getElementById('tribIsdConfirm').checked = false;
+  _tribCharges = []; _tribWitnesses = []; _tribProsecutors = [];
+  renderTribList('tribChargeList', _tribCharges, 'charge');
+  renderTribList('tribWitnessList', _tribWitnesses, 'witness');
+  renderTribList('tribProsecutorList', _tribProsecutors, 'prosecutor');
+  document.getElementById('tribunalModal').classList.add('open');
+}
+function closeTribunalModal() {
+  document.getElementById('tribunalModal').classList.remove('open');
+  _tribCharges = []; _tribWitnesses = []; _tribProsecutors = [];
+}
+function renderTribList(boxId, arr, kind) {
+  var box = document.getElementById(boxId);
+  if (!box) return;
+  if (!arr.length) { box.innerHTML = '<span style="font-size:.58rem;color:var(--text-faint);">none added</span>'; return; }
+  box.innerHTML = arr.map(function(v, i){
+    return '<span class="trn-attendee">' + e(v) + '<span class="x" data-action="remove-trib-item" data-kind="' + kind + '" data-idx="' + i + '">×</span></span>';
+  }).join('');
+}
+function addTribItem(kind) {
+  var map = { charge: ['tribChargeInput', _tribCharges, 'tribChargeList'], witness: ['tribWitnessInput', _tribWitnesses, 'tribWitnessList'], prosecutor: ['tribProsecutorInput', _tribProsecutors, 'tribProsecutorList'] };
+  var cfg = map[kind]; if (!cfg) return;
+  var inp = document.getElementById(cfg[0]); if (!inp) return;
+  var val = inp.value.trim(); if (!val) return;
+  cfg[1].push(val); inp.value = '';
+  renderTribList(cfg[2], cfg[1], kind);
+}
+function removeTribItem(kind, idx) {
+  var arr = kind === 'charge' ? _tribCharges : kind === 'witness' ? _tribWitnesses : _tribProsecutors;
+  arr.splice(parseInt(idx), 1);
+  renderTribList(kind === 'charge' ? 'tribChargeList' : kind === 'witness' ? 'tribWitnessList' : 'tribProsecutorList', arr, kind);
+}
+function nextTribunalRef() {
+  var yy = new Date().getFullYear().toString().slice(-2);
+  var prefix = 'EC-TRIB-' + yy + '-';
+  var maxN = 0;
+  allTribunals.concat(deletedTribunals).forEach(function(t){
+    if (t.ref && t.ref.indexOf(prefix) === 0) { var n = parseInt(t.ref.slice(prefix.length), 10); if (!isNaN(n) && n > maxN) maxN = n; }
+  });
+  return prefix + String(maxN + 1).padStart(3, '0');
+}
+async function saveTribunal() {
+  var name = document.getElementById('tribDefName').value.trim();
+  var lead = document.getElementById('tribLeadCounsel').value.trim();
+  var isd  = document.getElementById('tribIsdConfirm').checked;
+  var errEl = document.getElementById('tribErr');
+  function fail(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+  if (!name) { fail('Defendant name is required.'); return; }
+  if (!_tribCharges.length) { fail('At least one FLC charge is required.'); return; }
+  if (!lead) { fail('A Lead Counsel is required.'); return; }
+  if (!isd)  { fail('Lead Counsel must be confirmed as a member of the Internal Security Department.'); return; }
+  if (!canSubmitTribunal()) { fail('You must be signed in to submit.'); return; }
+
+  var btn = document.getElementById('tribSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '[ SUBMITTING... ]'; }
+  var t = {
+    id: 'trib_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    ref: nextTribunalRef(),
+    status: 'Submitted',
+    defendant: { department: document.getElementById('tribDefDept').value.trim(), rank: document.getElementById('tribDefRank').value.trim(), name: name },
+    leadCounsel: { name: lead, isdConfirmed: true },
+    prosecutors: _tribProsecutors.map(function(n){ return { name: n }; }),
+    charges: _tribCharges.slice(),
+    witnesses: _tribWitnesses.slice(),
+    thread: [],
+    submittedBy: currentUser.id, submittedAt: Date.now(), deleted: false
+  };
+  try { await tribunalSet(t.id, t); }
+  catch(err){ if (btn){ btn.disabled=false; btn.textContent='[ SUBMIT REQUEST ]'; } fail('SUBMIT ERROR: ' + err.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('SUBMITTED TRIBUNAL', t.ref + ' — ' + name);
+  if (btn) { btn.disabled = false; btn.textContent = '[ SUBMIT REQUEST ]'; }
+  closeTribunalModal();
+  await loadTribunals();
+}
+
+// ── Accept / deny ──
+async function acceptTribunal(id) {
+  if (!isEthicsPersonnel()) { alert('Only Ethics Committee personnel may accept a tribunal.'); return; }
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t || t.status !== 'Submitted') return;
+  t.status = 'Accepted';
+  t.judgeId = currentUser.id; t.judgeName = ecFileName(currentUser); t.judgeRole = ecRoleOf(currentUser);
+  t.acceptedAt = Date.now();
+  try { await tribunalSet(id, t); } catch(e){ alert('ERROR: ' + e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('ACCEPTED TRIBUNAL', t.ref + ' — presiding: ' + t.judgeName);
+  renderTribunals();
+}
+function denyTribunal(id) {
+  if (!isEthicsPersonnel()) { alert('Only Ethics Committee personnel may deny a tribunal.'); return; }
+  openReasonModal('Reason for denial', async function(reason){
+    var t = allTribunals.find(function(x){ return x.id === id; });
+    if (!t || t.status !== 'Submitted') return;
+    t.status = 'Denied'; t.deniedBy = currentUser.id; t.deniedAt = Date.now(); t.denyReason = reason || 'No reason recorded.';
+    try { await tribunalSet(id, t); } catch(e){ alert('ERROR: ' + e.message); return; }
+    if (typeof auditRecord === 'function') auditRecord('DENIED TRIBUNAL', t.ref);
+    renderTribunals();
+  });
+}
+
+// ── Scheduling thread + hearing date ──
+async function setHearingDate(id) {
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t || !isTribunalJudge(t)) { alert('Only the presiding judge may set the hearing date.'); return; }
+  var inp = document.getElementById('tribDate_' + id);
+  if (!inp || !inp.value) { alert('Select a date and time first.'); return; }
+  t.hearingDate = new Date(inp.value).getTime();
+  if (t.status === 'Accepted') t.status = 'Scheduled';
+  (t.thread = t.thread || []).push({ author: ecFileName(currentUser), text: 'Hearing scheduled for ' + safeDateTime(t.hearingDate) + ' UTC.', created: Date.now() });
+  try { await tribunalSet(id, t); } catch(e){ alert('ERROR: ' + e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('SCHEDULED TRIBUNAL', t.ref + ' — ' + safeDateTime(t.hearingDate));
+  renderTribunals();
+}
+async function postTribunalMsg(id) {
+  if (!currentUser) return;
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t) return;
+  var inp = document.getElementById('tribMsg_' + id);
+  var txt = inp && inp.value.trim(); if (!txt) return;
+  (t.thread = t.thread || []).push({ author: (currentUser.linkedEfId ? ecFileName(currentUser) : currentUser.id), text: txt, created: Date.now() });
+  try { await tribunalSet(id, t); } catch(e){ alert('ERROR: ' + e.message); return; }
+  renderTribunals();
+}
+function toggleTribunalThread(id) {
+  if (!expandedTribunals) return;
+  if (expandedTribunals.has(id)) expandedTribunals.delete(id); else expandedTribunals.add(id);
+  renderTribunals();
+}
+
+// ── Verdict / outcome ──
+function openOutcomeModal(id) {
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t || !isTribunalJudge(t)) { alert('Only the presiding judge may deliver the verdict.'); return; }
+  document.getElementById('outcomeTribId').value = id;
+  document.getElementById('outcomeType').value = (t.outcome && t.outcome.type) || 'plea';
+  document.getElementById('outcomePleaCharges').value = (t.outcome && t.outcome.pleaCharges) || '';
+  document.getElementById('outcomePleaPunish').value = (t.outcome && t.outcome.pleaPunishment) || '';
+  document.getElementById('outcomeAllPunish').value = (t.outcome && t.outcome.punishment) || '';
+  document.getElementById('outcomePartCharges').value = (t.outcome && t.outcome.partialCharges) || '';
+  document.getElementById('outcomePartPunish').value = (t.outcome && t.outcome.partialPunishment) || '';
+  document.getElementById('outcomeErr').style.display = 'none';
+  syncOutcomeFields();
+  document.getElementById('tribunalOutcomeModal').classList.add('open');
+}
+function closeOutcomeModal() { document.getElementById('tribunalOutcomeModal').classList.remove('open'); }
+function syncOutcomeFields() {
+  var type = document.getElementById('outcomeType').value;
+  var show = { plea: ['outcomePleaRow'], 'guilty-all': ['outcomeAllRow'], 'guilty-partial': ['outcomePartRow'], 'not-guilty': [] };
+  ['outcomePleaRow','outcomeAllRow','outcomePartRow'].forEach(function(rid){
+    var el = document.getElementById(rid); if (el) el.style.display = (show[type] || []).indexOf(rid) !== -1 ? 'block' : 'none';
+  });
+  var ng = document.getElementById('outcomeNotGuiltyNote');
+  if (ng) ng.style.display = type === 'not-guilty' ? 'block' : 'none';
+}
+async function saveTribunalOutcome() {
+  var id = document.getElementById('outcomeTribId').value;
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  var errEl = document.getElementById('outcomeErr');
+  function fail(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+  if (!t || !isTribunalJudge(t)) { fail('Only the presiding judge may deliver the verdict.'); return; }
+  var type = document.getElementById('outcomeType').value;
+  var o = { type: type, deliveredBy: currentUser.id, deliveredAt: Date.now() };
+  if (type === 'plea') {
+    o.pleaCharges = document.getElementById('outcomePleaCharges').value.trim();
+    o.pleaPunishment = document.getElementById('outcomePleaPunish').value.trim();
+    if (!o.pleaCharges || !o.pleaPunishment) { fail('Enter the charges pleaded to and the disposition.'); return; }
+  } else if (type === 'guilty-all') {
+    o.punishment = document.getElementById('outcomeAllPunish').value.trim();
+    if (!o.punishment) { fail('Enter the sentence.'); return; }
+  } else if (type === 'guilty-partial') {
+    o.partialCharges = document.getElementById('outcomePartCharges').value.trim();
+    o.partialPunishment = document.getElementById('outcomePartPunish').value.trim();
+    if (!o.partialCharges || !o.partialPunishment) { fail('Enter the charges found guilty and the sentence.'); return; }
+  }
+  t.outcome = o; t.status = 'Concluded';
+  try { await tribunalSet(id, t); } catch(err){ fail('SAVE ERROR: ' + err.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('TRIBUNAL VERDICT', t.ref + ' — ' + type);
+  closeOutcomeModal();
+  renderTribunals();
+}
+
+// ── Appeals ──
+function fileAppeal(id) {
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t || !appealAllowed(t)) { alert('This verdict is not currently open to appeal.'); return; }
+  openReasonModal('Grounds for appeal', async function(reason){
+    if (!reason) return;
+    t.status = 'Appealed';
+    t.appeal = { submittedBy: currentUser.id, submittedAt: Date.now(), reason: reason, escalatedToRole: nextEcRole(t.judgeRole), priorOutcome: t.outcome, priorJudge: { id: t.judgeId, name: t.judgeName, role: t.judgeRole } };
+    try { await tribunalSet(id, t); } catch(e){ alert('ERROR: ' + e.message); return; }
+    if (typeof auditRecord === 'function') auditRecord('TRIBUNAL APPEALED', t.ref + ' → ' + (t.appeal.escalatedToRole || 'review'));
+    renderTribunals();
+  });
+}
+async function takeAppeal(id) {
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t || t.status !== 'Appealed' || !t.appeal) return;
+  var need = t.appeal.escalatedToRole;
+  if (!isEthicsPersonnel() || ecRoleRank(ecRoleOf(currentUser)) < ecRoleRank(need)) {
+    alert('This appeal must be presided over by a ' + need + ' or higher.'); return;
+  }
+  t.status = 'Accepted';
+  t.judgeId = currentUser.id; t.judgeName = ecFileName(currentUser); t.judgeRole = ecRoleOf(currentUser);
+  t.hearingDate = null; t.outcome = null; t.isAppealHearing = true;
+  (t.thread = t.thread || []).push({ author: ecFileName(currentUser), text: 'Appeal accepted. Re-hearing to be scheduled.', created: Date.now() });
+  try { await tribunalSet(id, t); } catch(e){ alert('ERROR: ' + e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('TRIBUNAL APPEAL TAKEN', t.ref + ' — ' + t.judgeName);
+  renderTribunals();
+}
+async function deleteTribunal(id) {
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t) return;
+  var allowed = isTribunalJudge(t) || (currentUser && parseInt(currentUser.clearance) >= 5) || (currentUser && t.submittedBy === currentUser.id && t.status === 'Submitted');
+  if (!allowed) { alert('You do not have authority to remove this tribunal.'); return; }
+  if (!await pfConfirm('Move this tribunal to the recycle bin?\n\n' + (t.ref || ''))) return;
+  t.deleted = true; t.deletedBy = currentUser.id; t.deletedAt = Date.now();
+  try { await tribunalSet(id, t); } catch(e){ alert('ERROR: ' + e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('DELETED TRIBUNAL', (t.ref || id) + ' → recycle bin');
+  allTribunals = allTribunals.filter(function(x){ return x.id !== id; });
+  if (!deletedTribunals.some(function(x){ return x.id === id; })) deletedTribunals.push(t);
+  renderTribunals();
+}
+
+// ── Shared reason modal ──
+function openReasonModal(title, cb) {
+  _reasonCb = cb;
+  document.getElementById('tribReasonTitle').textContent = title;
+  document.getElementById('tribReasonInput').value = '';
+  document.getElementById('tribReasonModal').classList.add('open');
+}
+function closeReasonModal() { document.getElementById('tribReasonModal').classList.remove('open'); _reasonCb = null; }
+function submitReasonModal() {
+  var v = document.getElementById('tribReasonInput').value.trim();
+  var cb = _reasonCb;
+  document.getElementById('tribReasonModal').classList.remove('open'); _reasonCb = null;
+  if (cb) cb(v);
+}
+
+// ── Export (Foundation document, in the directive style) ──
+function exportTribunal(id) {
+  var t = allTribunals.find(function(x){ return x.id === id; });
+  if (!t) return;
+  if (t.status === 'Submitted' || t.status === 'Denied') { alert('A tribunal can be exported once it has been accepted.'); return; }
+  var html = buildTribunalDocument(t);
+  var safeName = (t.ref + '_' + ((t.defendant && t.defendant.name) || 'tribunal')).replace(/[^A-Za-z0-9_-]/g, '_');
+  downloadFile(safeName + '.html', html, 'text/html');
+  if (typeof auditRecord === 'function') auditRecord('EXPORTED TRIBUNAL', t.ref);
+}
+function buildTribunalDocument(t) {
+  var d = t.defendant || {};
+  var ref = t.ref || 'EC-TRIB';
+  var chargesHtml = (t.charges || []).length
+    ? '<ol style="margin:0 0 0 1.2rem;padding:0;">' + t.charges.map(function(c){ return '<li>' + escHtml(c) + '</li>'; }).join('') + '</ol>'
+    : '<p style="color:#777;font-style:italic;">[ No charges recorded. ]</p>';
+  var prosHtml = 'Lead Counsel (Internal Security Department): <strong>' + escHtml((t.leadCounsel && t.leadCounsel.name) || '—') + '</strong>'
+    + ((t.prosecutors || []).length ? '<br>Co-counsel: ' + t.prosecutors.map(function(p){ return escHtml(p.name || p); }).join(', ') : '');
+  var witHtml = (t.witnesses || []).length ? t.witnesses.map(function(w){ return escHtml(w); }).join('; ') : '[ none ]';
+  var verdictHtml = t.outcome
+    ? '<div class="secttl">Verdict</div><p>' + escHtml(outcomeText(t.outcome)) + '</p>'
+    : '';
+  var hearing = t.hearingDate ? safeDateTime(t.hearingDate) + ' UTC' : 'To be scheduled';
+  var statusU = (t.status || '').toUpperCase();
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+    + '<title>' + escHtml(ref) + ' — TRIBUNAL</title>'
+    + '<style>'
+    + '@page{size:A4;margin:18mm 16mm;}*{box-sizing:border-box;}'
+    + 'body{font-family:"Times New Roman",Georgia,serif;color:#111;background:#525659;margin:0;padding:24px;line-height:1.55;}'
+    + '.page{background:#fff;max-width:780px;margin:0 auto 24px;padding:46px 54px 40px;box-shadow:0 2px 18px rgba(0,0,0,.4);position:relative;}'
+    + '.runhead{display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.04em;color:#444;border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:2px;text-transform:uppercase;}'
+    + '.classbar{background:#1a1a1a;color:#fff;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.14em;text-align:center;padding:5px 4px;margin:0 -54px 4px;font-weight:bold;}'
+    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.42em;color:#222;margin:10px 0 18px;font-weight:bold;}'
+    + '.lh{text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}'
+    + '.lh .org{font-size:21px;font-weight:bold;letter-spacing:.06em;}.lh .sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#333;margin-top:3px;}.lh .div{font-size:10px;letter-spacing:.1em;color:#555;margin-top:6px;font-style:italic;}'
+    + '.doctype{text-align:center;font-size:13px;font-weight:bold;letter-spacing:.16em;margin:14px 0 16px;text-transform:uppercase;}'
+    + 'table.meta{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px;}table.meta td{border:1px solid #999;padding:4px 8px;vertical-align:top;}'
+    + 'table.meta td.k{background:#ededed;font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#333;width:34%;font-weight:bold;}table.meta td.v{font-weight:bold;}'
+    + '.secttl{font-size:11px;font-weight:bold;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid #000;padding-bottom:3px;margin:20px 0 8px;}'
+    + '.body p{font-size:12px;margin:0 0 10px;}'
+    + '.stampbox{position:absolute;top:120px;right:40px;border:3px double #7a0000;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;font-size:12px;letter-spacing:.08em;padding:6px 12px;transform:rotate(-9deg);opacity:.82;}'
+    + '.stampbox.ok{border-color:#0a5a23;color:#0a5a23;}'
+    + '.footer{margin-top:26px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
+    + '.redact{background:#000;color:#000;padding:0 .5em;}'
+    + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;padding:0;}.classbar{margin:0 0 4px;}}'
+    + '</style></head><body><div class="page">'
+    + '<div class="runhead"><span>SCP FOUNDATION · ETHICS COMMITTEE</span><span>TRIBUNAL ' + escHtml(ref) + ' · LEVEL 4-A</span></div>'
+    + '<div class="classbar">LEVEL 4-A // ETHICS COMMITTEE JUDICIAL PROCEEDING // DESIGNATED RECIPIENTS ONLY</div>'
+    + '<div class="scp-tag">SECURE · CONTAIN · PROTECT</div>'
+    + '<div class="lh"><div class="org">SCP FOUNDATION</div><div class="sub">Ethics Committee &mdash; Judicial Division</div><div class="div">CAIRO.AIC Oversight Terminal · O5 Liaison Division</div></div>'
+    + '<div class="doctype">Notice of Tribunal</div>'
+    + '<div class="stampbox ' + (t.status === 'Concluded' ? 'ok' : '') + '">' + escHtml(statusU) + '</div>'
+    + '<table class="meta">'
+    +   '<tr><td class="k">Tribunal Reference</td><td class="v">' + escHtml(ref) + '</td></tr>'
+    +   '<tr><td class="k">Defendant</td><td class="v">' + escHtml((d.rank ? d.rank + ' ' : '') + (d.name || '—')) + '</td></tr>'
+    +   '<tr><td class="k">Department</td><td class="v">' + escHtml(d.department || '—') + '</td></tr>'
+    +   '<tr><td class="k">Presiding Judge</td><td class="v">' + escHtml(t.judgeName || '—') + (t.judgeRole ? ' (' + escHtml(t.judgeRole) + ')' : '') + '</td></tr>'
+    +   '<tr><td class="k">Hearing</td><td class="v">' + escHtml(hearing) + '</td></tr>'
+    +   '<tr><td class="k">Status</td><td class="v">' + escHtml(statusU) + '</td></tr>'
+    + '</table>'
+    + '<div class="secttl">FLC Charges</div><div class="body">' + chargesHtml + '</div>'
+    + '<div class="secttl">Prosecution</div><div class="body"><p>' + prosHtml + '</p></div>'
+    + '<div class="secttl">Witnesses</div><div class="body"><p>' + witHtml + '</p></div>'
+    + verdictHtml
+    + '<div class="footer">CONFIDENTIAL // LEVEL 4-A // ' + escHtml(ref) + ' // GENERATED ' + escHtml(safeDateTime(Date.now())) + ' UTC // CAIRO.AIC</div>'
+    + '</div></body></html>';
+}
+
+// ── Admin config (appeal window) ──
+function renderTribunalCfgAdmin() {
+  var el = document.getElementById('adminTribunalCfg');
+  if (!el) return;
+  var isCL5 = currentUser && parseInt(currentUser.clearance) >= 5;
+  var dis = isCL5 ? '' : 'disabled';
+  el.innerHTML = '<label style="display:flex;align-items:center;gap:.4rem;">Appeal window (days) '
+    + '<input type="number" min="0" step="1" id="tribAppealDays" value="' + e(appealWindowDays()) + '" ' + dis + ' style="width:60px;background:var(--bg);border:1px solid var(--border2);color:var(--amber);padding:.2rem .4rem;font-family:inherit;"/></label>'
+    + (isCL5 ? '<button class="modal-save" data-action="save-tribunal-cfg" style="font-size:.6rem;margin-top:.4rem;">[ SAVE ]</button>' : '<div style="font-size:.52rem;color:var(--text-faint);">CL5 required to edit.</div>');
+}
+async function saveTribunalCfg() {
+  if (!(currentUser && parseInt(currentUser.clearance) >= 5)) return;
+  var v = parseInt(document.getElementById('tribAppealDays').value);
+  if (isNaN(v) || v < 0) { alert('Enter a valid number of days.'); return; }
+  tribunalConfig.appealWindowDays = v;
+  try { await tribunalConfigSave(); } catch(e){ alert('ERROR: ' + e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('UPDATED TRIBUNAL CONFIG', 'appeal window = ' + v + ' days');
+  renderTribunalCfgAdmin();
+}
+
+
 // ── Re-derive clearance once personnel data is in memory ──
 // Called at the end of loadPersonnel / loadEthicsPersonnel so any
 // stored-vs-file-rank discrepancy (e.g. from a promotion/demotion) is
@@ -6170,6 +6709,24 @@ document.addEventListener('click', function(ev) {
     case 'cast-case-vote':         castCaseVote(el.dataset.id, el.dataset.vote); break;
     case 'remove-case-link':       removeCaseLink(el.dataset.sys, el.dataset.pfid); break;
     case 'open-case-file':         openFileFromCase(el.dataset.pfid, el.dataset.sys); break;
+    // Tribunals
+    case 'close-tribunal-modal':   closeTribunalModal(); break;
+    case 'add-trib-item':          addTribItem(el.dataset.kind); break;
+    case 'remove-trib-item':       removeTribItem(el.dataset.kind, el.dataset.idx); break;
+    case 'accept-tribunal':        acceptTribunal(el.dataset.id); break;
+    case 'deny-tribunal':          denyTribunal(el.dataset.id); break;
+    case 'set-hearing-date':       setHearingDate(el.dataset.id); break;
+    case 'post-tribunal-msg':      postTribunalMsg(el.dataset.id); break;
+    case 'toggle-tribunal-thread': toggleTribunalThread(el.dataset.id); break;
+    case 'open-outcome':           openOutcomeModal(el.dataset.id); break;
+    case 'close-outcome-modal':    closeOutcomeModal(); break;
+    case 'file-appeal':            fileAppeal(el.dataset.id); break;
+    case 'take-appeal':            takeAppeal(el.dataset.id); break;
+    case 'export-tribunal':        exportTribunal(el.dataset.id); break;
+    case 'delete-tribunal':        deleteTribunal(el.dataset.id); break;
+    case 'close-reason-modal':     closeReasonModal(); break;
+    case 'submit-reason-modal':    submitReasonModal(); break;
+    case 'save-tribunal-cfg':      saveTribunalCfg(); break;
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
