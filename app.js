@@ -674,6 +674,7 @@ async function onLogin() { // Make function async
   loadPersonnel();
   loadTrainings();
   loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
+  loadEthicsCases();
   loadCompartments();
   loadPromoReqs();
   loadActivityReqs();
@@ -3044,6 +3045,7 @@ function switchTab(el, id) {
   if (id === 'ethics-roster')   { loadEthicsPersonnel(); var rbe=document.getElementById('exportRosterEfBtn'); if(rbe) rbe.style.display=(currentUser&&parseInt(currentUser.clearance)>=5)?'inline-block':'none'; }
   if (id === 'poi')             loadPOIData();
   if (id === 'trainings')       loadTrainings();
+  if (id === 'ethics-cases')    loadEthicsCases();
   if (id === 'blacklist')       loadBlacklist();
   if (id === 'recruit') {
     if (!currentUser || parseInt(currentUser.clearance) < 4) {
@@ -4666,7 +4668,9 @@ function buildTrainingSection(p) {
 //  notes) plus trainings, into one timeline. No new data model —
 //  this is a read-only view over fields the app already records.
 // ================================================================
-function buildServiceRecord(p) {
+function buildServiceRecord(p, opts) {
+  opts = opts || {};
+  var roleWord = opts.roleWord || 'RANK';
   var ev = [];
   function add(ts, dateStr, type, icon, color, label, detail) {
     if (ts == null && !dateStr) return;
@@ -4679,7 +4683,7 @@ function buildServiceRecord(p) {
   // Rank changes
   (p.rankHistory || []).forEach(function(r){
     add(r.changedAt, null, 'rank', '▲', 'var(--amber)',
-        (r.from ? 'RANK CHANGE · ' + r.from + ' → ' + r.to : 'RANK SET · ' + r.to),
+        (r.from ? roleWord + ' CHANGE · ' + r.from + ' → ' + r.to : roleWord + ' SET · ' + r.to),
         r.changedBy ? 'by ' + r.changedBy : '');
   });
   // Awards
@@ -4719,6 +4723,7 @@ function buildServiceRecord(p) {
     add(null, t.date, 'training', '⌖', 'var(--cyan)', 'TRAINING ' + role + (t.title ? ' · ' + t.title : ''), '');
   });
   ev.sort(function(a,b){ return b.ts - a.ts; }); // newest first
+  if (opts.excludeSensitive) ev = ev.filter(function(x){ return x.type !== 'strike' && x.type !== 'note'; });
   return ev;
 }
 
@@ -4738,8 +4743,8 @@ function renderServiceTimeline(events, limit) {
 }
 
 // Compact card section: milestones only (excludes routine activity/notes), capped.
-function buildServiceSection(p) {
-  var full = buildServiceRecord(p);
+function buildServiceSection(p, opts) {
+  var full = buildServiceRecord(p, opts);
   var milestones = full.filter(function(x){ return x.type !== 'activity' && x.type !== 'note'; });
   var body = renderServiceTimeline(milestones, 6);
   if (full.length > Math.min(milestones.length, 6)) {
@@ -4750,14 +4755,456 @@ function buildServiceSection(p) {
 }
 
 function openServiceRecord(pfId) {
+  _serviceRecordPfId = pfId;
   var p = (allPersonnel || []).find(function(x){ return x.id === pfId; });
+  var opts = {};
+  if (!p && typeof allEthicsPersonnel !== 'undefined') {
+    p = (allEthicsPersonnel || []).find(function(x){ return x.id === pfId; });
+    if (p) {
+      // Honour Ethics graduated access so the record can't bypass card restrictions.
+      var access = (typeof getEfFileAccess === 'function') ? getEfFileAccess(p) : 'full';
+      if (access === 'name-only') {
+        document.getElementById('serviceRecordTitle').textContent = 'SERVICE RECORD · ' + (p.name || p.nickname || pfId);
+        document.getElementById('serviceRecordBody').innerHTML =
+          '<div style="font-size:.62rem;color:var(--text-faint);font-style:italic;letter-spacing:.05em;padding:1rem;text-align:center;">[ SERVICE RECORD RESTRICTED ]</div>';
+        document.getElementById('serviceRecordModal').classList.add('open');
+        return;
+      }
+      opts = { roleWord: 'ROLE', excludeSensitive: (access !== 'full') };
+    }
+  }
   if (!p) return;
   document.getElementById('serviceRecordTitle').textContent = 'SERVICE RECORD · ' + (p.name || p.nickname || pfId);
-  document.getElementById('serviceRecordBody').innerHTML = renderServiceTimeline(buildServiceRecord(p));
+  document.getElementById('serviceRecordBody').innerHTML = renderServiceTimeline(buildServiceRecord(p, opts));
   document.getElementById('serviceRecordModal').classList.add('open');
 }
 function closeServiceRecord() {
   document.getElementById('serviceRecordModal').classList.remove('open');
+}
+
+// ================================================================
+//  PERSONNEL JACKET EXPORT
+//  Produces a standalone, print-ready Foundation-styled dossier for
+//  a single member, reusing the same document language as the
+//  directive export. Honours Ethics graduated access: 'name-only'
+//  viewers cannot export; 'partial' viewers get a record with
+//  disciplinary/notes entries withheld.
+// ================================================================
+var _serviceRecordPfId = null;
+
+function jacketRef(p, system) {
+  var tail = (system === 'ef')
+    ? String(p.id).slice(-5)
+    : (p.isdBadge ? p.isdBadge.replace(/[^A-Za-z0-9]/g, '') : String(p.id).slice(-5));
+  return (system === 'ef' ? 'EC-PF-' : 'O1-PF-') + String(tail || '00000').toUpperCase();
+}
+
+function buildPersonnelJacket(p, system, opts) {
+  opts = opts || {};
+  var isEf     = (system === 'ef');
+  var ref      = jacketRef(p, system);
+  var status   = (p.status || 'Active');
+  var statusU  = status.toUpperCase();
+  var roleRank = isEf ? (p.role || '—') : (p.rank || '—');
+  var classLine = (isEf ? 'LEVEL 4-A // ETHICS COMMITTEE PERSONNEL FILE' : 'LEVEL 3-A // OMEGA-1 PERSONNEL FILE')
+                + ' // DESIGNATED RECIPIENTS ONLY';
+  var clLabel  = isEf ? 'LEVEL 4-A · SENIOR' : 'LEVEL 3-A · STANDARD';
+
+  // Squadron assignments
+  var sqdNames = (typeof allSquadrons !== 'undefined' ? allSquadrons : [])
+    .filter(function(s){ return s.members && s.members.some(function(m){ return (m.memberId || m.pfId) === p.id; }); })
+    .map(function(s){ return s.name || s.id; });
+
+  // Service record (chronological ascending for a formal record)
+  var events = buildServiceRecord(p, opts).slice().reverse();
+  var svcRows = events.length
+    ? events.map(function(x){
+        return '<tr><td class="d">' + escHtml(formatDob(x.date)) + '</td>'
+          + '<td class="e">' + escHtml(x.label) + (x.detail ? ' <span class="dt">— ' + escHtml(x.detail) + '</span>' : '') + '</td></tr>';
+      }).join('')
+    : '<tr><td class="d">—</td><td class="e" style="color:#777;font-style:italic;">[ No service record entries on file. ]</td></tr>';
+
+  var nickRow = p.nickname ? '<tr><td class="k">Alias / Callsign</td><td class="v">"' + escHtml(p.nickname) + '"</td></tr>' : '';
+  var badgeRow = (!isEf && p.isdBadge) ? '<tr><td class="k">ISD Service Badge</td><td class="v">' + escHtml(p.isdBadge) + '</td></tr>' : '';
+  var sqdRow  = sqdNames.length ? '<tr><td class="k">Squadron Assignment</td><td class="v">' + escHtml(sqdNames.join(', ')) + '</td></tr>' : '';
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+    + '<title>' + escHtml(ref) + ' — ' + escHtml((p.name || 'PERSONNEL FILE').toUpperCase()) + '</title>'
+    + '<style>'
+    + '@page{size:A4;margin:18mm 16mm;}'
+    + '*{box-sizing:border-box;}'
+    + 'body{font-family:"Times New Roman",Georgia,serif;color:#111;background:#525659;margin:0;padding:24px;line-height:1.55;}'
+    + '.page{background:#fff;max-width:780px;margin:0 auto 24px;padding:46px 54px 40px;box-shadow:0 2px 18px rgba(0,0,0,.4);position:relative;}'
+    + '.runhead{display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.04em;color:#444;border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:2px;text-transform:uppercase;}'
+    + '.classbar{background:#1a1a1a;color:#fff;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.14em;text-align:center;padding:5px 4px;margin:0 -54px 4px;font-weight:bold;}'
+    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.42em;color:#222;margin:10px 0 18px;font-weight:bold;}'
+    + '.lh{text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}'
+    + '.lh .org{font-size:21px;font-weight:bold;letter-spacing:.06em;}'
+    + '.lh .sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#333;margin-top:3px;}'
+    + '.lh .div{font-size:10px;letter-spacing:.1em;color:#555;margin-top:6px;font-style:italic;}'
+    + '.doctype{text-align:center;font-size:13px;font-weight:bold;letter-spacing:.16em;margin:14px 0 16px;text-transform:uppercase;}'
+    + 'table.meta{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px;}'
+    + 'table.meta td{border:1px solid #999;padding:4px 8px;vertical-align:top;}'
+    + 'table.meta td.k{background:#ededed;font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#333;width:34%;font-weight:bold;}'
+    + 'table.meta td.v{font-weight:bold;}'
+    + '.secttl{font-size:11px;font-weight:bold;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid #000;padding-bottom:3px;margin:22px 0 8px;}'
+    + 'table.svc{width:100%;border-collapse:collapse;font-size:11px;}'
+    + 'table.svc td{border-bottom:1px solid #ccc;padding:3px 6px;vertical-align:top;}'
+    + 'table.svc td.d{font-family:"Courier New",monospace;font-size:9.5px;color:#444;white-space:nowrap;width:90px;}'
+    + 'table.svc td.e .dt{color:#666;font-style:italic;}'
+    + '.stampbox{position:absolute;top:120px;right:40px;border:3px double #7a0000;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;font-size:13px;letter-spacing:.1em;padding:6px 14px;transform:rotate(-9deg);opacity:.82;}'
+    + '.stampbox.ok{border-color:#0a5a23;color:#0a5a23;}'
+    + '.footer{margin-top:26px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
+    + '.redact{background:#000;color:#000;padding:0 .5em;border-radius:1px;user-select:none;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+    + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;padding:0;}.classbar{margin:0 0 4px;}}'
+    + '</style></head><body><div class="page">'
+    + '<div class="runhead"><span>SCP FOUNDATION · ' + (isEf ? 'ETHICS COMMITTEE' : 'MTF OMEGA-1') + '</span><span>FILE ' + escHtml(ref) + ' · ' + clLabel.split(' ·')[0] + '</span></div>'
+    + '<div class="classbar">' + classLine + '</div>'
+    + '<div class="scp-tag">SECURE · CONTAIN · PROTECT</div>'
+    + '<div class="lh"><div class="org">SCP FOUNDATION</div><div class="sub">' + (isEf ? 'Ethics Committee' : 'Mobile Task Force Omega-1 &mdash; &ldquo;Law\'s Left Hand&rdquo;') + '</div><div class="div">CAIRO.AIC ' + (isEf ? 'Oversight Terminal · O5 Liaison Division' : 'Personnel Division') + '</div></div>'
+    + '<div class="doctype">' + (isEf ? 'ETHICS COMMITTEE PERSONNEL FILE' : 'OMEGA-1 PERSONNEL FILE') + '</div>'
+    + '<div class="stampbox ' + (status === 'Active' ? 'ok' : '') + '">' + escHtml(statusU) + '</div>'
+    + '<table class="meta">'
+    +   '<tr><td class="k">File Reference</td><td class="v">' + escHtml(ref) + '</td></tr>'
+    +   '<tr><td class="k">Designation</td><td class="v">' + escHtml(p.name || 'UNNAMED') + '</td></tr>'
+    +   nickRow
+    +   '<tr><td class="k">' + (isEf ? 'Committee Role' : 'Rank') + '</td><td class="v">' + escHtml(roleRank) + '</td></tr>'
+    +   '<tr><td class="k">Operational Status</td><td class="v">' + escHtml(statusU) + '</td></tr>'
+    +   '<tr><td class="k">Date of Birth</td><td class="v">' + escHtml(formatDob(p.dob)) + '</td></tr>'
+    +   badgeRow
+    +   '<tr><td class="k">Date Enrolled</td><td class="v">' + escHtml(safeDate(p.created)) + '</td></tr>'
+    +   sqdRow
+    +   '<tr><td class="k">Clearance</td><td class="v"><span class="redact">LEVEL ' + (isEf ? '4-A' : '3-A') + '</span></td></tr>'
+    + '</table>'
+    + '<div class="secttl">Service Record &mdash; Chronological</div>'
+    + '<table class="svc"><tbody>' + svcRows + '</tbody></table>'
+    + '<div class="footer">CONFIDENTIAL // ' + clLabel.split(' ·')[0] + ' // ' + escHtml(ref) + ' // GENERATED ' + escHtml(safeDateTime(Date.now())) + ' UTC // CAIRO.AIC</div>'
+    + '</div></body></html>';
+}
+
+function exportPersonnelJacket(pfId) {
+  pfId = pfId || _serviceRecordPfId;
+  if (!pfId) return;
+  var p = (allPersonnel || []).find(function(x){ return x.id === pfId; });
+  var system = 'pf', opts = { roleWord: 'RANK' };
+  if (!p && typeof allEthicsPersonnel !== 'undefined') {
+    p = (allEthicsPersonnel || []).find(function(x){ return x.id === pfId; });
+    if (p) {
+      system = 'ef';
+      var access = (typeof getEfFileAccess === 'function') ? getEfFileAccess(p) : 'full';
+      if (access === 'name-only') { alert('You do not have sufficient access to export this file.'); return; }
+      opts = { roleWord: 'ROLE', excludeSensitive: (access !== 'full') };
+    }
+  }
+  if (!p) return;
+  var html = buildPersonnelJacket(p, system, opts);
+  var safeName = (jacketRef(p, system) + '_' + (p.name || 'file')).replace(/[^A-Za-z0-9_-]/g, '_');
+  downloadFile(safeName + '.html', html, 'text/html');
+  if (typeof auditRecord === 'function') auditRecord('EXPORTED PERSONNEL FILE', jacketRef(p, system) + ' — ' + (p.name || ''));
+}
+
+// ================================================================
+//  ETHICS COMMITTEE CASE DOCKET
+//  The committee's defining function: logging matters under review,
+//  recording rulings + rationale, casting deliberation votes, and
+//  linking the personnel/files involved.
+//  Firebase path: /ethicsCases/{id}
+// ================================================================
+var EC_CASE_CATEGORIES = ['Incident Review','Personnel Conduct','Containment Ethics','Testing Approval','Disclosure / Secrecy','Use of Force','Other'];
+var EC_CASE_STATUSES   = ['Open','Under Review','Ruled','Closed','Tabled'];
+var allEthicsCases     = [];
+var deletedEthicsCases = [];
+var _caseLinked        = []; // working set {id, sys, name} while the modal is open
+
+async function ethicsCasesGetAll() {
+  if (firebaseReady) { var all = await fbGetAll('/ethicsCases'); return all ? Object.values(all) : []; }
+  return Object.values(lsAll('ethicsCases/'));
+}
+async function ethicsCaseSet(id, data) {
+  if (firebaseReady) await fbSet('/ethicsCases/' + id, data); else lsSet('ethicsCases/' + id, data);
+}
+
+// A linked Ethics Committee member may open/manage cases; CL5 command may always.
+function canLogCase() {
+  if (!currentUser) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  return !!currentUser.linkedEfId;
+}
+function canManageCase(c) {
+  if (!currentUser || !c) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  return c.openedBy === currentUser.id;
+}
+// Any committee member (or senior staff) may cast a deliberation vote.
+function canVoteCase() {
+  if (!currentUser) return false;
+  return !!currentUser.linkedEfId || parseInt(currentUser.clearance) >= 4;
+}
+
+function caseStatusBadge(s) {
+  return s === 'Ruled' ? 'b-green' : s === 'Under Review' ? 'b-cyan'
+    : s === 'Closed' ? 'b-retired' : s === 'Tabled' ? 'b-red' : 'b-amber';
+}
+
+// Resolve a personnel name across both pools.
+function caseLinkName(l) {
+  var pool = (l.sys === 'ef') ? (typeof allEthicsPersonnel !== 'undefined' ? allEthicsPersonnel : []) : (allPersonnel || []);
+  var p = pool.find(function(x){ return x.id === l.id; });
+  return p ? (p.name || p.nickname || l.id) : (l.name || '[removed]');
+}
+
+function nextCaseRef() {
+  var yy = new Date().getFullYear().toString().slice(-2);
+  var prefix = 'EC-CASE-' + yy + '-';
+  var maxN = 0;
+  allEthicsCases.concat(deletedEthicsCases).forEach(function(c){
+    if (c.ref && c.ref.indexOf(prefix) === 0) {
+      var n = parseInt(c.ref.slice(prefix.length), 10);
+      if (!isNaN(n) && n > maxN) maxN = n;
+    }
+  });
+  return prefix + String(maxN + 1).padStart(3, '0');
+}
+
+async function loadEthicsCases() {
+  try {
+    var raw = await ethicsCasesGetAll();
+    allEthicsCases = partitionDeleted(raw.filter(function(c){ return c && c.id; }), function(d){ deletedEthicsCases = d; });
+  } catch(e) { allEthicsCases = []; }
+  allEthicsCases.sort(function(a,b){ return (b.openedAt || 0) - (a.openedAt || 0); });
+  var newBtn = document.getElementById('caseNewBtn');
+  if (newBtn) newBtn.style.display = canLogCase() ? 'inline-block' : 'none';
+  var notice = document.getElementById('caseAccessNotice');
+  if (notice) {
+    if (!canLogCase()) {
+      notice.style.display = 'block';
+      notice.textContent = currentUser
+        ? 'Only Ethics Committee members (or Level 5 command) may open cases. You may review and vote on the docket below.'
+        : 'Observer mode — case docket is read-only.';
+    } else notice.style.display = 'none';
+  }
+  renderEthicsCases();
+}
+
+function renderEthicsCases() {
+  var list = document.getElementById('caseList');
+  if (!list) return;
+  var q = ((document.getElementById('caseSearch') || {}).value || '').trim().toLowerCase();
+  var fStatus = (document.getElementById('caseFilterStatus') || {}).value || '';
+
+  var rows = allEthicsCases.filter(function(c){
+    if (fStatus && (c.status || 'Open') !== fStatus) return false;
+    if (!q) return true;
+    var hay = [c.ref, c.title, c.summary, c.ruling, c.rationale, c.category]
+      .concat((c.linked || []).map(caseLinkName)).join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+
+  var cnt = document.getElementById('caseCount');
+  if (cnt) cnt.textContent = rows.length ? '(' + rows.length + ')' : '';
+
+  if (!rows.length) {
+    list.innerHTML = '<div class="trn-empty">NO CASES' + (q || fStatus ? ' MATCH THE CURRENT FILTER.' : ' ON THE DOCKET YET.') + '</div>';
+    return;
+  }
+  list.innerHTML = rows.map(buildCaseCard).join('');
+}
+
+function buildCaseCard(c) {
+  var status = c.status || 'Open';
+  var catBadge = c.category ? '<span class="badge b-dim">' + e(c.category) + '</span>' : '';
+  var statusB = '<span class="badge ' + caseStatusBadge(status) + '">' + e(status.toUpperCase()) + '</span>';
+  var manage = canManageCase(c)
+    ? '<div style="display:flex;gap:.35rem;">'
+      + '<button class="pf-section-btn" data-action="edit-case" data-id="' + e(c.id) + '" style="font-size:.52rem;padding:1px 7px;">EDIT</button>'
+      + '<button class="pf-section-btn" data-action="delete-case" data-id="' + e(c.id) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">DELETE</button>'
+      + '</div>'
+    : '';
+
+  // Vote tally + controls
+  var votes = c.votes || {};
+  var vk = Object.keys(votes);
+  var nFor = vk.filter(function(k){ return votes[k] === 'for'; }).length;
+  var nAgainst = vk.filter(function(k){ return votes[k] === 'against'; }).length;
+  var nAbstain = vk.filter(function(k){ return votes[k] === 'abstain'; }).length;
+  var myVote = currentUser ? votes[currentUser.id] : null;
+  var voteCtrls = canVoteCase()
+    ? '<button class="vote-btn' + (myVote === 'for' ? ' on-for' : '') + '" data-action="cast-case-vote" data-id="' + e(c.id) + '" data-vote="for">FOR</button>'
+      + '<button class="vote-btn' + (myVote === 'against' ? ' on-against' : '') + '" data-action="cast-case-vote" data-id="' + e(c.id) + '" data-vote="against">AGAINST</button>'
+      + '<button class="vote-btn' + (myVote === 'abstain' ? ' on-abstain' : '') + '" data-action="cast-case-vote" data-id="' + e(c.id) + '" data-vote="abstain">ABSTAIN</button>'
+    : '';
+  var voteRow = '<div class="case-vote"><span class="vote-tally">DELIBERATION · For ' + nFor + ' · Against ' + nAgainst + ' · Abstain ' + nAbstain + '</span>' + voteCtrls + '</div>';
+
+  // Linked personnel
+  var linked = (c.linked || []).map(function(l){
+    return '<span class="case-link"><span class="person-link" data-action="open-case-file" data-pfid="' + e(l.id) + '" data-sys="' + e(l.sys) + '">'
+      + e(caseLinkName(l)) + '</span><span class="sys">' + (l.sys === 'ef' ? 'EC' : 'Ω1') + '</span></span>';
+  }).join('');
+
+  return '<div class="case-card">'
+    + '<div class="case-top"><div><div class="case-ref">' + e(c.ref || '—') + '</div>'
+    + '<div class="case-title">' + e(c.title || 'Untitled case') + '</div>'
+    + '<div class="case-badges" style="margin-top:4px;">' + statusB + catBadge + '</div></div>' + manage + '</div>'
+    + (c.summary ? '<div class="case-block"><span class="lbl">Matter under review</span><span class="txt">' + e(c.summary) + '</span></div>' : '')
+    + (c.ruling ? '<div class="case-block case-ruling"><span class="lbl">Ruling</span><span class="txt">' + e(c.ruling) + '</span></div>' : '')
+    + (c.rationale ? '<div class="case-block"><span class="lbl">Rationale</span><span class="txt">' + e(c.rationale) + '</span></div>' : '')
+    + (linked ? '<div class="case-block"><span class="lbl">Personnel involved</span><div>' + linked + '</div></div>' : '')
+    + voteRow
+    + '<div style="font-size:.5rem;color:var(--text-faint);letter-spacing:.04em;margin-top:.5rem;">OPENED ' + e(safeDate(c.openedAt)) + ' · EC·' + e(c.openedBy || '—') + (c.ruledBy ? ' · RULED BY EC·' + e(c.ruledBy) : '') + '</div>'
+    + '</div>';
+}
+
+// ── Modal ──
+function openCaseModal(id) {
+  if (!id && !canLogCase()) { alert('ACCESS REQUIRED\n\nOnly Ethics Committee members (or Level 5 command) may open cases.'); return; }
+  var editing = !!id;
+  var c = editing ? allEthicsCases.find(function(x){ return x.id === id; }) : null;
+  if (editing && !canManageCase(c)) { alert('You do not have authority to edit this case.'); return; }
+
+  document.getElementById('caseModalTitle').textContent = editing ? 'EDIT CASE' : 'OPEN CASE';
+  document.getElementById('caseEditId').value = id || '';
+  document.getElementById('caseErr').style.display = 'none';
+  document.getElementById('caseCategory').innerHTML = EC_CASE_CATEGORIES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  document.getElementById('caseStatus').innerHTML = EC_CASE_STATUSES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+
+  document.getElementById('caseRef').value      = c ? (c.ref || nextCaseRef()) : nextCaseRef();
+  document.getElementById('caseTitle').value    = c ? (c.title || '') : '';
+  document.getElementById('caseCategory').value = c ? (c.category || EC_CASE_CATEGORIES[0]) : EC_CASE_CATEGORIES[0];
+  document.getElementById('caseStatus').value   = c ? (c.status || 'Open') : 'Open';
+  document.getElementById('caseSummary').value  = c ? (c.summary || '') : '';
+  document.getElementById('caseRuling').value   = c ? (c.ruling || '') : '';
+  document.getElementById('caseRationale').value= c ? (c.rationale || '') : '';
+  _caseLinked = (c && Array.isArray(c.linked)) ? c.linked.map(function(l){ return { id: l.id, sys: l.sys, name: l.name }; }) : [];
+
+  renderCaseLinkList();
+  populateCaseLinkPicker();
+  document.getElementById('caseModal').classList.add('open');
+}
+function closeCaseModal() {
+  document.getElementById('caseModal').classList.remove('open');
+  _caseLinked = [];
+}
+function populateCaseLinkPicker() {
+  var sel = document.getElementById('caseLinkPicker');
+  if (!sel) return;
+  var taken = {};
+  _caseLinked.forEach(function(l){ taken[l.sys + ':' + l.id] = true; });
+  var opts = ['<option value="">+ LINK PERSONNEL...</option>'];
+  (allPersonnel || []).slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }).forEach(function(p){
+    if (p.id && !taken['pf:' + p.id]) opts.push('<option value="pf:' + e(p.id) + '">Ω1 · ' + e(p.name || p.id) + '</option>');
+  });
+  (typeof allEthicsPersonnel !== 'undefined' ? allEthicsPersonnel : []).slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }).forEach(function(p){
+    if (p.id && !taken['ef:' + p.id]) opts.push('<option value="ef:' + e(p.id) + '">EC · ' + e(p.name || p.id) + '</option>');
+  });
+  sel.innerHTML = opts.join('');
+}
+function addCaseLink(val) {
+  if (!val) return;
+  var sys = val.slice(0, 2), id = val.slice(3);
+  if (_caseLinked.some(function(l){ return l.sys === sys && l.id === id; })) return;
+  var pool = (sys === 'ef') ? (typeof allEthicsPersonnel !== 'undefined' ? allEthicsPersonnel : []) : (allPersonnel || []);
+  var p = pool.find(function(x){ return x.id === id; });
+  _caseLinked.push({ id: id, sys: sys, name: p ? (p.name || p.nickname || id) : id });
+  renderCaseLinkList();
+  populateCaseLinkPicker();
+}
+function removeCaseLink(sys, id) {
+  _caseLinked = _caseLinked.filter(function(l){ return !(l.sys === sys && l.id === id); });
+  renderCaseLinkList();
+  populateCaseLinkPicker();
+}
+function renderCaseLinkList() {
+  var box = document.getElementById('caseLinkList');
+  if (!box) return;
+  if (!_caseLinked.length) { box.innerHTML = '<span style="font-size:.58rem;color:var(--text-faint);">No personnel linked.</span>'; return; }
+  box.innerHTML = _caseLinked.map(function(l){
+    return '<span class="case-link">' + e(l.name) + '<span class="sys">' + (l.sys === 'ef' ? 'EC' : 'Ω1') + '</span>'
+      + '<span class="x" data-action="remove-case-link" data-sys="' + e(l.sys) + '" data-pfid="' + e(l.id) + '">×</span></span>';
+  }).join('');
+}
+async function saveCase() {
+  var title = document.getElementById('caseTitle').value.trim();
+  var summary = document.getElementById('caseSummary').value.trim();
+  var errEl = document.getElementById('caseErr');
+  function fail(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+  if (!title)   { fail('A case subject / title is required.'); return; }
+  if (!summary) { fail('Describe the matter under review.'); return; }
+
+  var editId = document.getElementById('caseEditId').value;
+  var existing = editId ? allEthicsCases.find(function(x){ return x.id === editId; }) : null;
+  if (editId && !canManageCase(existing)) { fail('You do not have authority to edit this case.'); return; }
+  if (!editId && !canLogCase()) { fail('Only Ethics Committee members (or Level 5 command) may open cases.'); return; }
+
+  var btn = document.getElementById('caseSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '[ SAVING... ]'; }
+
+  var status = document.getElementById('caseStatus').value;
+  var ruling = document.getElementById('caseRuling').value.trim();
+  var rationale = document.getElementById('caseRationale').value.trim();
+  var c;
+  if (existing) {
+    c = existing;
+    c.title = title; c.category = document.getElementById('caseCategory').value;
+    c.status = status; c.summary = summary; c.ruling = ruling; c.rationale = rationale;
+    c.linked = _caseLinked.slice(); c.updatedBy = currentUser.id; c.updatedAt = Date.now();
+    if (status === 'Ruled' && !c.ruledAt) { c.ruledBy = currentUser.id; c.ruledAt = Date.now(); }
+  } else {
+    c = {
+      id: 'case_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+      ref: document.getElementById('caseRef').value || nextCaseRef(),
+      title: title, category: document.getElementById('caseCategory').value,
+      status: status, summary: summary, ruling: ruling, rationale: rationale,
+      linked: _caseLinked.slice(), votes: {},
+      openedBy: currentUser.id, openedAt: Date.now(), deleted: false
+    };
+    if (status === 'Ruled') { c.ruledBy = currentUser.id; c.ruledAt = Date.now(); }
+  }
+  try { await ethicsCaseSet(c.id, c); }
+  catch(err) { if (btn){ btn.disabled=false; btn.textContent='[ SAVE CASE ]'; } fail('SAVE ERROR: ' + err.message); return; }
+  if (typeof auditRecord === 'function') auditRecord(existing ? 'EDITED CASE' : 'OPENED CASE', c.ref + ' — ' + c.title);
+
+  if (btn) { btn.disabled = false; btn.textContent = '[ SAVE CASE ]'; }
+  closeCaseModal();
+  await loadEthicsCases();
+}
+async function castCaseVote(caseId, vote) {
+  if (!canVoteCase()) { alert('Only Ethics Committee members (or senior staff) may vote.'); return; }
+  var c = allEthicsCases.find(function(x){ return x.id === caseId; });
+  if (!c) return;
+  if (!c.votes) c.votes = {};
+  if (c.votes[currentUser.id] === vote) delete c.votes[currentUser.id]; // toggle off
+  else c.votes[currentUser.id] = vote;
+  try { await ethicsCaseSet(c.id, c); } catch(e){ alert('ERROR: ' + e.message); return; }
+  renderEthicsCases();
+}
+async function deleteCase(id) {
+  var c = allEthicsCases.find(function(x){ return x.id === id; });
+  if (!canManageCase(c)) { alert('You do not have authority to delete this case.'); return; }
+  if (!await pfConfirm('Move this case to the recycle bin?\n\n' + (c ? (c.ref + ' — ' + c.title) : ''))) return;
+  if (c) {
+    c.deleted = true; c.deletedBy = currentUser.id; c.deletedAt = Date.now();
+    try { await ethicsCaseSet(id, c); } catch(e){ alert('ERROR: ' + e.message); return; }
+    if (typeof auditRecord === 'function') auditRecord('DELETED CASE', c.ref + ' → recycle bin');
+    allEthicsCases = allEthicsCases.filter(function(x){ return x.id !== id; });
+    if (!deletedEthicsCases.some(function(x){ return x.id === id; })) deletedEthicsCases.push(c);
+  }
+  renderEthicsCases();
+}
+// Jump from a linked case entry to the relevant personnel file.
+function openFileFromCase(pfId, sys) {
+  if (sys === 'ef') {
+    var navE = document.querySelector('#ngt-ethics .nav-tab[onclick*="ethics-files"]');
+    if (navE) navE.click();
+    setTimeout(function(){
+      if (typeof efExpanded !== 'undefined' && efExpanded.add) efExpanded.add(pfId);
+      if (typeof renderEthicsFiles === 'function') renderEthicsFiles();
+      var card = document.getElementById('efcard_' + pfId);
+      if (card && card.scrollIntoView) card.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 120);
+  } else {
+    openPersonnelFromTraining(pfId); // reuse the Omega-1 open+expand helper
+  }
 }
 
 // ── Re-derive clearance once personnel data is in memory ──
@@ -5716,6 +6163,13 @@ document.addEventListener('click', function(ev) {
     case 'open-training-tab':      { var tn=document.querySelector('#ngt-omega1 .nav-tab[onclick*="trainings"]'); if(tn) tn.click(); break; }
     case 'open-service-record':    openServiceRecord(el.dataset.pfid); break;
     case 'close-service-record':   closeServiceRecord(); break;
+    case 'export-jacket':          exportPersonnelJacket(); break;
+    case 'close-case-modal':       closeCaseModal(); break;
+    case 'edit-case':              openCaseModal(el.dataset.id); break;
+    case 'delete-case':            deleteCase(el.dataset.id); break;
+    case 'cast-case-vote':         castCaseVote(el.dataset.id, el.dataset.vote); break;
+    case 'remove-case-link':       removeCaseLink(el.dataset.sys, el.dataset.pfid); break;
+    case 'open-case-file':         openFileFromCase(el.dataset.pfid, el.dataset.sys); break;
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
@@ -8405,6 +8859,10 @@ function buildEthicsCard(p) {
         ${efSqdHtml}
         ${canEdit?`<button class="pf-section-btn" data-action="create-ef-sqd" data-id="${e(p.id)}" style="margin-top:.4rem;">[ + CREATE SQUADRON ]</button>`:''}
       </div>
+      ${!restrictAll ? `<div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="service">
+        <span>▸ ◳ SERVICE RECORD (${buildServiceRecord(p,{excludeSensitive:restrictSens}).length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':service')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':service')?'none':'block'};padding:0 .1rem .4rem;">${buildServiceSection(p,{roleWord:'ROLE',excludeSensitive:restrictSens})}</div>` : ''}
       <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="strikes">
         <span style="display:flex;align-items:center;justify-content:space-between;flex:1;gap:.5rem;">
           <span>▸ STRIKES (${restrictSens ? '—' : (Array.isArray(p.strikes)?p.strikes:[]).length})</span>

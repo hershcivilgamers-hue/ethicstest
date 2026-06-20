@@ -138,6 +138,9 @@
       </div>
       <div class="nav-dd-menu" id="ngt-ethics">
         <div class="nav-tab" onclick="switchTab(this,'ethics-files')">FILES</div>
+        <div class="nav-tab" onclick="switchTab(this,'ethics-cases')">CASE DOCKET
+          <span id="ethicsCaseBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ROSTER</div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-recruit')">RECRUIT
           <span id="ethicsRecruitBadge" style="display:none;" class="badge b-amber">0</span>
@@ -408,6 +411,25 @@
           [ + NEW ETHICS RECORD ]
         </button>
       </div>
+    </div>
+
+    <!-- ETHICS CASE DOCKET -->
+    <div class="tab-content" id="tab-ethics-cases">
+      <div class="sec">▸ ETHICS COMMITTEE CASE DOCKET <span id="caseCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
+      <div id="caseAccessNotice" style="display:none;" class="trn-empty"></div>
+      <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+        <input class="pf-search" id="caseSearch" placeholder="SEARCH BY REF, SUBJECT, RULING OR PERSONNEL..." oninput="renderEthicsCases()" style="flex:1;min-width:180px;"/>
+        <select class="pf-filter" id="caseFilterStatus" onchange="renderEthicsCases()" title="Filter by status">
+          <option value="">ALL STATUSES</option>
+          <option value="Open">OPEN</option>
+          <option value="Under Review">UNDER REVIEW</option>
+          <option value="Ruled">RULED</option>
+          <option value="Closed">CLOSED</option>
+          <option value="Tabled">TABLED</option>
+        </select>
+        <button class="pf-btn" id="caseNewBtn" onclick="openCaseModal(null)" style="display:none;">[ + OPEN CASE ]</button>
+      </div>
+      <div id="caseList"></div>
     </div>
 
     <!-- ETHICS ROSTER -->
@@ -1665,8 +1687,59 @@
     <div class="modal-title" id="serviceRecordTitle">SERVICE RECORD</div>
     <div style="font-size:.55rem;color:var(--text-faint);letter-spacing:.06em;margin:-.3rem 0 .5rem;">COMPLETE CHRONOLOGICAL FILE HISTORY · MOST RECENT FIRST</div>
     <div id="serviceRecordBody" style="max-height:60vh;overflow-y:auto;padding-right:.3rem;"></div>
-    <div style="display:flex;justify-content:flex-end;margin-top:.6rem;">
+    <div style="display:flex;justify-content:space-between;margin-top:.6rem;gap:.5rem;flex-wrap:wrap;">
+      <button class="modal-btn" data-action="export-jacket" title="Download a print-ready Foundation-styled personnel file">[ ⎙ EXPORT FILE ]</button>
       <button class="modal-cancel" data-action="close-service-record">[ CLOSE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ETHICS CASE MODAL -->
+<div class="modal-overlay-2" id="caseModal" style="z-index:1150;">
+  <div class="modal-box" style="max-width:600px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title" id="caseModalTitle">OPEN CASE</div>
+    <input type="hidden" id="caseEditId"/>
+    <div class="modal-field">
+      <label class="modal-label">CASE REFERENCE</label>
+      <input class="modal-input" id="caseRef" readonly style="opacity:.75;"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">SUBJECT / TITLE</label>
+      <input class="modal-input" id="caseTitle" placeholder="e.g. Review of containment breach in Sector 7"/>
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:160px;">
+        <label class="modal-label">CATEGORY</label>
+        <select class="modal-input" id="caseCategory"></select>
+      </div>
+      <div class="modal-field" style="flex:1;min-width:160px;">
+        <label class="modal-label">STATUS</label>
+        <select class="modal-input" id="caseStatus"></select>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">MATTER UNDER REVIEW</label>
+      <textarea class="modal-input" id="caseSummary" rows="3" placeholder="Describe the matter the committee is reviewing..." style="resize:vertical;min-height:60px;font-family:inherit;"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">RULING / DECISION <span style="color:var(--text-faint);">(when reached)</span></label>
+      <textarea class="modal-input" id="caseRuling" rows="2" placeholder="The committee's decision..." style="resize:vertical;min-height:46px;font-family:inherit;"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">RATIONALE <span style="color:var(--text-faint);">(reasoning)</span></label>
+      <textarea class="modal-input" id="caseRationale" rows="2" placeholder="Reasoning behind the ruling..." style="resize:vertical;min-height:46px;font-family:inherit;"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">PERSONNEL INVOLVED <span style="color:var(--text-faint);">(Ω-1 or EC)</span></label>
+      <select class="modal-input" id="caseLinkPicker" onchange="addCaseLink(this.value)">
+        <option value="">+ LINK PERSONNEL...</option>
+      </select>
+      <div id="caseLinkList" style="margin-top:.4rem;"></div>
+    </div>
+    <div class="modal-err" id="caseErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="modal-cancel" data-action="close-case-modal">[ CANCEL ]</button>
+      <button class="modal-btn" id="caseSaveBtn" onclick="saveCase()">[ SAVE CASE ]</button>
     </div>
   </div>
 </div>

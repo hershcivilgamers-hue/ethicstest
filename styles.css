@@ -815,3 +815,25 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .svc-label{color:var(--text);}
 .svc-detail{color:var(--text-faint);}
 
+/* ── Ethics Case Docket ── */
+.case-card{border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg2);padding:.65rem .8rem;margin-bottom:.6rem;}
+.case-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;}
+.case-ref{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--amber);letter-spacing:.05em;}
+.case-title{font-size:.8rem;color:var(--text);font-weight:600;margin-top:1px;}
+.case-badges{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center;}
+.case-block{margin-top:.5rem;font-size:.66rem;line-height:1.6;}
+.case-block .lbl{font-size:.55rem;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;display:block;margin-bottom:1px;}
+.case-block .txt{color:var(--text);white-space:pre-wrap;}
+.case-ruling{border-left:2px solid var(--green,#5fb87a);padding-left:.5rem;}
+.case-vote{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.55rem;padding-top:.5rem;border-top:1px dashed var(--border);}
+.vote-btn{font-family:inherit;font-size:.55rem;letter-spacing:.05em;padding:2px 9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text-dim);border-radius:2px;cursor:pointer;}
+.vote-btn:hover{color:var(--text);}
+.vote-btn.on-for{border-color:#5fb87a;color:#5fb87a;}
+.vote-btn.on-against{border-color:#dd6666;color:#dd6666;}
+.vote-btn.on-abstain{border-color:var(--amber);color:var(--amber);}
+.vote-tally{font-size:.58rem;color:var(--text-dim);letter-spacing:.04em;}
+.case-link{display:inline-flex;align-items:center;gap:.25rem;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:1px 7px;margin:2px 3px 2px 0;font-size:.57rem;color:var(--text);}
+.case-link .sys{font-size:.5rem;color:var(--text-faint);letter-spacing:.05em;}
+.case-link .x{cursor:pointer;color:var(--text-faint);font-weight:700;}
+.case-link .x:hover{color:#dd6666;}
+
