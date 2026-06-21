@@ -135,8 +135,6 @@
       </div>
     </div>
 
-<div class="nav-tab" onclick="switchTab(this,'readiness')">READINESS</div>
-
     <!-- ETHICS dropdown -->
     <div class="nav-dd" data-group="ethics">
       <div class="nav-dd-trigger" data-action="toggle-nav-dd" data-group="ethics">
@@ -167,9 +165,6 @@
 
     <!-- Standalone direct tabs -->
     <div class="nav-tab nav-standalone-tab" onclick="switchTab(this,'blacklist')">BLACKLIST</div>
-	<div class="nav-tab nav-standalone-tab" onclick="switchTab(this,'whistleblower')">WHISTLEBLOWER
-      <span id="whistleBadge" style="display:none;" class="badge b-red">0</span>
-    </div>
     <div class="nav-tab nav-standalone-tab" onclick="switchTab(this,'terminal')">TERMINAL
       <span class="blink" style="color:var(--green);font-size:.55rem;">▌</span>
     </div>
@@ -617,26 +612,6 @@
       <div id="operationList"></div>
     </div>
 
-  <!-- PERSONNEL READINESS BOARD -->
-    <div class="tab-content" id="tab-readiness">
-      <div class="sec">▸ OMEGA-1 PERSONNEL READINESS BOARD</div>
-      <div style="font-size:.58rem;color:var(--text-dim);margin-bottom:.75rem;">
-        At-a-glance deployment readiness · Active personnel only · CL4+ view
-      </div>
-      <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-        <input class="pf-search" id="rdySearch" placeholder="SEARCH BY NAME OR RANK..." oninput="renderReadiness()" style="flex:1;min-width:180px;"/>
-        <select class="pf-filter" id="rdyFilter" onchange="renderReadiness()" title="Filter by readiness">
-          <option value="">ALL PERSONNEL</option>
-          <option value="deployable">DEPLOYABLE ONLY</option>
-          <option value="non-deployable">NON-DEPLOYABLE ONLY</option>
-          <option value="breach">ACTIVITY BREACH</option>
-          <option value="leave">ON LEAVE</option>
-          <option value="strike">ACTIVE STRIKE</option>
-        </select>
-      </div>
-      <div id="rdyBoard"></div>
-    </div>
-
     <!-- POI / TARGET -->
     <div class="tab-content" id="tab-poi">
       <!-- List view (shown by default) -->
@@ -769,57 +744,7 @@
     <!-- BLACKLIST TAB -->
     <div class="tab-content" id="tab-blacklist">
       <div class="sec">▸ BLACKLIST REGISTRY — CROSS-DEPARTMENT CHECK</div>
-<!-- WHISTLEBLOWER INTAKE -->
-    <div class="tab-content" id="tab-whistleblower">
-      <div class="sec">▸ ETHICS COMMITTEE — CONFIDENTIAL WHISTLEBLOWER INTAKE</div>
-      <div style="font-size:.58rem;color:var(--text-dim);margin-bottom:.75rem;line-height:1.6;">
-        Anonymous channel for Foundation personnel to report ethical concerns to the Ethics Committee.<br>
-        Submissions are encrypted and cannot be traced. Only CL5 command may deanonymise if necessary.
-      </div>
-      <div id="whistleAccessNotice" style="display:none;" class="trn-empty"></div>
-      <div id="whistleBody">
-        <!-- Submission form (anyone, even unauthenticated) -->
-        <div class="order-form" style="margin-bottom:1rem;">
-          <div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin-bottom:.75rem;">▸ SUBMIT A CONFIDENTIAL REPORT</div>
-          <div class="modal-group">
-            <label>CATEGORY</label>
-            <select class="order-select" id="whistleCategory" style="width:100%;margin-bottom:.5rem;">
-              <option value="Misconduct">Personnel Misconduct</option>
-              <option value="Containment">Containment Ethics Violation</option>
-              <option value="Testing">Unethical Testing</option>
-              <option value="Force">Excessive Use of Force</option>
-              <option value="Secrecy">Improper Disclosure / Secrecy</option>
-              <option value="Corruption">Corruption / Bribery</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="modal-group">
-            <label>SUBJECT <span style="color:var(--text-faint);font-size:.58rem;">(who or what is this about?)</span></label>
-            <input class="order-input" id="whistleSubject" placeholder="Name, department, or incident..." style="width:100%;margin-bottom:.5rem;"/>
-          </div>
-          <div class="modal-group">
-            <label>REPORT</label>
-            <textarea class="order-textarea" id="whistleContent" rows="4" placeholder="Describe the ethical concern in detail. Be as specific as possible — dates, locations, personnel involved..."></textarea>
-          </div>
-          <div style="font-size:.54rem;color:var(--text-faint);margin-bottom:.5rem;line-height:1.5;">
-            ⚑ Your report is anonymous. No account, IP, or browser data is recorded.<br>
-            If you want the Committee to follow up, you may optionally provide a contact method below (this is the ONLY non-anonymous field).
-          </div>
-          <div class="modal-group">
-            <label>OPTIONAL CONTACT <span style="color:var(--text-faint);font-size:.58rem;">(leave blank to remain fully anonymous)</span></label>
-            <input class="order-input" id="whistleContact" placeholder="Discord, email, or codename for follow-up..." style="width:100%;margin-bottom:.5rem;"/>
-          </div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button class="order-submit" onclick="submitWhistleblower()">[ SUBMIT ANONYMOUS REPORT → ]</button>
-          </div>
-        </div>
-        <!-- Triage queue (EC members only) -->
-        <div id="whistleTriageSection" style="display:none;">
-          <div style="font-size:.6rem;letter-spacing:.15em;color:var(--green-dim);margin-bottom:.5rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ TRIAGE QUEUE</div>
-          <div id="whistleList"></div>
-        </div>
-      </div>
-    </div>
+
       <!-- Search bar -->
       <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;flex-wrap:wrap;">
         <input id="blSearch" class="pf-search" placeholder="Search name or SteamID across all departments..."
@@ -1843,13 +1768,6 @@
     <div id="recycleBinHdr" style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;">▸ RECYCLE BIN (0)</div>
     <div style="font-size:.52rem;color:var(--text-faint);margin-bottom:.4rem;line-height:1.5;">Deleted files and orders are held here. Restore returns them to active service; purge removes them permanently.</div>
     <div id="adminRecycleList"></div>
-	
-	<div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
-      <span>▸ DECOY / CANARY RECORDS <span style="color:var(--text-faint);font-size:.52rem;">(counter-intelligence)</span></span>
-      <button class="rec-btn" data-action="open-canary-modal" style="font-size:.53rem;padding:1px 7px;">+ PLANT CANARY</button>
-    </div>
-    <div style="font-size:.52rem;color:var(--text-faint);margin-bottom:.4rem;line-height:1.5;">Plant fake records tagged to specific users. If a canary appears leaked externally, the tagged user is compromised.</div>
-    <div id="canaryList"></div>
 
     <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
       <span>▸ AUDIT LOG <span style="color:var(--text-faint);font-size:.52rem;">(last 100 actions)</span></span>
@@ -1941,54 +1859,6 @@
     <div style="display:flex;justify-content:space-between;margin-top:.6rem;gap:.5rem;flex-wrap:wrap;">
       <button class="modal-btn" data-action="export-jacket" title="Download a print-ready Foundation-styled personnel file">[ ⎙ EXPORT FILE ]</button>
       <button class="modal-cancel" data-action="close-service-record">[ CLOSE ]</button>
-    </div>
-  </div>
-</div>
-
-<!-- BURN NOTICE MODAL -->
-<div class="modal-overlay-2" id="burnModal" style="z-index:1160;">
-  <div class="modal-box" style="max-width:480px;">
-    <div class="modal-title" style="color:#dd4444;">🔥 ISSUE BURN NOTICE</div>
-    <div style="font-size:.55rem;color:var(--text-faint);letter-spacing:.05em;margin:-.3rem 0 .6rem;">Declares the target persona non grata. All access is revoked instantly. An Omega-1 enforcement action may be auto-queued.</div>
-    <input type="hidden" id="burnTargetSys"/>
-    <input type="hidden" id="burnTargetId"/>
-    <div class="modal-field"><label class="modal-label">TARGET</label><input class="modal-input" id="burnTargetName" readonly style="opacity:.75;"/></div>
-    <div class="modal-field"><label class="modal-label">REASON FOR BURN</label><textarea class="modal-input" id="burnReason" rows="3" style="font-family:inherit;resize:vertical;" placeholder="State clearly why this person is being burned..."></textarea></div>
-    <div class="modal-field"><label class="modal-label">OMEGA-1 ACTION</label>
-      <select class="modal-input" id="burnQueueAction">
-        <option value="None">None — mark only</option>
-        <option value="Monitor">Monitor — observe and report</option>
-        <option value="Detain">Detain — recover for questioning</option>
-        <option value="Extract">Extract — remove from position</option>
-      </select>
-    </div>
-    <div class="modal-err" id="burnErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
-    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
-      <button class="modal-cancel" data-action="close-burn-modal">[ CANCEL ]</button>
-      <button class="modal-btn" onclick="saveBurnNotice()" style="background:rgba(80,10,10,.4);border-color:#5a0000;color:#ff6666;">[ 🔥 ISSUE BURN NOTICE ]</button>
-    </div>
-  </div>
-</div>
-
-<!-- CANARY MODAL -->
-<div class="modal-overlay-2" id="canaryModal" style="z-index:1160;">
-  <div class="modal-box" style="max-width:480px;">
-    <div class="modal-title">PLANT CANARY RECORD</div>
-    <div style="font-size:.55rem;color:var(--text-faint);letter-spacing:.05em;margin:-.3rem 0 .6rem;">A fake record tagged to a specific user. If it appears leaked, that user is compromised.</div>
-    <div class="modal-field"><label class="modal-label">DECOY TYPE</label>
-      <select class="modal-input" id="canaryType">
-        <option value="Informant">Fake Informant</option>
-        <option value="Case">Fake Ethics Case</option>
-        <option value="Intel Report">Fake Intel Report</option>
-        <option value="Directive">Fake Directive</option>
-      </select>
-    </div>
-    <div class="modal-field"><label class="modal-label">DECOY CONTENT</label><textarea class="modal-input" id="canaryContent" rows="3" style="font-family:inherit;resize:vertical;" placeholder="The fake information to plant..."></textarea></div>
-    <div class="modal-field"><label class="modal-label">TAGGED USER</label><select class="modal-input" id="canaryTaggedUser"></select></div>
-    <div class="modal-err" id="canaryErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
-    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
-      <button class="modal-cancel" data-action="close-canary-modal">[ CANCEL ]</button>
-      <button class="modal-btn" onclick="saveCanary()">[ PLANT CANARY ]</button>
     </div>
   </div>
 </div>
