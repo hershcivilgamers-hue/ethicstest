@@ -683,6 +683,8 @@ async function onLogin() { // Make function async
   loadPromoReqs();
   loadActivityReqs();
   startPolling();
+  loadWhistleblower();
+  loadBurnNotices();
   setTimeout(showLoginNotifications, 1500); // after data loads
   setTimeout(function(){ if (document.getElementById('tab-overview') && document.getElementById('tab-overview').classList.contains('active')) renderOverview(); }, 1500);
   if (typeof startSessionTimer === 'function') startSessionTimer();
@@ -1556,6 +1558,33 @@ function renderOverview() {
     }
   }
 
+// ── Ethics Committee KPIs (CL4+) ──
+  if (cl >= 4) {
+    var openCases = (allEthicsCases || []).filter(function(c){ return c.status === 'Open' || c.status === 'Under Review'; }).length;
+    if (openCases) cards.push(ovCard('Open Cases', openCases, 'ethics committee docket', 'var(--amber)', 'ethics-cases'));
+
+    var activeSources = (allInformants || []).filter(function(s){ return s.status === 'Active' && orgMatch(s); }).length;
+    if (activeSources) cards.push(ovCard('Active Sources', activeSources, 'confidential informants', 'var(--cyan)', 'ethics-intel'));
+
+    var compromisedSources = (allInformants || []).filter(function(s){ return s.status === 'Burned' && orgMatch(s); }).length;
+    if (compromisedSources) cards.push(ovCard('Compromised Sources', compromisedSources, 'burned informants — review', 'var(--red)', 'ethics-intel', true));
+
+    var newReports = (allIntelReports || []).filter(function(r){ return r.status === 'New' && orgMatch(r); }).length;
+    if (newReports) cards.push(ovCard('New Intel', newReports, 'unreviewed field reports', 'var(--amber)', 'ethics-intel'));
+
+    var watched = (allSurveillance || []).filter(function(s){ return s.active !== false; }).length;
+    if (watched) cards.push(ovCard('Under Surveillance', watched, 'subjects under observation', 'var(--text-dim)', 'ethics-intel'));
+
+    var pendingTribunals = (allTribunals || []).filter(function(t){ return t.status === 'Submitted' || t.status === 'Accepted'; }).length;
+    if (pendingTribunals) cards.push(ovCard('Pending Tribunals', pendingTribunals, 'awaiting action', 'var(--amber)', 'ethics-tribunals'));
+  }
+
+  // ── Activity breaches (CL4+) ──
+  if (cl >= 4) {
+    var breaches = (allPersonnel || []).filter(function(p){ return activityInBreach(p, 'pf'); }).length;
+    if (breaches) cards.push(ovCard('Activity Breaches', breaches, 'operatives below requirement', 'var(--red)', 'roster', true));
+  }
+
   // ── Active orders by priority (everyone) ──
   var liveOrders = (allOrders || []).filter(function(o){ return o.status !== 'CANCELLED' && o.status !== 'ARCHIVED' && !orderIsRestricted(o); });
   var crit = liveOrders.filter(function(o){ return (o.priority||'').toUpperCase() === 'CRITICAL'; }).length;
@@ -1765,6 +1794,7 @@ function renderAuditLog() {
       + '</div>';
   }).join('');
 }
+
 
 // ================================================================
 //  BLACKLIST REGISTRY
@@ -3099,11 +3129,13 @@ function switchTab(el, id) {
   if (id === 'poi')             loadPOIData();
   if (id === 'trainings')       loadTrainings();
   if (id === 'operations')      loadOperations();
+  if (id === 'readiness')      renderReadiness();
   if (id === 'ethics-cases')    loadEthicsCases();
   if (id === 'ethics-tribunals') loadTribunals();
   if (id === 'ethics-intel')     loadIntel('ec');
   if (id === 'omega1-intel')     loadIntel('o1');
   if (id === 'blacklist')       loadBlacklist();
+  if (id === 'whistleblower')   loadWhistleblower();
   if (id === 'recruit') {
     if (!currentUser || parseInt(currentUser.clearance) < 4) {
       var rTab = document.getElementById('tab-recruit');
@@ -3401,6 +3433,7 @@ async function openAdminPanel() {
   await loadPromoReqs();
   await loadActivityReqs();
   loadAuditLog();
+  loadCanaries();
   renderAdminPanel();
 }
 function closeAdminPanel() { document.getElementById('adminModal').classList.remove('open'); }
@@ -3566,6 +3599,7 @@ function renderAdminPanel() {
       </div>`;
     }).join('') : '<div style="font-size:.63rem;color:var(--text-faint);">[ NO ACCOUNTS MATCH FILTERS ]</div>';
     updateBulkBar();
+	
     var selAll = document.getElementById('adminDirSelectAll');
     if (selAll) selAll.checked = adminDirVisible.length > 0 && adminDirVisible.every(function(id){ return adminDirSelected.has(id); });
   }
@@ -3595,6 +3629,7 @@ function renderAdminPanel() {
   renderPromoReqList();
   renderActivityReqs();
   renderRecycleBin();
+  renderCanaries();
   updateRecycleHdr();
 }
 
@@ -4041,6 +4076,13 @@ function updateRecycleHdr() {
   var hdr = document.getElementById('recycleBinHdr');
   if (hdr) hdr.textContent = '▸ RECYCLE BIN (' + recycleBinCount() + ')';
 }
+
+  <div style="font-size:.6rem;letter-spacing:.15em;color:var(--text-dim);margin:.9rem 0 .4rem;border-top:1px solid var(--border2);padding-top:.6rem;display:flex;align-items:center;justify-content:space-between;">
+      <span>▸ DECOY / CANARY RECORDS <span style="color:var(--text-faint);font-size:.52rem;">(counter-intelligence)</span></span>
+      <button class="rec-btn" data-action="open-canary-modal" style="font-size:.53rem;padding:1px 7px;">+ PLANT CANARY</button>
+    </div>
+    <div style="font-size:.52rem;color:var(--text-faint);margin-bottom:.4rem;line-height:1.5;">Plant fake records tagged to specific users. If a canary appears leaked externally, the tagged user is compromised.</div>
+    <div id="canaryList"></div>
 
 // ── Activity requirements config (CL5) ──
 function renderActivityReqs() {
@@ -6396,6 +6438,91 @@ async function loadOperations() {
   renderOperations();
 }
 
+// ================================================================
+//  PERSONNEL READINESS BOARD
+//  At-a-glance deployment status for all active Omega-1 personnel.
+//  Combines activity status, leave, strikes, and surveillance into
+//  a single deployable / non-deployable assessment.
+// ================================================================
+function renderReadiness() {
+  var el = document.getElementById('rdyBoard');
+  if (!el) return;
+  if (!currentUser || parseInt(currentUser.clearance) < 4) {
+    el.innerHTML = '<div class="trn-empty">CLEARANCE LEVEL 4 REQUIRED TO VIEW THE READINESS BOARD.</div>';
+    return;
+  }
+  var q = ((document.getElementById('rdySearch')||{}).value||'').trim().toLowerCase();
+  var filter = (document.getElementById('rdyFilter')||{}).value||'';
+
+  var rows = (allPersonnel || []).filter(function(p){
+    if (p.status && p.status !== 'Active') return false;
+    if (!q) return true;
+    return ((p.name||'') + ' ' + (p.nickname||'') + ' ' + (p.rank||'')).toLowerCase().indexOf(q) !== -1;
+  });
+
+  // Compute readiness for each
+  var computed = rows.map(function(p){
+    var onLeave = !!(typeof getActiveLeave === 'function' && getActiveLeave(p));
+    var st = activityStatus(p, 'pf');
+    var activeStrikes = objArr(p.strikes).filter(function(s){ return isStrikeActive(s); });
+    var underSv = typeof isUnderSurveillance === 'function' && isUnderSurveillance('pf', p.id);
+    var inBreach = activityInBreach(p, 'pf');
+    var deployable = !onLeave && !inBreach && !activeStrikes.length && st.key === 'active';
+    return { p: p, onLeave: onLeave, st: st, strikes: activeStrikes, underSv: underSv, inBreach: inBreach, deployable: deployable };
+  });
+
+  // Apply filter
+  if (filter === 'deployable') computed = computed.filter(function(c){ return c.deployable; });
+  else if (filter === 'non-deployable') computed = computed.filter(function(c){ return !c.deployable; });
+  else if (filter === 'breach') computed = computed.filter(function(c){ return c.inBreach; });
+  else if (filter === 'leave') computed = computed.filter(function(c){ return c.onLeave; });
+  else if (filter === 'strike') computed = computed.filter(function(c){ return c.strikes.length; });
+
+  // Sort: deployable first, then by rank
+  computed.sort(function(a, b){
+    if (a.deployable !== b.deployable) return a.deployable ? -1 : 1;
+    var ri = rankIndex(a.p.rank) - rankIndex(b.p.rank);
+    if (ri !== 0) return ri;
+    return (a.p.name||'').localeCompare(b.p.name||'');
+  });
+
+  if (!computed.length) {
+    el.innerHTML = '<div class="trn-empty">NO PERSONNEL MATCH THE CURRENT FILTER.</div>';
+    return;
+  }
+
+  var deployableCount = computed.filter(function(c){ return c.deployable; }).length;
+  var summary = '<div style="font-size:.6rem;color:var(--text-dim);margin-bottom:.6rem;">'
+    + '<span style="color:var(--green);">● ' + deployableCount + ' DEPLOYABLE</span> · '
+    + '<span style="color:var(--amber);">● ' + (computed.length - deployableCount) + ' NON-DEPLOYABLE</span> · '
+    + '<span style="color:var(--text-faint);">' + computed.length + ' total</span></div>';
+
+  el.innerHTML = summary + computed.map(function(c){
+    var p = c.p;
+    var statusBadge = '<span class="badge ' + activityStatusClass(c.st.key) + '" style="font-size:.5rem;">' + e(c.st.label) + '</span>';
+    var flags = '';
+    if (c.onLeave) flags += ' <span class="badge b-cyan" style="font-size:.45rem;">ON LEAVE</span>';
+    if (c.strikes.length) flags += ' <span class="badge b-red" style="font-size:.45rem;">⚠ ' + c.strikes.length + ' STRIKE' + (c.strikes.length>1?'S':'') + '</span>';
+    if (c.underSv) flags += ' <span class="badge b-amber" style="font-size:.45rem;">◉ SURVEILLANCE</span>';
+    if (c.inBreach) flags += ' <span class="badge b-red" style="font-size:.45rem;">⚠ BREACH</span>';
+    var rdyBadge = c.deployable
+      ? '<span class="badge b-green" style="font-size:.5rem;">✓ DEPLOYABLE</span>'
+      : '<span class="badge b-red" style="font-size:.5rem;">✕ NON-DEPLOYABLE</span>';
+    var wkHrs = activityHoursThisWeek(p);
+    return '<div class="case-card" style="padding:.5rem .7rem;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">'
+      + '<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">'
+      + '<span class="badge ' + rankBadgeClass(p.rank) + '" style="font-size:.5rem;">' + e(p.rank||'—') + '</span>'
+      + '<span style="color:var(--text);font-size:.65rem;">' + e(p.name||'—') + '</span>'
+      + (p.nickname ? '<span style="color:var(--text-dim);font-size:.58rem;">"' + e(p.nickname) + '"</span>' : '')
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;">'
+      + statusBadge + flags + rdyBadge
+      + '<span style="font-size:.5rem;color:var(--text-faint);">' + _fmtHrs(wkHrs) + ' this wk</span>'
+      + '</div></div></div>';
+  }).join('');
+}
+
 function renderOperations() {
   var list = document.getElementById('operationList');
   if (!list) return;
@@ -6701,6 +6828,383 @@ function openIntelRef(ref) {
     var s = document.getElementById('repSearch'); if (s) s.value = ref;
     if (typeof renderIntelReports === 'function') renderIntelReports();
   }, 130);
+}
+
+// ================================================================
+//  WHISTLEBLOWER INTAKE — anonymous ethical concern reports
+//  Anyone (even unauthenticated) may submit. EC members triage.
+//  Firebase path: /whistleblower/{id}
+// ================================================================
+var WHISTLE_STATUSES = ['New','Under Review','Actioned','Converted to Case','Dismissed'];
+var allWhistleblower = [];
+
+async function whistleblowerGetAll() {
+  if (firebaseReady) { var a = await fbGetAll('/whistleblower'); return a ? Object.values(a) : []; }
+  return Object.values(lsAll('whistleblower/'));
+}
+async function whistleblowerSet(id, data) { if (firebaseReady) await fbSet('/whistleblower/' + id, data); else lsSet('whistleblower/' + id, data); }
+async function whistleblowerDel(id) { if (firebaseReady) await fbDelete('/whistleblower/' + id); else lsDel('whistleblower/' + id); }
+
+function canTriageWhistleblower() {
+  if (!currentUser) return false;
+  return isEthicsPersonnel() || parseInt(currentUser.clearance) >= 5;
+}
+
+async function loadWhistleblower() {
+  try { allWhistleblower = (await whistleblowerGetAll()).filter(function(w){ return w && w.id; }); }
+  catch(e) { allWhistleblower = []; }
+  allWhistleblower.sort(function(a,b){ return (b.submittedAt||0)-(a.submittedAt||0); });
+  renderWhistleblower();
+  updateWhistleBadge();
+}
+
+function updateWhistleBadge() {
+  var newCount = allWhistleblower.filter(function(w){ return w.status === 'New'; }).length;
+  var badge = document.getElementById('whistleBadge');
+  if (!badge) return;
+  badge.style.display = newCount > 0 && canTriageWhistleblower() ? 'inline-block' : 'none';
+  badge.textContent = newCount;
+}
+
+function renderWhistleblower() {
+  var triageEl = document.getElementById('whistleTriageSection');
+  var listEl = document.getElementById('whistleList');
+  if (!triageEl) return;
+  if (canTriageWhistleblower()) {
+    triageEl.style.display = 'block';
+    if (!listEl) return;
+    if (!allWhistleblower.length) {
+      listEl.innerHTML = '<div class="trn-empty">NO WHISTLEBLOWER REPORTS ON FILE.</div>';
+      return;
+    }
+    listEl.innerHTML = allWhistleblower.map(function(w){
+      var status = w.status || 'New';
+      var statusB = '<span class="badge ' + (status==='New'?'b-red':status==='Under Review'?'b-amber':status==='Actioned'?'b-green':status==='Dismissed'?'b-dim':'b-cyan') + '">' + e(status.toUpperCase()) + '</span>';
+      var manage = canTriageWhistleblower()
+        ? '<div style="display:flex;gap:.3rem;flex-wrap:wrap;">'
+          + '<select class="order-select" style="font-size:.55rem;padding:1px 5px;" onchange="setWhistleStatus(\'' + e(w.id) + '\',this.value)">'
+          + WHISTLE_STATUSES.map(function(s){ return '<option value="' + s + '"' + (s===status?' selected':'') + '>' + s + '</option>'; }).join('')
+          + '</select>'
+          + (status !== 'Dismissed' ? '<button class="pf-section-btn" data-action="convert-whistle" data-id="' + e(w.id) + '" style="font-size:.5rem;padding:1px 6px;color:var(--amber);">⮞ TO CASE</button>' : '')
+          + '<button class="pf-section-btn" data-action="delete-whistle" data-id="' + e(w.id) + '" style="font-size:.5rem;padding:1px 6px;color:#dd6666;">✕</button>'
+          + '</div>'
+        : '';
+      return '<div class="case-card">'
+        + '<div class="case-top"><div><div class="case-ref">WB-' + e(w.ref||w.id.slice(-6).toUpperCase()) + ' · ' + e((w.category||'').toUpperCase()) + '</div>'
+        + '<div class="case-badges" style="margin-top:4px;">' + statusB + '</div></div>' + manage + '</div>'
+        + (w.subject ? '<div class="case-block"><span class="lbl">Subject</span><span class="txt">' + e(w.subject) + '</span></div>' : '')
+        + '<div class="case-block"><span class="lbl">Report</span><span class="txt">' + e(w.content||'') + '</span></div>'
+        + (w.contact ? '<div class="case-block"><span class="lbl">Contact</span><span class="txt">' + e(w.contact) + '</span></div>' : '')
+        + '<div style="font-size:.5rem;color:var(--text-faint);margin-top:.4rem;">SUBMITTED ' + e(safeDate(w.submittedAt)) + ' · ANONYMOUS</div>'
+        + '</div>';
+    }).join('');
+  } else {
+    triageEl.style.display = 'none';
+  }
+}
+
+async function submitWhistleblower() {
+  var category = document.getElementById('whistleCategory').value;
+  var subject = document.getElementById('whistleSubject').value.trim();
+  var content = document.getElementById('whistleContent').value.trim();
+  var contact = document.getElementById('whistleContact').value.trim();
+  if (!content) { alert('A report is required.'); return; }
+  var yy = new Date().getFullYear().toString().slice(-2);
+  var ref = 'WB-' + yy + '-' + String(Date.now()).slice(-5);
+  var w = {
+    id: 'wb_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    ref: ref,
+    category: category,
+    subject: subject || null,
+    content: content,
+    contact: contact || null,
+    status: 'New',
+    submittedAt: Date.now()
+  };
+  try {
+    await whistleblowerSet(w.id, w);
+    document.getElementById('whistleSubject').value = '';
+    document.getElementById('whistleContent').value = '';
+    document.getElementById('whistleContact').value = '';
+    if (typeof toast === 'function') toast('✓ REPORT SUBMITTED ANONYMOUSLY');
+    else alert('Your anonymous report has been submitted to the Ethics Committee.');
+  } catch(e) { alert('SUBMISSION ERROR: ' + e.message); }
+}
+
+async function setWhistleStatus(id, status) {
+  var w = allWhistleblower.find(function(x){ return x.id === id; });
+  if (!w || !canTriageWhistleblower()) return;
+  w.status = status;
+  try { await whistleblowerSet(id, w); renderWhistleblower(); updateWhistleBadge(); }
+  catch(e) { alert('ERROR: ' + e.message); }
+}
+
+async function convertWhistleToCase(id) {
+  var w = allWhistleblower.find(function(x){ return x.id === id; });
+  if (!w || !canTriageWhistleblower()) return;
+  if (typeof openCaseModal !== 'function') { alert('Case docket unavailable.'); return; }
+  openCaseModal(null);
+  document.getElementById('caseTitle').value = 'Whistleblower report — ' + (w.subject || w.category);
+  document.getElementById('caseCategory').value = w.category === 'Misconduct' ? 'Personnel Conduct' : w.category === 'Containment' ? 'Containment Ethics' : w.category === 'Testing' ? 'Testing Approval' : w.category === 'Force' ? 'Use of Force' : 'Other';
+  document.getElementById('caseSummary').value = 'Escalated from whistleblower report ' + (w.ref||w.id) + ' (' + w.category + ').\n\nSubject: ' + (w.subject||'—') + '\n\n' + (w.content||'');
+  w.status = 'Converted to Case';
+  try { await whistleblowerSet(id, w); renderWhistleblower(); }
+  catch(e) {}
+}
+
+async function deleteWhistleblower(id) {
+  if (!canTriageWhistleblower()) return;
+  if (!await pfConfirm('PERMANENTLY DELETE this whistleblower report?')) return;
+  try { await whistleblowerDel(id); allWhistleblower = allWhistleblower.filter(function(x){ return x.id !== id; }); renderWhistleblower(); updateWhistleBadge(); }
+  catch(e) { alert('ERROR: ' + e.message); }
+}
+
+
+// ================================================================
+//  BURN NOTICE / PERSONA NON GRATA
+//  A formal declaration that a person (informant, personnel, or EC
+//  member) is burned — all access revoked instantly, files sealed,
+//  and an Omega-1 enforcement action is auto-queued.
+//  Firebase path: /burnNotices/{id}
+// ================================================================
+var allBurnNotices = [];
+
+async function burnNoticesGetAll() {
+  if (firebaseReady) { var a = await fbGetAll('/burnNotices'); return a ? Object.values(a) : []; }
+  return Object.values(lsAll('burnNotices/'));
+}
+async function burnNoticeSet(id, data) { if (firebaseReady) await fbSet('/burnNotices/' + id, data); else lsSet('burnNotices/' + id, data); }
+async function burnNoticeDel(id) { if (firebaseReady) await fbDelete('/burnNotices/' + id); else lsDel('burnNotices/' + id); }
+
+function canIssueBurnNotice() {
+  if (!currentUser) return false;
+  return parseInt(currentUser.clearance) >= 5;
+}
+
+async function loadBurnNotices() {
+  try { allBurnNotices = (await burnNoticesGetAll()).filter(function(b){ return b && b.id; }); }
+  catch(e) { allBurnNotices = []; }
+  allBurnNotices.sort(function(a,b){ return (b.issuedAt||0)-(a.issuedAt||0); });
+}
+
+// Check if a person (by file id + system) has an active burn notice
+function isBurned(sys, pfId) {
+  return (allBurnNotices || []).some(function(b){
+    return b.active !== false && b.targetSys === sys && b.targetId === pfId;
+  });
+}
+
+// Burn notice badge for personnel cards
+function burnNoticeBadge(fileId, unit) {
+  if (!isBurned(unit, fileId)) return '';
+  return '<span class="badge b-red" style="margin-left:4px;font-size:.5rem;animation:pulse 1.5s infinite;" title="BURN NOTICE ACTIVE — persona non grata">🔥 BURNED</span>';
+}
+
+function openBurnNoticeModal(sys, pfId, targetName) {
+  if (!canIssueBurnNotice()) { alert('CLEARANCE LEVEL 5 REQUIRED TO ISSUE A BURN NOTICE.'); return; }
+  document.getElementById('burnTargetSys').value = sys || 'pf';
+  document.getElementById('burnTargetId').value = pfId || '';
+  document.getElementById('burnTargetName').value = targetName || '';
+  document.getElementById('burnReason').value = '';
+  document.getElementById('burnQueueAction').value = 'Monitor';
+  document.getElementById('burnErr').textContent = '';
+  document.getElementById('burnModal').classList.add('open');
+}
+function closeBurnNoticeModal() { document.getElementById('burnModal').classList.remove('open'); }
+
+async function saveBurnNotice() {
+  if (!canIssueBurnNotice()) return;
+  var sys = document.getElementById('burnTargetSys').value;
+  var pfId = document.getElementById('burnTargetId').value;
+  var targetName = document.getElementById('burnTargetName').value;
+  var reason = document.getElementById('burnReason').value.trim();
+  var queueAction = document.getElementById('burnQueueAction').value;
+  var errEl = document.getElementById('burnErr');
+  if (!pfId) { errEl.textContent = '> TARGET REQUIRED'; return; }
+  if (!reason) { errEl.textContent = '> REASON REQUIRED'; return; }
+
+  var b = {
+    id: 'burn_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    targetSys: sys,
+    targetId: pfId,
+    targetName: targetName,
+    reason: reason,
+    queueAction: queueAction,
+    active: true,
+    issuedBy: currentUser.id,
+    issuedAt: Date.now()
+  };
+  try {
+    await burnNoticeSet(b.id, b);
+    allBurnNotices.unshift(b);
+    auditRecord('ISSUED BURN NOTICE', (targetName||pfId) + ' — ' + reason.slice(0,80));
+
+    // Auto-revoke the linked account's access if one exists
+    var u = userForFile(pfId, sys);
+    if (u) {
+      u.status = 'denied'; u.statusReason = 'BURN NOTICE — ' + reason.slice(0,100);
+      u.revokedBy = currentUser.id; u.revokedAt = Date.now();
+      try { await userSet(u.displayId, u); } catch(_) {}
+    }
+
+    // Auto-queue an Omega-1 operation if action requested
+    if (queueAction !== 'None' && typeof operationSet === 'function') {
+      var op = {
+        id: 'op_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+        ref: nextOpRef(),
+        codename: 'BURN-' + (targetName||pfId).slice(0,8).toUpperCase().replace(/\s/g,''),
+        objective: 'BURN NOTICE enforcement — ' + queueAction + ' target: ' + (targetName||pfId) + '. Reason: ' + reason,
+        opType: queueAction === 'Extract' ? 'Extraction' : queueAction === 'Detain' ? 'Recovery' : 'Investigation',
+        status: 'Planned',
+        priority: 'Critical',
+        location: '',
+        startDate: '', endDate: '',
+        leadId: null, leadName: null,
+        squadId: null, squadName: null,
+        operators: [],
+        outcome: 'N/A',
+        afterAction: '',
+        createdBy: currentUser.id, createdAt: Date.now(), deleted: false
+      };
+      try { await operationSet(op.id, op); } catch(_) {}
+    }
+
+    closeBurnNoticeModal();
+    if (typeof toast === 'function') toast('🔥 BURN NOTICE ISSUED');
+    refreshFileViews(sys);
+    if (typeof renderOverview === 'function') renderOverview();
+  } catch(e) { errEl.textContent = '> ERROR: ' + e.message; }
+}
+
+async function liftBurnNotice(id) {
+  if (!canIssueBurnNotice()) return;
+  if (!await pfConfirm('LIFT this burn notice? The target will no longer be marked persona non grata.')) return;
+  var b = allBurnNotices.find(function(x){ return x.id === id; });
+  if (!b) return;
+  b.active = false; b.liftedBy = currentUser.id; b.liftedAt = Date.now();
+  try {
+    await burnNoticeSet(id, b);
+    auditRecord('LIFTED BURN NOTICE', b.targetName || b.targetId);
+    refreshFileViews(b.targetSys);
+  } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+// ================================================================
+//  DECOY / CANARY RECORDS
+//  Plant fake records (decoy informants, decoy cases) tagged to
+//  specific users. If a decoy record appears leaked externally,
+//  the tagged user is compromised. CL5 can create and track them.
+//  Firebase path: /canaries/{id}
+// ================================================================
+var allCanaries = [];
+
+async function canariesGetAll() {
+  if (firebaseReady) { var a = await fbGetAll('/canaries'); return a ? Object.values(a) : []; }
+  return Object.values(lsAll('canaries/'));
+}
+async function canarySet(id, data) { if (firebaseReady) await fbSet('/canaries/' + id, data); else lsSet('canaries/' + id, data); }
+async function canaryDel(id) { if (firebaseReady) await fbDelete('/canaries/' + id); else lsDel('canaries/' + id); }
+
+function canManageCanaries() {
+  if (!currentUser) return false;
+  return parseInt(currentUser.clearance) >= 5;
+}
+
+async function loadCanaries() {
+  try { allCanaries = (await canariesGetAll()).filter(function(c){ return c && c.id; }); }
+  catch(e) { allCanaries = []; }
+  allCanaries.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+}
+
+function openCanaryModal() {
+  if (!canManageCanaries()) { alert('CL5 REQUIRED.'); return; }
+  document.getElementById('canaryType').value = 'Informant';
+  document.getElementById('canaryContent').value = '';
+  document.getElementById('canaryTaggedUser').value = '';
+  document.getElementById('canaryErr').textContent = '';
+  // Populate the tagged-user select with all users
+  var sel = document.getElementById('canaryTaggedUser');
+  var opts = '<option value="">— SELECT USER TO TAG —</option>';
+  Object.values(allUsers || {}).forEach(function(u){
+    if (u.displayId) opts += '<option value="' + e(u.displayId) + '">EC·' + e(u.displayId) + ' [CL' + e(u.clearance||'3') + ']</option>';
+  });
+  sel.innerHTML = opts;
+  document.getElementById('canaryModal').classList.add('open');
+}
+function closeCanaryModal() { document.getElementById('canaryModal').classList.remove('open'); }
+
+async function saveCanary() {
+  if (!canManageCanaries()) return;
+  var type = document.getElementById('canaryType').value;
+  var content = document.getElementById('canaryContent').value.trim();
+  var taggedUser = document.getElementById('canaryTaggedUser').value;
+  var errEl = document.getElementById('canaryErr');
+  if (!content) { errEl.textContent = '> DECOY CONTENT REQUIRED'; return; }
+  if (!taggedUser) { errEl.textContent = '> TAG A USER'; return; }
+  var c = {
+    id: 'can_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    type: type,
+    content: content,
+    taggedUser: taggedUser,
+    status: 'Planted',
+    confirmedLeaked: false,
+    createdBy: currentUser.id,
+    createdAt: Date.now()
+  };
+  try {
+    await canarySet(c.id, c);
+    allCanaries.unshift(c);
+    auditRecord('PLANTED CANARY', type + ' tagged to EC·' + taggedUser);
+    closeCanaryModal();
+    renderCanaries();
+  } catch(e) { errEl.textContent = '> ERROR: ' + e.message; }
+}
+
+async function confirmCanaryLeaked(id) {
+  if (!canManageCanaries()) return;
+  var c = allCanaries.find(function(x){ return x.id === id; });
+  if (!c) return;
+  if (!await pfConfirm('CONFIRM CANARY LEAK?\n\nThis marks EC·' + c.taggedUser + ' as COMPROMISED. Their access will be suspended.')) return;
+  c.confirmedLeaked = true; c.confirmedBy = currentUser.id; c.confirmedAt = Date.now();
+  try {
+    await canarySet(id, c);
+    auditRecord('⚠ CANARY LEAK CONFIRMED', 'EC·' + c.taggedUser + ' compromised via ' + c.type + ' canary');
+    // Auto-set integrity status to compromised on the tagged user
+    var u = allUsers[c.taggedUser];
+    if (u) {
+      u.integrityStatus = 'compromised';
+      try { await userPatch(c.taggedUser, { integrityStatus: 'compromised' }); } catch(_) {}
+    }
+    renderCanaries();
+    if (typeof renderOverview === 'function') renderOverview();
+  } catch(e) { alert('ERROR: ' + e.message); }
+}
+
+async function deleteCanary(id) {
+  if (!canManageCanaries()) return;
+  if (!await pfConfirm('DELETE this canary record?')) return;
+  try { await canaryDel(id); allCanaries = allCanaries.filter(function(x){ return x.id !== id; }); renderCanaries(); }
+  catch(e) { alert('ERROR: ' + e.message); }
+}
+
+function renderCanaries() {
+  var el = document.getElementById('canaryList');
+  if (!el) return;
+  if (!allCanaries.length) { el.innerHTML = '<div style="font-size:.6rem;color:var(--text-faint);">[ NO CANARY RECORDS PLANTED ]</div>'; return; }
+  el.innerHTML = allCanaries.map(function(c){
+    var statusB = c.confirmedLeaked
+      ? '<span class="badge b-red" style="animation:pulse 1.5s infinite;">⚠ LEAKED — COMPROMISED</span>'
+      : '<span class="badge b-amber">PLANTED — monitoring</span>';
+    return '<div style="border:1px solid ' + (c.confirmedLeaked ? '#4a1414' : 'var(--border2)') + ';background:' + (c.confirmedLeaked ? 'rgba(80,10,10,.15)' : 'var(--bg3)') + ';padding:.5rem .7rem;margin-bottom:.35rem;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;flex-wrap:wrap;">'
+      + '<div><span class="badge b-dim" style="font-size:.5rem;">' + e(c.type.toUpperCase()) + '</span> ' + statusB + '<br>'
+      + '<span style="font-size:.58rem;color:var(--text);margin-top:3px;display:block;">' + e(c.content) + '</span>'
+      + '<span style="font-size:.5rem;color:var(--text-faint);margin-top:3px;display:block;">TAGGED: EC·' + e(c.taggedUser) + ' · planted ' + e(safeDate(c.createdAt)) + ' by EC·' + e(c.createdBy) + '</span></div>'
+      + '<div style="display:flex;gap:.3rem;flex-shrink:0;">'
+      + (!c.confirmedLeaked ? '<button class="pf-section-btn" data-action="confirm-canary" data-id="' + e(c.id) + '" style="font-size:.5rem;padding:1px 6px;color:#dd4444;">⚠ CONFIRM LEAK</button>' : '')
+      + '<button class="pf-section-btn" data-action="delete-canary" data-id="' + e(c.id) + '" style="font-size:.5rem;padding:1px 6px;color:var(--text-faint);">✕</button>'
+      + '</div></div></div>';
+  }).join('');
 }
 
 
@@ -7085,7 +7589,7 @@ var linkedBadge = linkedPfIds.has(p.id)
         <div class="pf-card-header" data-action="toggle-pf" data-id="${e(p.id)}" style="cursor:pointer;padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;" onmouseover="this.style.background='var(--accent-softer)'" onmouseout="this.style.background=''">
           <div>
             <div class="pf-name">${e(p.name||'—')}${p.nickname?` <span style="color:var(--text-dim);font-size:.75rem;">"${e(p.nickname)}"</span>`:''}</div>
-            <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${tagPills}${linkedBadge}${fileSecBadges}</div>
+            <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;margin-top:2px;">${rankBadge}${statusBadge}${tagPills}${linkedBadge}${fileSecBadges}${burnNoticeBadge(p.id,'pf')}</div>
           </div>
           <span style="font-size:.62rem;color:var(--text-dim);">▸</span>
         </div>
@@ -7190,12 +7694,18 @@ var linkedBadge = linkedPfIds.has(p.id)
     }).join('') : '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NOT IN ANY SQUADRON ]</div>';
 
     // ── action buttons ──
+    var burnBtn = (currentUser && parseInt(currentUser.clearance) >= 5)
+      ? (isBurned('pf', p.id)
+        ? `<button class="pf-btn" data-action="lift-burn" data-id="${(allBurnNotices.find(function(b){ return b.active !== false && b.targetSys === 'pf' && b.targetId === p.id; })||{}).id}" style="border-color:#1a3a5a;color:#4488cc;">[ LIFT BURN ]</button>`
+        : `<button class="pf-btn" data-action="issue-burn" data-sys="pf" data-id="${e(p.id)}" data-name="${e(p.name||'')}" style="border-color:#4a1414;color:#dd4444;">[ 🔥 BURN ]</button>`)
+      : '';
     var actionBtns = (canEdit && !selfRestricted) ? `
       <div class="pf-card-actions">
         <button class="pf-btn"    data-action="edit-pf"    data-id="${e(p.id)}">[ EDIT RECORD ]</button>
         <button class="pf-btn"    data-action="award-pf"   data-id="${e(p.id)}">[ AWARD MEDAL ]</button>
         <button class="pf-btn"    data-action="open-tag-modal" data-id="${e(p.id)}" style="display:none;">+ TAG</button>
         <button class="pf-btn"    data-action="create-sqd" data-id="${e(p.id)}">[ + SQUADRON ]</button>
+        ${burnBtn}
         <button class="pf-btn danger" data-action="delete-pf" data-id="${e(p.id)}">[ DELETE ]</button>
       </div>` : '';
     var statusBtns = canEdit ? `
@@ -7897,6 +8407,18 @@ document.addEventListener('click', function(ev) {
     case 'del-leave':        ev.stopPropagation(); deleteLeave(el.dataset.id, el.dataset.leaveid, el.dataset.division); break;
     case 'close-leave-modal': closeLeaveModal(); break;
     case 'save-leave':        saveLeave(); break;
+	// Whistleblower 
+	case 'convert-whistle':     convertWhistleToCase(el.dataset.id); break;
+    case 'delete-whistle':      deleteWhistleblower(el.dataset.id); break;
+	// Burn Notice
+	case 'close-burn-modal':     closeBurnNoticeModal(); break;
+    case 'issue-burn':           openBurnNoticeModal(el.dataset.sys, el.dataset.id, el.dataset.name); break;
+    case 'lift-burn':            liftBurnNotice(el.dataset.id); break;
+	// Canary modal
+	case 'open-canary-modal':   openCanaryModal(); break;
+    case 'close-canary-modal':  closeCanaryModal(); break;
+    case 'confirm-canary':      confirmCanaryLeaked(el.dataset.id); break;
+    case 'delete-canary':       deleteCanary(el.dataset.id); break;
   }
 });
 
