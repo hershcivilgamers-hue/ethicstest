@@ -678,7 +678,7 @@ async function onLogin() { // Make function async
   loadEthicsCases();
   loadTribunals();
   refreshIntelNav();
-  loadIntel();
+  loadIntel('ec');
   loadCompartments();
   loadPromoReqs();
   loadActivityReqs();
@@ -3050,7 +3050,8 @@ function switchTab(el, id) {
   if (id === 'operations')      loadOperations();
   if (id === 'ethics-cases')    loadEthicsCases();
   if (id === 'ethics-tribunals') loadTribunals();
-  if (id === 'ethics-intel')     loadIntel();
+  if (id === 'ethics-intel')     loadIntel('ec');
+  if (id === 'omega1-intel')     loadIntel('o1');
   if (id === 'blacklist')       loadBlacklist();
   if (id === 'recruit') {
     if (!currentUser || parseInt(currentUser.clearance) < 4) {
@@ -5844,16 +5845,45 @@ function canAccessIntel() {
   if (!currentUser) return false;
   return isEthicsPersonnel() || parseInt(currentUser.clearance) >= 5;
 }
+// Omega-1 intel is a separate compartment: command tier (CL4+) or Overseer.
+function canAccessO1Intel() {
+  if (!currentUser) return false;
+  return parseInt(currentUser.clearance) >= 4;
+}
+var _intelOrg = 'ec';
+function intelOrgCanAccess() { return _intelOrg === 'o1' ? canAccessO1Intel() : canAccessIntel(); }
+function orgMatch(rec) { return rec && (rec.org || 'ec') === _intelOrg; }
+// Visible if in this compartment AND the viewer holds any need-to-know grant on the record.
+function intelVisible(rec) { return orgMatch(rec) && userHasCompartment(rec && rec.compartment); }
+function intelEls() {
+  return _intelOrg === 'o1' ? {
+    notice:'o1IntelAccessNotice', body:'o1IntelBody', count:'o1IntelCount',
+    srcSearch:'o1SrcSearch', srcFilter:'o1SrcFilterStatus', srcList:'o1InformantList',
+    repSearch:'o1RepSearch', repFilter:'o1RepFilterStatus', repList:'o1IntelReportList',
+    watchList:'o1WatchlistList',
+    segS:'o1SegSources', segR:'o1SegReports', segW:'o1SegWatchlist',
+    sV:'o1IntelSourcesView', rV:'o1IntelReportsView', wV:'o1IntelWatchlistView'
+  } : {
+    notice:'intelAccessNotice', body:'intelBody', count:'intelCount',
+    srcSearch:'srcSearch', srcFilter:'srcFilterStatus', srcList:'informantList',
+    repSearch:'repSearch', repFilter:'repFilterStatus', repList:'intelReportList',
+    watchList:'watchlistList',
+    segS:'segSources', segR:'segReports', segW:'segWatchlist',
+    sV:'intelSourcesView', rV:'intelReportsView', wV:'intelWatchlistView'
+  };
+}
 function canManageIntel(rec) {
-  if (!canAccessIntel()) return false;
+  if (!intelOrgCanAccess()) return false;
   if (parseInt(currentUser.clearance) >= 5) return true;
   return !rec || rec.createdBy === currentUser.id;
 }
 
-// Reveal the INTEL nav tab only to those cleared for it (called on login).
+// Reveal each INTEL nav tab only to those cleared for that compartment.
 function refreshIntelNav() {
-  var tab = document.getElementById('navIntelTab');
-  if (tab) tab.style.display = canAccessIntel() ? '' : 'none';
+  var ec = document.getElementById('navIntelTab');
+  if (ec) ec.style.display = canAccessIntel() ? '' : 'none';
+  var o1 = document.getElementById('navO1IntelTab');
+  if (o1) o1.style.display = canAccessO1Intel() ? '' : 'none';
 }
 
 function informantName(id) {
@@ -5861,11 +5891,15 @@ function informantName(id) {
   return s ? s.codename : '[unknown source]';
 }
 
-async function loadIntel() {
-  var notice = document.getElementById('intelAccessNotice');
-  var body = document.getElementById('intelBody');
-  if (!canAccessIntel()) {
-    if (notice) { notice.style.display = 'block'; notice.textContent = 'ACCESS DENIED — This terminal is restricted to Ethics Committee personnel.'; }
+async function loadIntel(org) {
+  if (org) _intelOrg = org;
+  var els = intelEls();
+  var notice = document.getElementById(els.notice);
+  var body = document.getElementById(els.body);
+  if (!intelOrgCanAccess()) {
+    if (notice) { notice.style.display = 'block'; notice.textContent = _intelOrg === 'o1'
+      ? 'ACCESS DENIED — Omega-1 intelligence is restricted to command (Level 4+).'
+      : 'ACCESS DENIED — This terminal is restricted to Ethics Committee personnel.'; }
     if (body) body.style.display = 'none';
     return;
   }
@@ -5880,13 +5914,15 @@ async function loadIntel() {
   allInformants.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
   allIntelReports.sort(function(a,b){ return (b.filedAt||0)-(a.filedAt||0); });
   await loadSurveillance();
+  if (_intelView === 'watchlist' && _intelOrg === 'o1') _intelView = 'sources';
   setIntelView(_intelView);
 }
 
 function setIntelView(view) {
   _intelView = view;
-  var sv = document.getElementById('intelSourcesView'), rv = document.getElementById('intelReportsView'), wv = document.getElementById('intelWatchlistView');
-  var sb = document.getElementById('segSources'), rb = document.getElementById('segReports'), wb = document.getElementById('segWatchlist');
+  var els = intelEls();
+  var sv = document.getElementById(els.sV), rv = document.getElementById(els.rV), wv = document.getElementById(els.wV);
+  var sb = document.getElementById(els.segS), rb = document.getElementById(els.segR), wb = document.getElementById(els.segW);
   if (sv) sv.style.display = view === 'sources' ? 'block' : 'none';
   if (rv) rv.style.display = view === 'reports' ? 'block' : 'none';
   if (wv) wv.style.display = view === 'watchlist' ? 'block' : 'none';
@@ -5905,11 +5941,12 @@ function subjectName(sys, pfId) {
   return p ? (p.name || p.nickname || pfId) : '[file ' + pfId + ']';
 }
 function renderWatchlist() {
-  var list = document.getElementById('watchlistList');
+  var els = intelEls();
+  var list = document.getElementById(els.watchList);
   if (!list) return;
   var rows = (allSurveillance || []).filter(function(s){ return s && s.active !== false; })
     .sort(function(a,b){ var ord={Priority:0,Elevated:1,Routine:2}; return (ord[a.level]||3)-(ord[b.level]||3); });
-  var cnt = document.getElementById('intelCount');
+  var cnt = document.getElementById(els.count);
   if (cnt && _intelView === 'watchlist') cnt.textContent = rows.length ? '(' + rows.length + ' watched)' : '';
   if (!rows.length) { list.innerHTML = '<div class="trn-empty">NO SUBJECTS UNDER OBSERVATION.</div>'; return; }
   list.innerHTML = rows.map(function(s){
@@ -5930,16 +5967,18 @@ function renderWatchlist() {
 function srcStatusBadge(s) { return s === 'Active' ? 'b-green' : s === 'Dormant' ? 'b-amber' : s === 'Burned' ? 'b-red' : 'b-retired'; }
 
 function renderInformants() {
-  var list = document.getElementById('informantList');
+  var els = intelEls();
+  var list = document.getElementById(els.srcList);
   if (!list) return;
-  var q = ((document.getElementById('srcSearch')||{}).value||'').trim().toLowerCase();
-  var f = (document.getElementById('srcFilterStatus')||{}).value||'';
+  var q = ((document.getElementById(els.srcSearch)||{}).value||'').trim().toLowerCase();
+  var f = (document.getElementById(els.srcFilter)||{}).value||'';
   var rows = allInformants.filter(function(s){
+    if (!intelVisible(s)) return false;
     if (f && (s.status||'Active') !== f) return false;
     if (!q) return true;
     return [s.codename, s.department, s.coverRole, s.handlerName, s.notes].join(' ').toLowerCase().indexOf(q) !== -1;
   });
-  var cnt = document.getElementById('intelCount');
+  var cnt = document.getElementById(els.count);
   if (cnt && _intelView === 'sources') cnt.textContent = rows.length ? '(' + rows.length + ' sources)' : '';
   if (!rows.length) { list.innerHTML = '<div class="trn-empty">NO SOURCES' + (q||f?' MATCH THE FILTER.':' ON THE NETWORK YET.') + '</div>'; return; }
   list.innerHTML = rows.map(buildInformantCard).join('');
@@ -5973,7 +6012,7 @@ function buildInformantCard(s) {
 }
 
 function openInformantModal(id) {
-  if (!canAccessIntel()) { alert('Ethics Committee access required.'); return; }
+  if (!intelOrgCanAccess()) { alert('Compartment access required.'); return; }
   var editing = !!id;
   var s = editing ? allInformants.find(function(x){ return x.id === id; }) : null;
   if (editing && !canManageIntel(s)) { alert('Only the handler or command may edit this source.'); return; }
@@ -5982,21 +6021,23 @@ function openInformantModal(id) {
   document.getElementById('srcErr').style.display = 'none';
   document.getElementById('srcReliability').innerHTML = SRC_RELIABILITY.map(function(r){ return '<option value="' + r + '">' + r + ' — ' + e(SRC_RELIABILITY_LABEL[r]) + '</option>'; }).join('');
   document.getElementById('srcStatus').innerHTML = SRC_STATUSES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
-  // Handler picker = EC personnel
-  var ecOpts = '<option value="">— select handler —</option>' + (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).map(function(p){ return '<option value="' + e(p.id) + '">' + e(p.name||p.id) + (p.role?' ('+e(p.role)+')':'') + '</option>'; }).join('');
-  document.getElementById('srcHandler').innerHTML = ecOpts;
+  // Handler picker = personnel of the active compartment's organisation
+  var handlerPool = _intelOrg === 'o1' ? (allPersonnel||[]) : (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]);
+  var handlerOpts = '<option value="">— select handler —</option>' + handlerPool.map(function(p){ return '<option value="' + e(p.id) + '">' + e(p.name||p.id) + (p.role?' ('+e(p.role)+')':'') + (p.rank?' ('+e(p.rank)+')':'') + '</option>'; }).join('');
+  document.getElementById('srcHandler').innerHTML = handlerOpts;
   // True-identity picker = all personnel (both pools)
   var idOpts = '<option value="">— unlinked —</option>'
     + (allPersonnel||[]).map(function(p){ return '<option value="pf:' + e(p.id) + '">Ω1 · ' + e(p.name||p.id) + '</option>'; }).join('')
     + (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).map(function(p){ return '<option value="ef:' + e(p.id) + '">EC · ' + e(p.name||p.id) + '</option>'; }).join('');
   document.getElementById('srcRealId').innerHTML = idOpts;
+  if (typeof populateCompartmentSelect === 'function') populateCompartmentSelect('srcCompartment', s ? (s.compartment||'') : '');
 
   document.getElementById('srcCodename').value = s ? (s.codename||'') : '';
   document.getElementById('srcReliability').value = s ? (s.reliability||'C') : 'C';
   document.getElementById('srcDept').value = s ? (s.department||'') : '';
   document.getElementById('srcStatus').value = s ? (s.status||'Active') : 'Active';
   document.getElementById('srcCover').value = s ? (s.coverRole||'') : '';
-  document.getElementById('srcHandler').value = s ? (s.handlerId||'') : (currentUser.linkedEfId || '');
+  document.getElementById('srcHandler').value = s ? (s.handlerId||'') : (_intelOrg === 'o1' ? (currentUser.linkedPfId||'') : (currentUser.linkedEfId||''));
   document.getElementById('srcLastContact').value = s ? (s.lastContact||'') : '';
   document.getElementById('srcRealId').value = s && s.realPfId ? ((s.realSys||'pf')+':'+s.realPfId) : '';
   document.getElementById('srcNotes').value = s ? (s.notes||'') : '';
@@ -6014,7 +6055,8 @@ async function saveInformant() {
   if (editId && !canManageIntel(existing)) { fail('You may not edit this source.'); return; }
 
   var handlerId = document.getElementById('srcHandler').value;
-  var handlerName = handlerId ? (((typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).find(function(p){return p.id===handlerId;})||{}).name || handlerId) : '';
+  var handlerPool = (existing ? (existing.org==='o1') : (_intelOrg==='o1')) ? (allPersonnel||[]) : (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]);
+  var handlerName = handlerId ? ((handlerPool.find(function(p){return p.id===handlerId;})||{}).name || handlerId) : '';
   var realVal = document.getElementById('srcRealId').value;
   var realSys = realVal ? realVal.slice(0,2) : '';
   var realId = realVal ? realVal.slice(3) : '';
@@ -6029,8 +6071,10 @@ async function saveInformant() {
   if (existing) {
     s = existing;
   } else {
-    s = { id: 'src_' + Date.now() + '_' + Math.random().toString(36).slice(2,5), createdBy: currentUser.id, createdAt: Date.now(), deleted: false };
+    s = { id: 'src_' + Date.now() + '_' + Math.random().toString(36).slice(2,5), org: _intelOrg, createdBy: currentUser.id, createdAt: Date.now(), deleted: false };
   }
+  if (!s.org) s.org = _intelOrg;
+  s.compartment = (document.getElementById('srcCompartment')||{}).value || null;
   s.codename = codename;
   s.reliability = document.getElementById('srcReliability').value;
   s.department = document.getElementById('srcDept').value.trim();
@@ -6074,16 +6118,18 @@ function nextIntelRef() {
 }
 
 function renderIntelReports() {
-  var list = document.getElementById('intelReportList');
+  var els = intelEls();
+  var list = document.getElementById(els.repList);
   if (!list) return;
-  var q = ((document.getElementById('repSearch')||{}).value||'').trim().toLowerCase();
-  var f = (document.getElementById('repFilterStatus')||{}).value||'';
+  var q = ((document.getElementById(els.repSearch)||{}).value||'').trim().toLowerCase();
+  var f = (document.getElementById(els.repFilter)||{}).value||'';
   var rows = allIntelReports.filter(function(r){
+    if (!intelVisible(r)) return false;
     if (f && (r.status||'New') !== f) return false;
     if (!q) return true;
     return [r.ref, r.content, r.category, informantName(r.sourceId), r.subjectName].join(' ').toLowerCase().indexOf(q) !== -1;
   });
-  var cnt = document.getElementById('intelCount');
+  var cnt = document.getElementById(els.count);
   if (cnt && _intelView === 'reports') cnt.textContent = rows.length ? '(' + rows.length + ' reports)' : '';
   if (!rows.length) { list.innerHTML = '<div class="trn-empty">NO REPORTS' + (q||f?' MATCH THE FILTER.':' FILED YET.') + '</div>'; return; }
   list.innerHTML = rows.map(buildIntelReportCard).join('');
@@ -6110,7 +6156,7 @@ function buildIntelReportCard(r) {
     + '<span class="rel-badge rel-' + e(rel) + '" title="Admiralty rating">' + e(rel) + e(cred) + '</span></div></div>' + manage + '</div>'
     + subject
     + '<div class="case-block"><span class="lbl">Intelligence</span><span class="txt">' + e(r.content||'') + '</span></div>'
-    + '<div class="case-vote"><span class="vote-tally">FILED ' + e(safeDate(r.filedAt)) + ' · EC·' + e(r.filedBy||'—')
+    + '<div class="case-vote"><span class="vote-tally">FILED ' + e(safeDate(r.filedAt)) + ' · ' + (r.org==='o1'?'Ω1·':'EC·') + e(r.filedBy||'—')
     + ' · rating ' + e(rel) + e(cred) + ' (' + e(SRC_RELIABILITY_LABEL[rel]||'?') + ' / ' + e(INFO_CREDIBILITY_LABEL[cred]||'?') + ')</span>' + escalate + '</div>'
     + '</div>';
 }
@@ -6122,7 +6168,7 @@ function syncReportReliability() {
 }
 
 function openIntelReportModal(id, presetSourceId) {
-  if (!canAccessIntel()) { alert('Ethics Committee access required.'); return; }
+  if (!intelOrgCanAccess()) { alert('Compartment access required.'); return; }
   var editing = !!id;
   var r = editing ? allIntelReports.find(function(x){ return x.id === id; }) : null;
   if (editing && !canManageIntel(r)) { alert('You may not edit this report.'); return; }
@@ -6130,7 +6176,7 @@ function openIntelReportModal(id, presetSourceId) {
   document.getElementById('intelReportEditId').value = id || '';
   document.getElementById('repErr').style.display = 'none';
   document.getElementById('repRef').value = r ? (r.ref || nextIntelRef()) : nextIntelRef();
-  document.getElementById('repSource').innerHTML = '<option value="">— select source —</option>' + allInformants.map(function(s){ return '<option value="' + e(s.id) + '">' + e(s.codename) + ' (REL ' + e(s.reliability||'F') + ')</option>'; }).join('');
+  document.getElementById('repSource').innerHTML = '<option value="">— select source —</option>' + allInformants.filter(orgMatch).map(function(s){ return '<option value="' + e(s.id) + '">' + e(s.codename) + ' (REL ' + e(s.reliability||'F') + ')</option>'; }).join('');
   document.getElementById('repCategory').innerHTML = INTEL_CATEGORIES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
   document.getElementById('repReliability').innerHTML = SRC_RELIABILITY.map(function(x){ return '<option value="' + x + '">' + x + ' — ' + e(SRC_RELIABILITY_LABEL[x]) + '</option>'; }).join('');
   document.getElementById('repCredibility').innerHTML = INFO_CREDIBILITY.map(function(x){ return '<option value="' + x + '">' + x + ' — ' + e(INFO_CREDIBILITY_LABEL[x]) + '</option>'; }).join('');
@@ -6139,6 +6185,7 @@ function openIntelReportModal(id, presetSourceId) {
     + (allPersonnel||[]).map(function(p){ return '<option value="pf:' + e(p.id) + '">Ω1 · ' + e(p.name||p.id) + '</option>'; }).join('')
     + (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).map(function(p){ return '<option value="ef:' + e(p.id) + '">EC · ' + e(p.name||p.id) + '</option>'; }).join('');
   document.getElementById('repSubject').innerHTML = subjOpts;
+  if (typeof populateCompartmentSelect === 'function') populateCompartmentSelect('repCompartment', r ? (r.compartment||'') : '');
 
   document.getElementById('repSource').value = r ? (r.sourceId||'') : (presetSourceId||'');
   document.getElementById('repCategory').value = r ? (r.category||INTEL_CATEGORIES[0]) : INTEL_CATEGORIES[0];
@@ -6175,7 +6222,9 @@ async function saveIntelReport() {
   var btn = document.getElementById('repSaveBtn'); if (btn){ btn.disabled=true; btn.textContent='[ FILING... ]'; }
   var r;
   if (existing) { r = existing; }
-  else { r = { id:'intel_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), ref:document.getElementById('repRef').value||nextIntelRef(), filedBy:currentUser.id, filedAt:Date.now(), deleted:false }; }
+  else { r = { id:'intel_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), ref:document.getElementById('repRef').value||nextIntelRef(), org:_intelOrg, filedBy:currentUser.id, filedAt:Date.now(), deleted:false }; }
+  if (!r.org) r.org = _intelOrg;
+  r.compartment = (document.getElementById('repCompartment')||{}).value || null;
   r.sourceId = sourceId;
   r.category = document.getElementById('repCategory').value;
   r.reliability = document.getElementById('repReliability').value;

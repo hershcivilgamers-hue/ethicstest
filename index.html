@@ -129,6 +129,7 @@
         <div class="nav-tab" onclick="switchTab(this,'operations')">OPERATIONS
           <span id="operationBadge" style="display:none;" class="badge b-amber">0</span>
         </div>
+        <div class="nav-tab" id="navO1IntelTab" onclick="switchTab(this,'omega1-intel')" style="display:none;">▣ INTEL</div>
       </div>
     </div>
 
@@ -461,6 +462,42 @@
         <div id="intelWatchlistView" style="display:none;">
           <div style="font-size:.58rem;color:var(--text-faint);letter-spacing:.05em;margin-bottom:.6rem;">Personnel currently under Ethics Committee observation. Subjects are not notified.</div>
           <div id="watchlistList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OMEGA-1 INTEL (compartmentalised) -->
+    <div class="tab-content" id="tab-omega1-intel">
+      <div class="sec">▣ OMEGA-1 FIELD INTELLIGENCE — COMPARTMENTED <span id="o1IntelCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
+      <div id="o1IntelAccessNotice" style="display:none;" class="trn-empty"></div>
+      <div id="o1IntelBody" style="display:none;">
+        <div class="intel-seg">
+          <button class="intel-seg-btn on" id="o1SegSources" data-action="intel-view" data-view="sources">CONFIDENTIAL SOURCES</button>
+          <button class="intel-seg-btn" id="o1SegReports" data-action="intel-view" data-view="reports">FIELD REPORTS</button>
+        </div>
+
+        <!-- SOURCES VIEW -->
+        <div id="o1IntelSourcesView">
+          <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+            <input class="pf-search" id="o1SrcSearch" placeholder="SEARCH CODENAME, DEPARTMENT, HANDLER..." oninput="renderInformants()" style="flex:1;min-width:170px;"/>
+            <select class="pf-filter" id="o1SrcFilterStatus" onchange="renderInformants()" title="Filter by status">
+              <option value="">ALL</option><option value="Active">ACTIVE</option><option value="Dormant">DORMANT</option><option value="Burned">BURNED</option><option value="Terminated">TERMINATED</option>
+            </select>
+            <button class="pf-btn" onclick="openInformantModal(null)">[ + RECRUIT SOURCE ]</button>
+          </div>
+          <div id="o1InformantList"></div>
+        </div>
+
+        <!-- REPORTS VIEW -->
+        <div id="o1IntelReportsView" style="display:none;">
+          <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+            <input class="pf-search" id="o1RepSearch" placeholder="SEARCH REF, SUBJECT, SOURCE, CONTENT..." oninput="renderIntelReports()" style="flex:1;min-width:170px;"/>
+            <select class="pf-filter" id="o1RepFilterStatus" onchange="renderIntelReports()" title="Filter by status">
+              <option value="">ALL</option><option value="New">NEW</option><option value="Reviewed">REVIEWED</option><option value="Actioned">ACTIONED</option><option value="Archived">ARCHIVED</option>
+            </select>
+            <button class="pf-btn" onclick="openIntelReportModal(null)">[ + FILE REPORT ]</button>
+          </div>
+          <div id="o1IntelReportList"></div>
         </div>
       </div>
     </div>
@@ -1847,6 +1884,7 @@
       <select class="modal-input" id="srcRealId"><option value="">— unlinked —</option></select>
     </div>
     <div class="modal-field"><label class="modal-label">HANDLER NOTES</label><textarea class="modal-input" id="srcNotes" rows="2" style="font-family:inherit;resize:vertical;" placeholder="Tasking, access, vulnerabilities..."></textarea></div>
+    <div class="modal-field"><label class="modal-label">NEED-TO-KNOW PROGRAM <span style="color:var(--text-faint);">(optional)</span></label><select class="modal-input" id="srcCompartment"><option value="">OPEN (no compartment)</option></select></div>
     <div class="modal-err" id="srcErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
       <button class="modal-cancel" data-action="close-informant-modal">[ CANCEL ]</button>
@@ -1874,6 +1912,7 @@
       <select class="modal-input" id="repSubject"><option value="">— no linked subject —</option></select>
     </div>
     <div class="modal-field"><label class="modal-label">INTELLIGENCE</label><textarea class="modal-input" id="repContent" rows="4" style="font-family:inherit;resize:vertical;min-height:80px;" placeholder="What the source reported..."></textarea></div>
+    <div class="modal-field"><label class="modal-label">NEED-TO-KNOW PROGRAM <span style="color:var(--text-faint);">(optional)</span></label><select class="modal-input" id="repCompartment"><option value="">OPEN (no compartment)</option></select></div>
     <div class="modal-err" id="repErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
       <button class="modal-cancel" data-action="close-intel-report-modal">[ CANCEL ]</button>
