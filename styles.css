@@ -130,6 +130,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 /* ── Layout ── */
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.035) 3px,rgba(0,0,0,.035) 5px);pointer-events:none;z-index:1000;opacity:.5;}
 .shell{position:relative;max-width:960px;margin:0 auto;padding:1.5rem 1.25rem;animation:flicker 8s infinite;display:flex;flex-direction:column;min-height:100vh;}
+body.no-flicker .shell{animation:none;}
+/* Transient toasts */
+.toast-host{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:5000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+.toast{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.09em;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--green);background:var(--bg2);color:var(--green);box-shadow:0 6px 22px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);animation:toastIn .22s ease forwards;pointer-events:auto;max-width:88vw;text-align:center;}
+.toast.warn{border-color:var(--amber);color:var(--amber);}
+.toast.err{border-color:#dd6666;color:#dd6666;}
+.toast.leaving{animation:toastOut .25s ease forwards;}
+@keyframes toastIn{to{opacity:1;transform:translateY(0);}}
+@keyframes toastOut{to{opacity:0;transform:translateY(8px);}}
+/* Collapse header meta on narrow screens — keep only the clock */
+@media(max-width:640px){.header-meta>div:not(#clock){display:none;}}
 
 /* ── Header ── */
 .header{border:1px solid var(--border2);border-bottom:none;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);flex-wrap:wrap;gap:.5rem;}

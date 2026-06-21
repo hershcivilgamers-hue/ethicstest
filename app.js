@@ -2515,7 +2515,7 @@ async function deleteOrder(id) {
 }
 
 function setFilter(f, btn) {
-  activeFilter = f;
+  activeFilter = f; _filtSet('orders', f);
   document.querySelectorAll('#tab-orders .filter-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   renderOrders();
@@ -2698,7 +2698,9 @@ function renderOrders() {
 
   var list = document.getElementById('ordersList');
   if (!filtered.length) {
-    list.innerHTML = '<div class="order-empty">[ NO ORDERS MATCH CURRENT FILTER ]</div>';
+    list.innerHTML = activeFilter === 'ALL'
+      ? '<div class="order-empty">[ NO ORDERS ON RECORD — SUBMIT THE FIRST DIRECTIVE ABOVE ↑ ]</div>'
+      : '<div class="order-empty">[ NO ' + activeFilter + ' ORDERS — ADJUST THE FILTER ]</div>';
     return;
   }
 
@@ -2949,6 +2951,54 @@ function toggleTheme() {
   applyTheme(saved);
 })();
 
+// ── Transient toast notifications ──
+function toast(msg, type) {
+  var host = document.getElementById('toastHost'); if (!host) return;
+  var el = document.createElement('div');
+  el.className = 'toast' + (type ? (' ' + type) : '');
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(function(){ el.classList.add('leaving'); setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 280); }, 2400);
+}
+
+// ── Screen-flicker preference (persisted) ──
+function applyFlickerPref() {
+  var off = false; try { off = localStorage.getItem('cairoFlicker') === 'off'; } catch(e) {}
+  document.body.classList.toggle('no-flicker', off);
+  var b = document.getElementById('flickerToggle');
+  if (b) b.textContent = off ? '⌁ FLICKER: OFF' : '⌁ FLICKER: ON';
+}
+function toggleFlicker() {
+  var off; try { off = localStorage.getItem('cairoFlicker') !== 'off'; localStorage.setItem('cairoFlicker', off ? 'off' : 'on'); } catch(e) { off = true; }
+  applyFlickerPref();
+  toast(off ? 'SCREEN FLICKER DISABLED' : 'SCREEN FLICKER ENABLED');
+}
+(function initFlicker(){ if (document.body) applyFlickerPref(); else document.addEventListener('DOMContentLoaded', applyFlickerPref); })();
+
+// ── Per-tab filter persistence (filters survive tab switches) ──
+function _filtSet(k, v) { try { localStorage.setItem('cairo:filt:' + k, v); } catch(e) {} }
+function _filtGet(k, def) { try { var v = localStorage.getItem('cairo:filt:' + k); return v === null ? def : v; } catch(e) { return def; } }
+// Restore the saved value of every .pf-filter <select> inside a tab before it renders.
+function restoreTabFilters(tabId) {
+  var tab = document.getElementById(tabId); if (!tab) return;
+  tab.querySelectorAll('.pf-filter').forEach(function(sel){
+    if (!sel.id) return;
+    var v = _filtGet('sel:' + sel.id, null);
+    if (v !== null) { for (var i=0;i<sel.options.length;i++){ if (sel.options[i].value === v) { sel.value = v; break; } } }
+  });
+}
+// Reflect a saved order-filter button (ALL/PENDING/…) as active within a tab.
+function restoreFilterButtons(tabSelector, value) {
+  document.querySelectorAll(tabSelector + ' .filter-btn').forEach(function(b){
+    b.classList.toggle('active', b.textContent.trim() === value);
+  });
+}
+// Persist any .pf-filter change globally, keyed by element id.
+document.addEventListener('change', function(e){
+  var t = e.target;
+  if (t && t.classList && t.classList.contains('pf-filter') && t.id) _filtSet('sel:' + t.id, t.value);
+});
+
 function updateOrderBadge() {
   var pend  = allOrders.filter(function(o){ return o.status==='PENDING'; }).length;
   var badge = document.getElementById('orderBadge');
@@ -3028,6 +3078,7 @@ function switchTab(el, id) {
   el.classList.add('active');
   var tab = document.getElementById('tab-'+id);
   if (tab) tab.classList.add('active');
+  restoreTabFilters('tab-'+id);
 
   // Close all dropdowns; mark the parent dropdown that owns the active child
   document.querySelectorAll('.nav-dd').forEach(function(d){
@@ -3038,8 +3089,8 @@ function switchTab(el, id) {
   if (id === 'matrix')          animateBars();
   if (id === 'overview')        { renderOverview(); startOverviewHeartbeat(); }
   else                          stopOverviewHeartbeat();
-  if (id === 'orders')          { loadOrders(); populateCompartmentSelect('oCompartment'); }
-  if (id === 'ethics-orders')   { loadEthicsOrders(); populateCompartmentSelect('ethicsOrderCompartment'); }
+  if (id === 'orders')          { activeFilter = _filtGet('orders','ALL'); restoreFilterButtons('#tab-orders', activeFilter); loadOrders(); populateCompartmentSelect('oCompartment'); }
+  if (id === 'ethics-orders')   { activeEthicsFilter = _filtGet('ethicsOrders','ALL'); restoreFilterButtons('#tab-ethics-orders', activeEthicsFilter); loadEthicsOrders(); populateCompartmentSelect('ethicsOrderCompartment'); }
   if (id === 'ethics-recruit')  loadEthicsRecruit();
   if (id === 'personnel-files') loadPersonnel();
   if (id === 'roster')          { loadPersonnel(); var rb=document.getElementById('exportRosterPfBtn'); if(rb) rb.style.display=(currentUser&&parseInt(currentUser.clearance)>=5)?'inline-block':'none'; }
@@ -3563,6 +3614,7 @@ async function adminApprove(uid) {
     allUsers[uid] = rec;
     updateAdminBadge();
     renderAdminPanel();
+    if (typeof toast === 'function') toast('✓ USER APPROVED');
   } catch(err) { alert('ERROR: ' + err.message); }
 }
 
@@ -4643,6 +4695,7 @@ async function saveTraining() {
 
   if (btn) { btn.disabled = false; btn.textContent = '[ SAVE TRAINING ]'; }
   closeTrainingModal();
+  if (typeof toast==='function') toast('✓ TRAINING SAVED');
   await loadTrainings();
   // refresh personnel cards so their TRAININGS section reflects the change
   if (document.getElementById('tab-personnel-files') && document.getElementById('tab-personnel-files').classList.contains('active')) renderPersonnelFiles();
@@ -5229,6 +5282,7 @@ async function saveCase() {
 
   if (btn) { btn.disabled = false; btn.textContent = '[ SAVE CASE ]'; }
   closeCaseModal();
+  if (typeof toast==='function') toast('✓ CASE SAVED');
   await loadEthicsCases();
 }
 async function castCaseVote(caseId, vote) {
@@ -5551,6 +5605,7 @@ async function saveTribunal() {
   if (typeof auditRecord === 'function') auditRecord('SUBMITTED TRIBUNAL', t.ref + ' — ' + name);
   if (btn) { btn.disabled = false; btn.textContent = '[ SUBMIT REQUEST ]'; }
   closeTribunalModal();
+  if (typeof toast==='function') toast('✓ TRIBUNAL SAVED');
   await loadTribunals();
 }
 
@@ -6090,6 +6145,7 @@ async function saveInformant() {
   if (typeof auditRecord === 'function') auditRecord(existing?'EDITED SOURCE':'RECRUITED SOURCE', 'codename ' + codename);
   if (btn){ btn.disabled=false; btn.textContent='[ SAVE SOURCE ]'; }
   closeInformantModal();
+  if (typeof toast==='function') toast('✓ SOURCE SAVED');
   await loadIntel();
 }
 async function deleteInformant(id) {
@@ -6237,6 +6293,7 @@ async function saveIntelReport() {
   if (typeof auditRecord === 'function') auditRecord(existing?'EDITED INTEL REPORT':'FILED INTEL REPORT', r.ref);
   if (btn){ btn.disabled=false; btn.textContent='[ FILE REPORT ]'; }
   closeIntelReportModal();
+  if (typeof toast==='function') toast('✓ REPORT FILED');
   await loadIntel();
 }
 async function deleteIntelReport(id) {
@@ -6491,6 +6548,7 @@ async function saveOperation() {
   if (typeof auditRecord === 'function') auditRecord(existing?'EDITED OPERATION':'LOGGED OPERATION', (o.ref||'') + ' — ' + codename);
   if (btn){ btn.disabled=false; btn.textContent='[ SAVE OPERATION ]'; }
   closeOperationModal();
+  if (typeof toast==='function') toast('✓ OPERATION SAVED');
   await loadOperations();
 }
 async function deleteOperation(id) {
@@ -6619,6 +6677,7 @@ async function saveSurveillance() {
   if (!allSurveillance.some(function(x){ return x.key === key; })) allSurveillance.push(rec);
   if (typeof auditRecord === 'function') auditRecord(existing ? 'ADJUSTED SURVEILLANCE' : 'PLACED SURVEILLANCE', key + ' · ' + rec.level);
   closeSurveillanceModal();
+  if (typeof toast==='function') toast('✓ SURVEILLANCE UPDATED');
   refreshFileViews(sys);
 }
 async function liftSurveillance(sys, pfId) {
@@ -8880,7 +8939,7 @@ var allEthicsOrders = [];
 var activeEthicsFilter = 'ALL';
 
 function setEthicsFilter(f, btn) {
-  activeEthicsFilter = f;
+  activeEthicsFilter = f; _filtSet('ethicsOrders', f);
   document.querySelectorAll('#ethicsOrderFilters .filter-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
   renderEthicsOrders();
@@ -9607,7 +9666,7 @@ function renderPoiList() {
         ${t.priority ? `<span class="badge ${PRIORITY_CLS[t.priority]||'b-dim'}">P${e(t.priority)}</span>` : ''}
       </span>
     </div>`;
-  }).join('') : '<div class="poi-empty">[ NO TARGETS ON RECORD ]</div>';
+  }).join('') : '<div class="poi-empty">[ NO TARGETS ON RECORD — ADD ONE TO BEGIN TRACKING ]</div>';
 
   var cntEl = document.getElementById('poiArchiveCount');
   if (cntEl) cntEl.textContent = closed.length;
