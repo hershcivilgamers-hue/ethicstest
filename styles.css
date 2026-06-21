@@ -815,7 +815,24 @@ html,body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',m
 .svc-label{color:var(--text);}
 .svc-detail{color:var(--text-faint);}
 
-/* ── Ethics Case Docket ── */
+/* ── Intel Network ── */
+.intel-seg{display:flex;gap:0;margin-bottom:.7rem;border:1px solid var(--border2);border-radius:3px;overflow:hidden;width:fit-content;max-width:100%;}
+.intel-seg-btn{font-family:inherit;font-size:.58rem;letter-spacing:.08em;padding:5px 14px;background:var(--bg2);color:var(--text-dim);border:none;cursor:pointer;border-right:1px solid var(--border2);}
+.intel-seg-btn:last-child{border-right:none;}
+.intel-seg-btn.on{background:var(--red,#7a1f1f);color:#fff;}
+.intel-seg-btn:hover:not(.on){color:var(--text);}
+.src-codename{font-family:'Share Tech Mono',monospace;font-size:.85rem;color:var(--red,#dd6666);letter-spacing:.12em;font-weight:700;}
+.rel-badge{font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:1px 6px;border:1px solid var(--border2);border-radius:2px;letter-spacing:.05em;}
+.rel-A,.rel-B{color:#5fb87a;border-color:#5fb87a;}
+.rel-C,.rel-D{color:var(--amber);border-color:var(--amber);}
+.rel-E,.rel-F{color:#dd6666;border-color:#dd6666;}
+.intel-redact{background:var(--bg3);color:var(--text-faint);font-style:italic;padding:0 .4em;border-radius:2px;letter-spacing:.04em;}
+.sv-banner{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.1em;font-weight:700;padding:4px 9px;border-radius:2px;margin-bottom:.5rem;border:1px solid;}
+.sv-routine{color:var(--text-dim);border-color:var(--border2);background:var(--bg3);}
+.sv-elevated{color:var(--amber);border-color:var(--amber);background:rgba(214,158,46,.08);}
+.sv-priority{color:#dd6666;border-color:#dd6666;background:rgba(221,102,102,.1);}
+.sv-report{border-left:2px solid var(--red,#7a1f1f);padding:.3rem .5rem;margin-bottom:.35rem;background:var(--bg3);border-radius:0 2px 2px 0;cursor:pointer;}
+.sv-report:hover{background:var(--bg2);}
 .case-card{border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg2);padding:.65rem .8rem;margin-bottom:.6rem;}
 .case-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;}
 .case-ref{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--amber);letter-spacing:.05em;}

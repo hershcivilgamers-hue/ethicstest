@@ -673,9 +673,12 @@ async function onLogin() { // Make function async
   loadOrders();
   loadPersonnel();
   loadTrainings();
+  loadOperations();
   loadEthicsPersonnel(); // needed so EC members get correct clearance from refreshClearance()
   loadEthicsCases();
   loadTribunals();
+  refreshIntelNav();
+  loadIntel();
   loadCompartments();
   loadPromoReqs();
   loadActivityReqs();
@@ -978,9 +981,7 @@ function buildActivitySection(p, unit) {
   var mo       = activityHoursThisMonth(p);
   var canLog   = canLogActivity(p, unit);        // Sr CL4 / CL5 / linked user
   var canCmd   = canSetActivityStatus(p, unit);  // Sr CL4 / CL5 (not own file below CL5)
-  var log      = Array.isArray(p.activityLog)
-                   ? p.activityLog.slice().sort(function(a, b){ return (b.at || 0) - (a.at || 0); })
-                   : [];
+  var log      = objArr(p.activityLog).sort(function(a, b){ return (b.at || 0) - (a.at || 0); });
 
   var reqWk, reqMo, reqLine;
   if (unit === 'ef') {
@@ -3046,8 +3047,10 @@ function switchTab(el, id) {
   if (id === 'ethics-roster')   { loadEthicsPersonnel(); var rbe=document.getElementById('exportRosterEfBtn'); if(rbe) rbe.style.display=(currentUser&&parseInt(currentUser.clearance)>=5)?'inline-block':'none'; }
   if (id === 'poi')             loadPOIData();
   if (id === 'trainings')       loadTrainings();
+  if (id === 'operations')      loadOperations();
   if (id === 'ethics-cases')    loadEthicsCases();
   if (id === 'ethics-tribunals') loadTribunals();
+  if (id === 'ethics-intel')     loadIntel();
   if (id === 'blacklist')       loadBlacklist();
   if (id === 'recruit') {
     if (!currentUser || parseInt(currentUser.clearance) < 4) {
@@ -3884,7 +3887,13 @@ async function bulkRevoke() {
 
 // ── Recycle bin (soft-delete restore / purge, CL5) ──
 function recycleBinCount() {
-  return deletedPersonnel.length + deletedEthics.length + deletedOrders.length + deletedEthicsOrders.length;
+  return deletedPersonnel.length + deletedEthics.length + deletedOrders.length + deletedEthicsOrders.length
+    + (typeof deletedTrainings!=='undefined'?deletedTrainings.length:0)
+    + (typeof deletedEthicsCases!=='undefined'?deletedEthicsCases.length:0)
+    + (typeof deletedTribunals!=='undefined'?deletedTribunals.length:0)
+    + (typeof deletedInformants!=='undefined'?deletedInformants.length:0)
+    + (typeof deletedIntelReports!=='undefined'?deletedIntelReports.length:0)
+    + (typeof deletedOperations!=='undefined'?deletedOperations.length:0);
 }
 function renderRecycleBin() {
   var el = document.getElementById('adminRecycleList');
@@ -3893,7 +3902,13 @@ function renderRecycleBin() {
     { label:'Omega-1 Files',   arr:deletedPersonnel,     kind:'pf', name:function(r){ return r.name || r.id; } },
     { label:'Ethics Files',    arr:deletedEthics,        kind:'ef', name:function(r){ return r.name || r.id; } },
     { label:'Orders',          arr:deletedOrders,        kind:'order', name:function(r){ return r.title || r.id; } },
-    { label:'Ethics Orders',   arr:deletedEthicsOrders,  kind:'eorder', name:function(r){ return r.title || r.id; } }
+    { label:'Ethics Orders',   arr:deletedEthicsOrders,  kind:'eorder', name:function(r){ return r.title || r.id; } },
+    { label:'Trainings',       arr:(typeof deletedTrainings!=='undefined'?deletedTrainings:[]),     kind:'training',  name:function(r){ return r.title || (r.date?('Session '+r.date):r.id); } },
+    { label:'Ethics Cases',    arr:(typeof deletedEthicsCases!=='undefined'?deletedEthicsCases:[]), kind:'ecase',     name:function(r){ return (r.ref?r.ref+' — ':'') + (r.title || r.id); } },
+    { label:'Tribunals',       arr:(typeof deletedTribunals!=='undefined'?deletedTribunals:[]),     kind:'tribunal',  name:function(r){ return (r.ref?r.ref+' — ':'') + ((r.defendant&&r.defendant.name) || r.id); } },
+    { label:'Sources',         arr:(typeof deletedInformants!=='undefined'?deletedInformants:[]),   kind:'informant', name:function(r){ return r.codename || r.id; } },
+    { label:'Intel Reports',   arr:(typeof deletedIntelReports!=='undefined'?deletedIntelReports:[]),kind:'intelrep', name:function(r){ return (r.ref?r.ref+' — ':'') + (r.category||r.id); } },
+    { label:'Operations',      arr:(typeof deletedOperations!=='undefined'?deletedOperations:[]),    kind:'operation', name:function(r){ return (r.ref?r.ref+' — ':'') + (r.codename||r.id); } }
   ];
   var total = recycleBinCount();
   if (!total) { el.innerHTML = '<div style="font-size:.58rem;color:var(--text-faint);padding:.3rem 0;">Recycle bin is empty.</div>'; return; }
@@ -3919,7 +3934,13 @@ async function restoreRecord(kind, id) {
     pf:     { sink:deletedPersonnel,    live:allPersonnel,      set:personnelSet,      reRender:function(){ renderPersonnelFiles(); renderRoster(); } },
     ef:     { sink:deletedEthics,       live:allEthicsPersonnel,set:ethicsPersonnelSet,reRender:function(){ renderEthicsFiles(); renderEthicsRoster(); } },
     order:  { sink:deletedOrders,       live:allOrders,         set:orderSet,          reRender:function(){ renderOrders(); updateOrderBadge(); } },
-    eorder: { sink:deletedEthicsOrders, live:allEthicsOrders,   set:ethicsOrderSet,    reRender:function(){ renderEthicsOrders(); updateEthicsOrderBadge(); } }
+    eorder: { sink:deletedEthicsOrders, live:allEthicsOrders,   set:ethicsOrderSet,    reRender:function(){ renderEthicsOrders(); updateEthicsOrderBadge(); } },
+    training:{ sink:deletedTrainings,   live:allTrainings,      set:trainingSet,       reRender:function(){ if(typeof renderTrainings==='function') renderTrainings(); } },
+    ecase:   { sink:deletedEthicsCases, live:allEthicsCases,    set:ethicsCaseSet,     reRender:function(){ if(typeof renderEthicsCases==='function') renderEthicsCases(); } },
+    tribunal:{ sink:deletedTribunals,   live:allTribunals,      set:tribunalSet,       reRender:function(){ if(typeof renderTribunals==='function') renderTribunals(); } },
+    informant:{sink:deletedInformants,  live:allInformants,     set:informantSet,      reRender:function(){ if(typeof renderInformants==='function') renderInformants(); } },
+    intelrep: {sink:deletedIntelReports,live:allIntelReports,   set:intelReportSet,    reRender:function(){ if(typeof renderIntelReports==='function') renderIntelReports(); } },
+    operation:{sink:deletedOperations,  live:allOperations,     set:operationSet,      reRender:function(){ if(typeof renderOperations==='function') renderOperations(); } }
   };
   var m = map[kind]; if (!m) return;
   var idx = m.sink.findIndex(function(r){ return r.id === id; });
@@ -3943,7 +3964,13 @@ async function purgeRecord(kind, id) {
     pf:     { sink:deletedPersonnel,    del:personnelDel },
     ef:     { sink:deletedEthics,       del:ethicsPersonnelDel },
     order:  { sink:deletedOrders,       del:orderDel },
-    eorder: { sink:deletedEthicsOrders, del:ethicsOrderDel }
+    eorder: { sink:deletedEthicsOrders, del:ethicsOrderDel },
+    training:{ sink:deletedTrainings,   del:trainingDel },
+    ecase:   { sink:deletedEthicsCases, del:ethicsCaseDel },
+    tribunal:{ sink:deletedTribunals,   del:tribunalDel },
+    informant:{sink:deletedInformants,  del:informantDel },
+    intelrep: {sink:deletedIntelReports,del:intelReportDel },
+    operation:{sink:deletedOperations,  del:operationDel }
   };
   var m = map[kind]; if (!m) return;
   var idx = m.sink.findIndex(function(r){ return r.id === id; });
@@ -4405,6 +4432,7 @@ async function trainingsGetAll() {
 async function trainingSet(id, data) {
   if (firebaseReady) await fbSet('/trainings/' + id, data); else lsSet('trainings/' + id, data);
 }
+async function trainingDel(id) { if (firebaseReady) await fbDelete('/trainings/' + id); else lsDel('trainings/' + id); }
 
 // A member linked to an Omega-1 file may log trainings; CL5 command may always log.
 function canLogTraining() {
@@ -4458,7 +4486,7 @@ function renderTrainings() {
     if (scope === 'mine' && t.conductedByPfId !== mine) return false;
     if (scope === 'involving-me') {
       var involved = t.conductedByPfId === mine ||
-        (Array.isArray(t.attendees) && t.attendees.some(function(a){ return a.pfId === mine; }));
+        (Array.isArray(t.attendees) && t.attendees.some(function(a){ return a && a.pfId === mine; }));
       if (!involved) return false;
     }
     if (!q) return true;
@@ -4647,7 +4675,7 @@ function openPersonnelFromTraining(pfId) {
 function buildTrainingSection(p) {
   var conducted = allTrainings.filter(function(t){ return t.conductedByPfId === p.id; });
   var attended  = allTrainings.filter(function(t){
-    return t.conductedByPfId !== p.id && Array.isArray(t.attendees) && t.attendees.some(function(a){ return a.pfId === p.id; });
+    return t.conductedByPfId !== p.id && Array.isArray(t.attendees) && t.attendees.some(function(a){ return a && a.pfId === p.id; });
   });
   if (!conducted.length && !attended.length) {
     return '<div style="font-size:.6rem;color:var(--text-faint);padding:.3rem 0;">No training records.</div>';
@@ -4671,57 +4699,87 @@ function buildTrainingSection(p) {
 //  notes) plus trainings, into one timeline. No new data model —
 //  this is a read-only view over fields the app already records.
 // ================================================================
+// Coerce to an array of real objects, dropping null holes (which Firebase
+// can introduce when array items are deleted by index). Shared by the card
+// builders and activity logic so one malformed record can't break a list view.
+function objArr(x) {
+  return Array.isArray(x) ? x.filter(function(v){ return v && typeof v === 'object'; }) : [];
+}
+
 function buildServiceRecord(p, opts) {
   opts = opts || {};
   var roleWord = opts.roleWord || 'RANK';
   var ev = [];
+  // Firebase can return arrays as objects (with null holes when items are
+  // deleted by index), so coerce + drop null/non-object entries defensively.
+  function safeArr(x) {
+    var arr = Array.isArray(x) ? x : (x && typeof x === 'object' ? Object.values(x) : []);
+    return arr.filter(function(v){ return v && typeof v === 'object'; });
+  }
   function add(ts, dateStr, type, icon, color, label, detail) {
     if (ts == null && !dateStr) return;
-    var sortTs = (ts != null) ? ts : (Date.parse((dateStr || '') + 'T00:00:00') || 0);
-    var shownDate = dateStr || (ts != null ? new Date(ts).toISOString().slice(0,10) : '');
+    var sortTs, shownDate;
+    if (dateStr) {
+      sortTs = Date.parse(dateStr + 'T00:00:00') || 0;
+      shownDate = dateStr;
+    } else {
+      var dt = new Date(ts);
+      if (isNaN(dt.getTime())) return; // invalid date value → skip rather than throw
+      sortTs = dt.getTime();
+      shownDate = dt.toISOString().slice(0, 10);
+    }
     ev.push({ ts: sortTs, date: shownDate, type: type, icon: icon, color: color, label: label, detail: detail || '' });
   }
   // Enrolment
   if (p.created) add(p.created, null, 'enlist', '✦', 'var(--cyan)', 'ENROLLED · personnel file created', '');
   // Rank changes
-  (p.rankHistory || []).forEach(function(r){
+  safeArr(p.rankHistory).forEach(function(r){
     add(r.changedAt, null, 'rank', '▲', 'var(--amber)',
         (r.from ? roleWord + ' CHANGE · ' + r.from + ' → ' + r.to : roleWord + ' SET · ' + r.to),
         r.changedBy ? 'by ' + r.changedBy : '');
   });
   // Awards
-  (p.awards || []).forEach(function(a){
+  safeArr(p.awards).forEach(function(a){
     add(a.created || null, a.date || null, 'award', '✪', '#5fb87a',
         'AWARD · ' + (a.name || '—') + (a.tier ? ' (' + a.tier + ')' : ''),
         a.awardedBy ? 'by ' + a.awardedBy : '');
   });
   // Strikes
-  (p.strikes || []).forEach(function(s){
+  safeArr(p.strikes).forEach(function(s){
     add(s.issuedAt, null, 'strike', '⚠', '#dd6666',
         'STRIKE · ' + (s.reason || '—') + (s.status && s.status !== 'Active' ? ' [' + s.status + ']' : ''),
         s.issuedBy ? 'by ' + s.issuedBy : '');
   });
   // Leave (LOA / ROA)
-  (p.leaves || p.leave || []).forEach(function(l){
+  safeArr(p.leaves || p.leave).forEach(function(l){
     add(l.issuedAt || null, l.startDate || null, 'leave', '◷', 'var(--text-dim)',
         'LEAVE · ' + (l.type || 'LOA') + ' ' + (l.startDate || '') + (l.endDate ? '–' + l.endDate : '') + (l.ended ? ' [ended]' : ''),
         l.reason || '');
   });
   // Activity entries
-  (p.activityLog || []).forEach(function(a){
+  safeArr(p.activityLog).forEach(function(a){
     add(a.at, null, 'activity', '▣', 'var(--text-faint)',
         'ACTIVITY · ' + (a.hours != null ? a.hours + 'h' : '') + (a.note ? ' — ' + a.note : ''),
         (a.tags && a.tags.length) ? a.tags.join(', ') : '');
   });
   // File notes / annotations
-  (p.notes || []).forEach(function(n){
+  safeArr(p.notes).forEach(function(n){
     add(n.created, null, 'note', '✎', 'var(--text-faint)',
         'NOTE · ' + (n.text || ''), n.author ? 'by ' + n.author : '');
   });
+  // Operations (led or served on)
+  safeArr(typeof allOperations !== 'undefined' ? allOperations : []).forEach(function(o){
+    var role = (o.leadId === p.id) ? 'LED'
+      : (Array.isArray(o.operators) && o.operators.some(function(x){ return x && x.id === p.id; }) ? 'DEPLOYED' : null);
+    if (!role) return;
+    add(null, o.startDate || (o.createdAt ? new Date(o.createdAt).toISOString().slice(0,10) : null), 'operation', '✜', 'var(--amber)',
+        'OPERATION ' + role + ' · ' + (o.codename || o.ref || '') + (o.opType ? ' (' + o.opType + ')' : ''),
+        o.status ? o.status : '');
+  });
   // Trainings (from the global log)
-  (typeof allTrainings !== 'undefined' ? allTrainings : []).forEach(function(t){
+  safeArr(typeof allTrainings !== 'undefined' ? allTrainings : []).forEach(function(t){
     var role = (t.conductedByPfId === p.id) ? 'CONDUCTED'
-      : (Array.isArray(t.attendees) && t.attendees.some(function(x){ return x.pfId === p.id; }) ? 'ATTENDED' : null);
+      : (Array.isArray(t.attendees) && t.attendees.some(function(x){ return x && x.pfId === p.id; }) ? 'ATTENDED' : null);
     if (!role) return;
     add(null, t.date, 'training', '⌖', 'var(--cyan)', 'TRAINING ' + role + (t.title ? ' · ' + t.title : ''), '');
   });
@@ -4815,7 +4873,7 @@ function buildPersonnelJacket(p, system, opts) {
 
   // Squadron assignments
   var sqdNames = (typeof allSquadrons !== 'undefined' ? allSquadrons : [])
-    .filter(function(s){ return s.members && s.members.some(function(m){ return (m.memberId || m.pfId) === p.id; }); })
+    .filter(function(s){ return s.members && s.members.some(function(m){ return m && (m.memberId || m.pfId) === p.id; }); })
     .map(function(s){ return s.name || s.id; });
 
   // Service record (chronological ascending for a formal record)
@@ -4927,6 +4985,7 @@ async function ethicsCasesGetAll() {
 async function ethicsCaseSet(id, data) {
   if (firebaseReady) await fbSet('/ethicsCases/' + id, data); else lsSet('ethicsCases/' + id, data);
 }
+async function ethicsCaseDel(id) { if (firebaseReady) await fbDelete('/ethicsCases/' + id); else lsDel('ethicsCases/' + id); }
 
 // A linked Ethics Committee member may open/manage cases; CL5 command may always.
 function canLogCase() {
@@ -5237,6 +5296,7 @@ async function tribunalsGetAll() {
 async function tribunalSet(id, data) {
   if (firebaseReady) await fbSet('/tribunals/' + id, data); else lsSet('tribunals/' + id, data);
 }
+async function tribunalDel(id) { if (firebaseReady) await fbDelete('/tribunals/' + id); else lsDel('tribunals/' + id); }
 async function tribunalConfigGet() {
   if (firebaseReady) { var c = await fbGetAll('/tribunalConfig'); return c || null; }
   return lsGet('tribunalConfig/config') || null;
@@ -5745,6 +5805,798 @@ async function saveTribunalCfg() {
   renderTribunalCfgAdmin();
 }
 
+// ================================================================
+//  ETHICS COMMITTEE — CONFIDENTIAL INTELLIGENCE NETWORK (EYES ONLY)
+//  The committee's covert apparatus: a registry of codenamed sources
+//  embedded across the Foundation, run by EC handlers, and the field
+//  reports they file. Reports carry the NATO Admiralty rating (source
+//  reliability A–F + information credibility 1–6) and can escalate
+//  directly into an Ethics case.
+//  Firebase paths: /informants/{id}  ·  /intelReports/{id}
+// ================================================================
+var SRC_RELIABILITY = ['A','B','C','D','E','F'];
+var SRC_RELIABILITY_LABEL = { A:'Completely reliable', B:'Usually reliable', C:'Fairly reliable', D:'Not usually reliable', E:'Unreliable', F:'Cannot be judged' };
+var INFO_CREDIBILITY = ['1','2','3','4','5','6'];
+var INFO_CREDIBILITY_LABEL = { '1':'Confirmed', '2':'Probably true', '3':'Possibly true', '4':'Doubtful', '5':'Improbable', '6':'Cannot be judged' };
+var SRC_STATUSES = ['Active','Dormant','Burned','Terminated'];
+var INTEL_CATEGORIES = ['Misconduct','Security Risk','Containment Concern','Disloyalty','Corruption','Insubordination','Other'];
+var INTEL_REPORT_STATUSES = ['New','Reviewed','Actioned','Archived'];
+
+var allInformants = [], deletedInformants = [];
+var allIntelReports = [], deletedIntelReports = [];
+var _intelView = 'sources';
+
+async function informantsGetAll() {
+  if (firebaseReady) { var a = await fbGetAll('/informants'); return a ? Object.values(a) : []; }
+  return Object.values(lsAll('informants/'));
+}
+async function informantSet(id, data) { if (firebaseReady) await fbSet('/informants/' + id, data); else lsSet('informants/' + id, data); }
+async function informantDel(id) { if (firebaseReady) await fbDelete('/informants/' + id); else lsDel('informants/' + id); }
+async function intelReportsGetAll() {
+  if (firebaseReady) { var a = await fbGetAll('/intelReports'); return a ? Object.values(a) : []; }
+  return Object.values(lsAll('intelReports/'));
+}
+async function intelReportSet(id, data) { if (firebaseReady) await fbSet('/intelReports/' + id, data); else lsSet('intelReports/' + id, data); }
+async function intelReportDel(id) { if (firebaseReady) await fbDelete('/intelReports/' + id); else lsDel('intelReports/' + id); }
+
+// EC personnel (any role) or CL5 command may access the intel network.
+function canAccessIntel() {
+  if (!currentUser) return false;
+  return isEthicsPersonnel() || parseInt(currentUser.clearance) >= 5;
+}
+function canManageIntel(rec) {
+  if (!canAccessIntel()) return false;
+  if (parseInt(currentUser.clearance) >= 5) return true;
+  return !rec || rec.createdBy === currentUser.id;
+}
+
+// Reveal the INTEL nav tab only to those cleared for it (called on login).
+function refreshIntelNav() {
+  var tab = document.getElementById('navIntelTab');
+  if (tab) tab.style.display = canAccessIntel() ? '' : 'none';
+}
+
+function informantName(id) {
+  var s = (allInformants || []).find(function(x){ return x.id === id; });
+  return s ? s.codename : '[unknown source]';
+}
+
+async function loadIntel() {
+  var notice = document.getElementById('intelAccessNotice');
+  var body = document.getElementById('intelBody');
+  if (!canAccessIntel()) {
+    if (notice) { notice.style.display = 'block'; notice.textContent = 'ACCESS DENIED — This terminal is restricted to Ethics Committee personnel.'; }
+    if (body) body.style.display = 'none';
+    return;
+  }
+  if (notice) notice.style.display = 'none';
+  if (body) body.style.display = 'block';
+  try {
+    var rawS = await informantsGetAll();
+    allInformants = partitionDeleted(rawS.filter(function(x){ return x && x.id; }), function(d){ deletedInformants = d; });
+    var rawR = await intelReportsGetAll();
+    allIntelReports = partitionDeleted(rawR.filter(function(x){ return x && x.id; }), function(d){ deletedIntelReports = d; });
+  } catch(e) { allInformants = allInformants || []; allIntelReports = allIntelReports || []; }
+  allInformants.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+  allIntelReports.sort(function(a,b){ return (b.filedAt||0)-(a.filedAt||0); });
+  await loadSurveillance();
+  setIntelView(_intelView);
+}
+
+function setIntelView(view) {
+  _intelView = view;
+  var sv = document.getElementById('intelSourcesView'), rv = document.getElementById('intelReportsView'), wv = document.getElementById('intelWatchlistView');
+  var sb = document.getElementById('segSources'), rb = document.getElementById('segReports'), wb = document.getElementById('segWatchlist');
+  if (sv) sv.style.display = view === 'sources' ? 'block' : 'none';
+  if (rv) rv.style.display = view === 'reports' ? 'block' : 'none';
+  if (wv) wv.style.display = view === 'watchlist' ? 'block' : 'none';
+  if (sb) sb.classList.toggle('on', view === 'sources');
+  if (rb) rb.classList.toggle('on', view === 'reports');
+  if (wb) wb.classList.toggle('on', view === 'watchlist');
+  if (view === 'sources') renderInformants();
+  else if (view === 'watchlist') renderWatchlist();
+  else renderIntelReports();
+}
+
+// Watchlist: every file currently under EC observation, with report counts.
+function subjectName(sys, pfId) {
+  var pool = (sys === 'ef') ? (typeof allEthicsPersonnel !== 'undefined' ? allEthicsPersonnel : []) : (allPersonnel || []);
+  var p = pool.find(function(x){ return x.id === pfId; });
+  return p ? (p.name || p.nickname || pfId) : '[file ' + pfId + ']';
+}
+function renderWatchlist() {
+  var list = document.getElementById('watchlistList');
+  if (!list) return;
+  var rows = (allSurveillance || []).filter(function(s){ return s && s.active !== false; })
+    .sort(function(a,b){ var ord={Priority:0,Elevated:1,Routine:2}; return (ord[a.level]||3)-(ord[b.level]||3); });
+  var cnt = document.getElementById('intelCount');
+  if (cnt && _intelView === 'watchlist') cnt.textContent = rows.length ? '(' + rows.length + ' watched)' : '';
+  if (!rows.length) { list.innerHTML = '<div class="trn-empty">NO SUBJECTS UNDER OBSERVATION.</div>'; return; }
+  list.innerHTML = rows.map(function(s){
+    var reports = reportsForSubject(s.sys, s.pfId).length;
+    return '<div class="case-card"><div class="case-top"><div>'
+      + '<div class="case-title"><span class="person-link" data-action="open-intel-file" data-pfid="' + e(s.pfId) + '" data-sys="' + e(s.sys||'pf') + '">' + e(subjectName(s.sys, s.pfId)) + '</span></div>'
+      + '<div class="case-badges" style="margin-top:4px;"><span class="badge ' + svLevelBadge(s.level) + '">' + e((s.level||'Routine').toUpperCase()) + '</span>'
+      + '<span class="badge b-dim">' + (s.sys === 'ef' ? 'EC' : 'Ω1') + '</span>'
+      + '<span class="badge b-dim">' + reports + ' report' + (reports===1?'':'s') + '</span></div></div>'
+      + '<div style="display:flex;gap:.35rem;"><button class="pf-section-btn" data-action="adjust-surveillance" data-sys="' + e(s.sys||'pf') + '" data-pfid="' + e(s.pfId) + '" style="font-size:.52rem;padding:1px 7px;">ADJUST</button>'
+      + '<button class="pf-section-btn" data-action="lift-surveillance" data-sys="' + e(s.sys||'pf') + '" data-pfid="' + e(s.pfId) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">LIFT</button></div></div>'
+      + (s.reason ? '<div class="case-block"><span class="lbl">Grounds</span><span class="txt">' + e(s.reason) + '</span></div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+// ── Sources ──
+function srcStatusBadge(s) { return s === 'Active' ? 'b-green' : s === 'Dormant' ? 'b-amber' : s === 'Burned' ? 'b-red' : 'b-retired'; }
+
+function renderInformants() {
+  var list = document.getElementById('informantList');
+  if (!list) return;
+  var q = ((document.getElementById('srcSearch')||{}).value||'').trim().toLowerCase();
+  var f = (document.getElementById('srcFilterStatus')||{}).value||'';
+  var rows = allInformants.filter(function(s){
+    if (f && (s.status||'Active') !== f) return false;
+    if (!q) return true;
+    return [s.codename, s.department, s.coverRole, s.handlerName, s.notes].join(' ').toLowerCase().indexOf(q) !== -1;
+  });
+  var cnt = document.getElementById('intelCount');
+  if (cnt && _intelView === 'sources') cnt.textContent = rows.length ? '(' + rows.length + ' sources)' : '';
+  if (!rows.length) { list.innerHTML = '<div class="trn-empty">NO SOURCES' + (q||f?' MATCH THE FILTER.':' ON THE NETWORK YET.') + '</div>'; return; }
+  list.innerHTML = rows.map(buildInformantCard).join('');
+}
+
+function buildInformantCard(s) {
+  var status = s.status || 'Active';
+  var rel = s.reliability || 'F';
+  var reports = allIntelReports.filter(function(r){ return r.sourceId === s.id; }).length;
+  var manage = canManageIntel(s)
+    ? '<div style="display:flex;gap:.35rem;">'
+      + '<button class="pf-section-btn" data-action="edit-informant" data-id="' + e(s.id) + '" style="font-size:.52rem;padding:1px 7px;">EDIT</button>'
+      + '<button class="pf-section-btn" data-action="delete-informant" data-id="' + e(s.id) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">DELETE</button></div>'
+    : '';
+  var realLink = s.realPfId
+    ? '<div class="case-block"><span class="lbl">True identity</span><span class="txt"><span class="person-link" data-action="open-intel-file" data-pfid="' + e(s.realPfId) + '" data-sys="' + e(s.realSys||'pf') + '">' + e(s.realName || '[linked file]') + '</span></span></div>'
+    : '';
+  return '<div class="case-card">'
+    + '<div class="case-top"><div><div class="src-codename">' + e(s.codename || 'UNNAMED') + '</div>'
+    + '<div class="case-badges" style="margin-top:5px;"><span class="badge ' + srcStatusBadge(status) + '">' + e(status.toUpperCase()) + '</span>'
+    + '<span class="rel-badge rel-' + e(rel) + '">REL ' + e(rel) + '</span>'
+    + (s.department ? '<span class="badge b-dim">' + e(s.department) + '</span>' : '') + '</div></div>' + manage + '</div>'
+    + (s.coverRole ? '<div class="case-block"><span class="lbl">Cover</span><span class="txt">' + e(s.coverRole) + '</span></div>' : '')
+    + '<div class="case-block"><span class="lbl">Handler</span><span class="txt">' + e(s.handlerName || '—') + '</span></div>'
+    + realLink
+    + (s.notes ? '<div class="case-block"><span class="lbl">Handler notes</span><span class="txt">' + e(s.notes) + '</span></div>' : '')
+    + '<div class="case-vote"><span class="vote-tally">' + reports + ' report' + (reports===1?'':'s') + ' on file'
+    + (s.lastContact ? ' · last contact ' + e(safeDate(s.lastContact)) : '') + '</span>'
+    + '<button class="vote-btn" data-action="file-from-source" data-id="' + e(s.id) + '">+ FILE REPORT</button></div>'
+    + '</div>';
+}
+
+function openInformantModal(id) {
+  if (!canAccessIntel()) { alert('Ethics Committee access required.'); return; }
+  var editing = !!id;
+  var s = editing ? allInformants.find(function(x){ return x.id === id; }) : null;
+  if (editing && !canManageIntel(s)) { alert('Only the handler or command may edit this source.'); return; }
+  document.getElementById('informantModalTitle').textContent = editing ? 'EDIT SOURCE' : 'RECRUIT CONFIDENTIAL SOURCE';
+  document.getElementById('informantEditId').value = id || '';
+  document.getElementById('srcErr').style.display = 'none';
+  document.getElementById('srcReliability').innerHTML = SRC_RELIABILITY.map(function(r){ return '<option value="' + r + '">' + r + ' — ' + e(SRC_RELIABILITY_LABEL[r]) + '</option>'; }).join('');
+  document.getElementById('srcStatus').innerHTML = SRC_STATUSES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  // Handler picker = EC personnel
+  var ecOpts = '<option value="">— select handler —</option>' + (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).map(function(p){ return '<option value="' + e(p.id) + '">' + e(p.name||p.id) + (p.role?' ('+e(p.role)+')':'') + '</option>'; }).join('');
+  document.getElementById('srcHandler').innerHTML = ecOpts;
+  // True-identity picker = all personnel (both pools)
+  var idOpts = '<option value="">— unlinked —</option>'
+    + (allPersonnel||[]).map(function(p){ return '<option value="pf:' + e(p.id) + '">Ω1 · ' + e(p.name||p.id) + '</option>'; }).join('')
+    + (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).map(function(p){ return '<option value="ef:' + e(p.id) + '">EC · ' + e(p.name||p.id) + '</option>'; }).join('');
+  document.getElementById('srcRealId').innerHTML = idOpts;
+
+  document.getElementById('srcCodename').value = s ? (s.codename||'') : '';
+  document.getElementById('srcReliability').value = s ? (s.reliability||'C') : 'C';
+  document.getElementById('srcDept').value = s ? (s.department||'') : '';
+  document.getElementById('srcStatus').value = s ? (s.status||'Active') : 'Active';
+  document.getElementById('srcCover').value = s ? (s.coverRole||'') : '';
+  document.getElementById('srcHandler').value = s ? (s.handlerId||'') : (currentUser.linkedEfId || '');
+  document.getElementById('srcLastContact').value = s ? (s.lastContact||'') : '';
+  document.getElementById('srcRealId').value = s && s.realPfId ? ((s.realSys||'pf')+':'+s.realPfId) : '';
+  document.getElementById('srcNotes').value = s ? (s.notes||'') : '';
+  document.getElementById('informantModal').classList.add('open');
+}
+function closeInformantModal() { document.getElementById('informantModal').classList.remove('open'); }
+
+async function saveInformant() {
+  var codename = document.getElementById('srcCodename').value.trim();
+  var errEl = document.getElementById('srcErr');
+  function fail(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+  if (!codename) { fail('A codename is required.'); return; }
+  var editId = document.getElementById('informantEditId').value;
+  var existing = editId ? allInformants.find(function(x){ return x.id === editId; }) : null;
+  if (editId && !canManageIntel(existing)) { fail('You may not edit this source.'); return; }
+
+  var handlerId = document.getElementById('srcHandler').value;
+  var handlerName = handlerId ? (((typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).find(function(p){return p.id===handlerId;})||{}).name || handlerId) : '';
+  var realVal = document.getElementById('srcRealId').value;
+  var realSys = realVal ? realVal.slice(0,2) : '';
+  var realId = realVal ? realVal.slice(3) : '';
+  var realName = '';
+  if (realId) {
+    var pool = realSys==='ef' ? (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]) : (allPersonnel||[]);
+    var pr = pool.find(function(p){ return p.id===realId; });
+    realName = pr ? (pr.name||realId) : realId;
+  }
+  var btn = document.getElementById('srcSaveBtn'); if (btn){ btn.disabled=true; btn.textContent='[ SAVING... ]'; }
+  var s;
+  if (existing) {
+    s = existing;
+  } else {
+    s = { id: 'src_' + Date.now() + '_' + Math.random().toString(36).slice(2,5), createdBy: currentUser.id, createdAt: Date.now(), deleted: false };
+  }
+  s.codename = codename;
+  s.reliability = document.getElementById('srcReliability').value;
+  s.department = document.getElementById('srcDept').value.trim();
+  s.status = document.getElementById('srcStatus').value;
+  s.coverRole = document.getElementById('srcCover').value.trim();
+  s.handlerId = handlerId; s.handlerName = handlerName;
+  s.lastContact = document.getElementById('srcLastContact').value || '';
+  s.realPfId = realId || null; s.realSys = realId ? realSys : null; s.realName = realId ? realName : null;
+  s.notes = document.getElementById('srcNotes').value.trim();
+  s.updatedAt = Date.now();
+  try { await informantSet(s.id, s); }
+  catch(err){ if(btn){btn.disabled=false;btn.textContent='[ SAVE SOURCE ]';} fail('SAVE ERROR: '+err.message); return; }
+  if (typeof auditRecord === 'function') auditRecord(existing?'EDITED SOURCE':'RECRUITED SOURCE', 'codename ' + codename);
+  if (btn){ btn.disabled=false; btn.textContent='[ SAVE SOURCE ]'; }
+  closeInformantModal();
+  await loadIntel();
+}
+async function deleteInformant(id) {
+  var s = allInformants.find(function(x){ return x.id === id; });
+  if (!canManageIntel(s)) { alert('You may not remove this source.'); return; }
+  if (!await pfConfirm('Move source ' + (s?s.codename:'') + ' to the recycle bin?')) return;
+  s.deleted = true; s.deletedBy = currentUser.id; s.deletedAt = Date.now();
+  try { await informantSet(id, s); } catch(e){ alert('ERROR: '+e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('DELETED SOURCE', (s.codename||id) + ' → recycle bin');
+  allInformants = allInformants.filter(function(x){ return x.id !== id; });
+  if (!deletedInformants.some(function(x){ return x.id===id; })) deletedInformants.push(s);
+  renderInformants();
+}
+
+// ── Field reports ──
+function repStatusBadge(s) { return s === 'Actioned' ? 'b-green' : s === 'Reviewed' ? 'b-cyan' : s === 'Archived' ? 'b-retired' : 'b-amber'; }
+
+function nextIntelRef() {
+  var yy = new Date().getFullYear().toString().slice(-2);
+  var prefix = 'INTEL-' + yy + '-';
+  var maxN = 0;
+  allIntelReports.concat(deletedIntelReports).forEach(function(r){
+    if (r.ref && r.ref.indexOf(prefix)===0){ var n=parseInt(r.ref.slice(prefix.length),10); if(!isNaN(n)&&n>maxN) maxN=n; }
+  });
+  return prefix + String(maxN+1).padStart(3,'0');
+}
+
+function renderIntelReports() {
+  var list = document.getElementById('intelReportList');
+  if (!list) return;
+  var q = ((document.getElementById('repSearch')||{}).value||'').trim().toLowerCase();
+  var f = (document.getElementById('repFilterStatus')||{}).value||'';
+  var rows = allIntelReports.filter(function(r){
+    if (f && (r.status||'New') !== f) return false;
+    if (!q) return true;
+    return [r.ref, r.content, r.category, informantName(r.sourceId), r.subjectName].join(' ').toLowerCase().indexOf(q) !== -1;
+  });
+  var cnt = document.getElementById('intelCount');
+  if (cnt && _intelView === 'reports') cnt.textContent = rows.length ? '(' + rows.length + ' reports)' : '';
+  if (!rows.length) { list.innerHTML = '<div class="trn-empty">NO REPORTS' + (q||f?' MATCH THE FILTER.':' FILED YET.') + '</div>'; return; }
+  list.innerHTML = rows.map(buildIntelReportCard).join('');
+}
+
+function buildIntelReportCard(r) {
+  var status = r.status || 'New';
+  var rel = r.reliability || 'F', cred = r.credibility || '6';
+  var manage = canManageIntel(r)
+    ? '<div style="display:flex;gap:.35rem;">'
+      + '<button class="pf-section-btn" data-action="edit-intel-report" data-id="' + e(r.id) + '" style="font-size:.52rem;padding:1px 7px;">EDIT</button>'
+      + '<button class="pf-section-btn" data-action="delete-intel-report" data-id="' + e(r.id) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">DELETE</button></div>'
+    : '';
+  var subject = r.subjectId
+    ? '<div class="case-block"><span class="lbl">Subject</span><span class="txt"><span class="person-link" data-action="open-intel-file" data-pfid="' + e(r.subjectId) + '" data-sys="' + e(r.subjectSys||'pf') + '">' + e(r.subjectName||'[linked file]') + '</span></span></div>'
+    : '';
+  var escalate = canManageIntel(r)
+    ? '<button class="vote-btn" data-action="escalate-report" data-id="' + e(r.id) + '" style="border-color:var(--amber);color:var(--amber);">⮞ ESCALATE TO CASE</button>'
+    : '';
+  return '<div class="case-card">'
+    + '<div class="case-top"><div><div class="case-ref">' + e(r.ref||'—') + ' · ' + e((r.category||'').toUpperCase()) + '</div>'
+    + '<div class="case-title" style="font-size:.72rem;">SOURCE <span class="src-codename" style="font-size:.72rem;">' + e(informantName(r.sourceId)) + '</span></div>'
+    + '<div class="case-badges" style="margin-top:5px;"><span class="badge ' + repStatusBadge(status) + '">' + e(status.toUpperCase()) + '</span>'
+    + '<span class="rel-badge rel-' + e(rel) + '" title="Admiralty rating">' + e(rel) + e(cred) + '</span></div></div>' + manage + '</div>'
+    + subject
+    + '<div class="case-block"><span class="lbl">Intelligence</span><span class="txt">' + e(r.content||'') + '</span></div>'
+    + '<div class="case-vote"><span class="vote-tally">FILED ' + e(safeDate(r.filedAt)) + ' · EC·' + e(r.filedBy||'—')
+    + ' · rating ' + e(rel) + e(cred) + ' (' + e(SRC_RELIABILITY_LABEL[rel]||'?') + ' / ' + e(INFO_CREDIBILITY_LABEL[cred]||'?') + ')</span>' + escalate + '</div>'
+    + '</div>';
+}
+
+function syncReportReliability() {
+  var srcId = document.getElementById('repSource').value;
+  var s = allInformants.find(function(x){ return x.id === srcId; });
+  if (s && s.reliability) document.getElementById('repReliability').value = s.reliability;
+}
+
+function openIntelReportModal(id, presetSourceId) {
+  if (!canAccessIntel()) { alert('Ethics Committee access required.'); return; }
+  var editing = !!id;
+  var r = editing ? allIntelReports.find(function(x){ return x.id === id; }) : null;
+  if (editing && !canManageIntel(r)) { alert('You may not edit this report.'); return; }
+  document.getElementById('intelReportModalTitle').textContent = editing ? 'EDIT FIELD REPORT' : 'FILE FIELD REPORT';
+  document.getElementById('intelReportEditId').value = id || '';
+  document.getElementById('repErr').style.display = 'none';
+  document.getElementById('repRef').value = r ? (r.ref || nextIntelRef()) : nextIntelRef();
+  document.getElementById('repSource').innerHTML = '<option value="">— select source —</option>' + allInformants.map(function(s){ return '<option value="' + e(s.id) + '">' + e(s.codename) + ' (REL ' + e(s.reliability||'F') + ')</option>'; }).join('');
+  document.getElementById('repCategory').innerHTML = INTEL_CATEGORIES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  document.getElementById('repReliability').innerHTML = SRC_RELIABILITY.map(function(x){ return '<option value="' + x + '">' + x + ' — ' + e(SRC_RELIABILITY_LABEL[x]) + '</option>'; }).join('');
+  document.getElementById('repCredibility').innerHTML = INFO_CREDIBILITY.map(function(x){ return '<option value="' + x + '">' + x + ' — ' + e(INFO_CREDIBILITY_LABEL[x]) + '</option>'; }).join('');
+  document.getElementById('repStatus').innerHTML = INTEL_REPORT_STATUSES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  var subjOpts = '<option value="">— no linked subject —</option>'
+    + (allPersonnel||[]).map(function(p){ return '<option value="pf:' + e(p.id) + '">Ω1 · ' + e(p.name||p.id) + '</option>'; }).join('')
+    + (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).map(function(p){ return '<option value="ef:' + e(p.id) + '">EC · ' + e(p.name||p.id) + '</option>'; }).join('');
+  document.getElementById('repSubject').innerHTML = subjOpts;
+
+  document.getElementById('repSource').value = r ? (r.sourceId||'') : (presetSourceId||'');
+  document.getElementById('repCategory').value = r ? (r.category||INTEL_CATEGORIES[0]) : INTEL_CATEGORIES[0];
+  document.getElementById('repReliability').value = r ? (r.reliability||'C') : 'C';
+  document.getElementById('repCredibility').value = r ? (r.credibility||'3') : '3';
+  document.getElementById('repStatus').value = r ? (r.status||'New') : 'New';
+  document.getElementById('repSubject').value = r && r.subjectId ? ((r.subjectSys||'pf')+':'+r.subjectId) : '';
+  document.getElementById('repContent').value = r ? (r.content||'') : '';
+  if (!editing && presetSourceId) syncReportReliability();
+  document.getElementById('intelReportModal').classList.add('open');
+}
+function closeIntelReportModal() { document.getElementById('intelReportModal').classList.remove('open'); }
+
+async function saveIntelReport() {
+  var content = document.getElementById('repContent').value.trim();
+  var sourceId = document.getElementById('repSource').value;
+  var errEl = document.getElementById('repErr');
+  function fail(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+  if (!sourceId) { fail('Select the reporting source.'); return; }
+  if (!content) { fail('Enter the intelligence.'); return; }
+  var editId = document.getElementById('intelReportEditId').value;
+  var existing = editId ? allIntelReports.find(function(x){ return x.id === editId; }) : null;
+  if (editId && !canManageIntel(existing)) { fail('You may not edit this report.'); return; }
+
+  var subjVal = document.getElementById('repSubject').value;
+  var subjSys = subjVal ? subjVal.slice(0,2) : '';
+  var subjId = subjVal ? subjVal.slice(3) : '';
+  var subjName = '';
+  if (subjId) {
+    var pool = subjSys==='ef' ? (typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]) : (allPersonnel||[]);
+    var sp = pool.find(function(p){ return p.id===subjId; });
+    subjName = sp ? (sp.name||subjId) : subjId;
+  }
+  var btn = document.getElementById('repSaveBtn'); if (btn){ btn.disabled=true; btn.textContent='[ FILING... ]'; }
+  var r;
+  if (existing) { r = existing; }
+  else { r = { id:'intel_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), ref:document.getElementById('repRef').value||nextIntelRef(), filedBy:currentUser.id, filedAt:Date.now(), deleted:false }; }
+  r.sourceId = sourceId;
+  r.category = document.getElementById('repCategory').value;
+  r.reliability = document.getElementById('repReliability').value;
+  r.credibility = document.getElementById('repCredibility').value;
+  r.status = document.getElementById('repStatus').value;
+  r.subjectId = subjId || null; r.subjectSys = subjId ? subjSys : null; r.subjectName = subjId ? subjName : null;
+  r.content = content; r.updatedAt = Date.now();
+  try { await intelReportSet(r.id, r); }
+  catch(err){ if(btn){btn.disabled=false;btn.textContent='[ FILE REPORT ]';} fail('SAVE ERROR: '+err.message); return; }
+  if (typeof auditRecord === 'function') auditRecord(existing?'EDITED INTEL REPORT':'FILED INTEL REPORT', r.ref);
+  if (btn){ btn.disabled=false; btn.textContent='[ FILE REPORT ]'; }
+  closeIntelReportModal();
+  await loadIntel();
+}
+async function deleteIntelReport(id) {
+  var r = allIntelReports.find(function(x){ return x.id === id; });
+  if (!canManageIntel(r)) { alert('You may not remove this report.'); return; }
+  if (!await pfConfirm('Move report ' + (r?r.ref:'') + ' to the recycle bin?')) return;
+  r.deleted = true; r.deletedBy = currentUser.id; r.deletedAt = Date.now();
+  try { await intelReportSet(id, r); } catch(e){ alert('ERROR: '+e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('DELETED INTEL REPORT', (r.ref||id) + ' → recycle bin');
+  allIntelReports = allIntelReports.filter(function(x){ return x.id !== id; });
+  if (!deletedIntelReports.some(function(x){ return x.id===id; })) deletedIntelReports.push(r);
+  renderIntelReports();
+}
+
+// ── Connective tissue: escalate a report into an Ethics case ──
+function escalateReportToCase(id) {
+  var r = allIntelReports.find(function(x){ return x.id === id; });
+  if (!r) return;
+  if (typeof openCaseModal !== 'function') { alert('Case docket unavailable.'); return; }
+  if (typeof canLogCase === 'function' && !canLogCase()) { alert('You need case-docket authority (EC member or CL5) to escalate.'); return; }
+  openCaseModal(null);
+  // Pre-fill from the intelligence
+  var src = informantName(r.sourceId);
+  document.getElementById('caseTitle').value = 'Intelligence review — ' + (r.subjectName || r.category || r.ref);
+  document.getElementById('caseCategory').value = 'Personnel Conduct';
+  document.getElementById('caseSummary').value = 'Escalated from field report ' + r.ref + ' (source ' + src + ', rating ' + (r.reliability||'') + (r.credibility||'') + ').\n\n' + (r.content||'');
+  if (r.subjectId && typeof _caseLinked !== 'undefined') {
+    _caseLinked = [{ id: r.subjectId, sys: r.subjectSys||'pf', name: r.subjectName||r.subjectId }];
+    if (typeof renderCaseLinkList === 'function') renderCaseLinkList();
+    if (typeof populateCaseLinkPicker === 'function') populateCaseLinkPicker();
+  }
+  // Mark the report actioned
+  r.status = 'Actioned';
+  intelReportSet(r.id, r);
+}
+function openIntelFile(pfId, sys) {
+  if (typeof openFileFromCase === 'function') openFileFromCase(pfId, sys);
+}
+
+// ================================================================
+//  OMEGA-1 — OPERATIONS / DEPLOYMENT LOG
+//  The task force's operational record: deployments with objectives,
+//  assigned operators, and after-action reports. Operations a member
+//  led or served on surface on their personnel file's service record.
+//  Firebase path: /operations/{id}
+// ================================================================
+var OP_TYPES      = ['Containment','Recovery','Escort','Investigation','Security Detail','Reconnaissance','Extraction','Suppression','Other'];
+var OP_STATUSES   = ['Planned','Active','On Hold','Completed','Aborted'];
+var OP_PRIORITIES = ['Routine','Elevated','Critical'];
+var OP_OUTCOMES   = ['Success','Partial Success','Failure','N/A'];
+var allOperations = [], deletedOperations = [];
+var _opOperators  = [];
+
+async function operationsGetAll() {
+  if (firebaseReady) { var a = await fbGetAll('/operations'); return a ? Object.values(a) : []; }
+  return Object.values(lsAll('operations/'));
+}
+async function operationSet(id, data) { if (firebaseReady) await fbSet('/operations/' + id, data); else lsSet('operations/' + id, data); }
+async function operationDel(id) { if (firebaseReady) await fbDelete('/operations/' + id); else lsDel('operations/' + id); }
+
+// Operations are a command function: CL4+ may log and manage them.
+function canManageOp() { return currentUser && parseInt(currentUser.clearance) >= 4; }
+
+function opName(id) {
+  var p = (allPersonnel || []).find(function(x){ return x.id === id; });
+  return p ? (p.name || p.nickname || id) : null;
+}
+function opStatusBadge(s) {
+  return s === 'Active' ? 'b-green' : s === 'Completed' ? 'b-cyan'
+    : s === 'Aborted' ? 'b-red' : s === 'On Hold' ? 'b-retired' : 'b-amber';
+}
+function opOutcomeBadge(o) {
+  return o === 'Success' ? 'b-green' : o === 'Failure' ? 'b-red' : o === 'Partial Success' ? 'b-amber' : 'b-dim';
+}
+function opPriorityBadge(p) { return p === 'Critical' ? 'b-red' : p === 'Elevated' ? 'b-amber' : 'b-dim'; }
+
+function nextOpRef() {
+  var yy = new Date().getFullYear().toString().slice(-2);
+  var prefix = 'OP-' + yy + '-';
+  var maxN = 0;
+  allOperations.concat(deletedOperations).forEach(function(o){
+    if (o.ref && o.ref.indexOf(prefix) === 0) { var n = parseInt(o.ref.slice(prefix.length), 10); if (!isNaN(n) && n > maxN) maxN = n; }
+  });
+  return prefix + String(maxN + 1).padStart(3, '0');
+}
+
+async function loadOperations() {
+  try {
+    var raw = await operationsGetAll();
+    allOperations = partitionDeleted(raw.filter(function(o){ return o && o.id; }), function(d){ deletedOperations = d; });
+  } catch(e) { allOperations = []; }
+  allOperations.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+  var btn = document.getElementById('opNewBtn');
+  if (btn) btn.style.display = canManageOp() ? 'inline-block' : 'none';
+  var notice = document.getElementById('opAccessNotice');
+  if (notice) {
+    if (!canManageOp()) { notice.style.display = 'block'; notice.textContent = currentUser ? 'Operations are logged by command (Level 4+). You may review the deployment log below.' : 'Observer mode — deployment log is read-only.'; }
+    else notice.style.display = 'none';
+  }
+  renderOperations();
+}
+
+function renderOperations() {
+  var list = document.getElementById('operationList');
+  if (!list) return;
+  var q = ((document.getElementById('opSearch')||{}).value||'').trim().toLowerCase();
+  var f = (document.getElementById('opFilterStatus')||{}).value||'';
+  var rows = allOperations.filter(function(o){
+    if (f && (o.status||'Planned') !== f) return false;
+    if (!q) return true;
+    var hay = [o.ref, o.codename, o.objective, o.opType, o.location, o.leadName].concat((o.operators||[]).map(function(x){ return x.name; })).join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  var cnt = document.getElementById('opCount');
+  if (cnt) cnt.textContent = rows.length ? '(' + rows.length + ')' : '';
+  if (!rows.length) { list.innerHTML = '<div class="trn-empty">NO OPERATIONS' + (q||f?' MATCH THE FILTER.':' LOGGED YET.') + '</div>'; return; }
+  list.innerHTML = rows.map(buildOperationCard).join('');
+}
+
+function buildOperationCard(o) {
+  var status = o.status || 'Planned';
+  var manage = canManageOp()
+    ? '<div style="display:flex;gap:.35rem;">'
+      + '<button class="pf-section-btn" data-action="edit-operation" data-id="' + e(o.id) + '" style="font-size:.52rem;padding:1px 7px;">EDIT</button>'
+      + '<button class="pf-section-btn" data-action="delete-operation" data-id="' + e(o.id) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">DELETE</button></div>'
+    : '';
+  var dates = (o.startDate || o.endDate)
+    ? (o.startDate ? safeDate(o.startDate) : '?') + (o.endDate ? ' → ' + safeDate(o.endDate) : '')
+    : '';
+  var operators = (o.operators || []).map(function(op){
+    return '<span class="case-link"><span class="person-link" data-action="open-op-file" data-pfid="' + e(op.id) + '">' + e(opName(op.id) || op.name || op.id) + '</span></span>';
+  }).join('');
+  var sqd = o.squadName ? '<span class="badge b-dim">SQUAD: ' + e(o.squadName) + '</span>' : '';
+  var outcomeBlock = (status === 'Completed' || status === 'Aborted')
+    ? '<div class="case-block case-ruling"><span class="lbl">Outcome</span><span class="txt">'
+      + (o.outcome ? '<span class="badge ' + opOutcomeBadge(o.outcome) + '">' + e(o.outcome.toUpperCase()) + '</span> ' : '')
+      + (o.afterAction ? e(o.afterAction) : '<span style="color:var(--text-faint);">No after-action report filed.</span>') + '</span></div>'
+    : '';
+  return '<div class="case-card">'
+    + '<div class="case-top"><div><div class="case-ref">' + e(o.ref||'—') + (o.opType ? ' · ' + e(o.opType.toUpperCase()) : '') + '</div>'
+    + '<div class="case-title" style="letter-spacing:.06em;">OPERATION ' + e((o.codename||'UNNAMED').toUpperCase()) + '</div>'
+    + '<div class="case-badges" style="margin-top:4px;"><span class="badge ' + opStatusBadge(status) + '">' + e(status.toUpperCase()) + '</span>'
+    + (o.priority ? '<span class="badge ' + opPriorityBadge(o.priority) + '">' + e(o.priority.toUpperCase()) + '</span>' : '') + sqd + '</div></div>' + manage + '</div>'
+    + (o.objective ? '<div class="case-block"><span class="lbl">Objective</span><span class="txt">' + e(o.objective) + '</span></div>' : '')
+    + ((o.location || dates) ? '<div class="case-block"><span class="lbl">Deployment</span><span class="txt">' + (o.location ? e(o.location) : '') + (o.location && dates ? ' · ' : '') + e(dates) + '</span></div>' : '')
+    + '<div class="case-block"><span class="lbl">Lead</span><span class="txt">' + e(o.leadName || '—') + '</span></div>'
+    + (operators ? '<div class="case-block"><span class="lbl">Operators (' + (o.operators||[]).length + ')</span><div>' + operators + '</div></div>' : '')
+    + outcomeBlock
+    + '<div style="font-size:.5rem;color:var(--text-faint);letter-spacing:.04em;margin-top:.5rem;">LOGGED ' + e(safeDate(o.createdAt)) + ' · ' + e(o.createdBy||'—') + '</div>'
+    + '</div>';
+}
+
+// ── Modal ──
+function openOperationModal(id) {
+  if (!id && !canManageOp()) { alert('Operations are logged by command (Level 4+).'); return; }
+  var editing = !!id;
+  var o = editing ? allOperations.find(function(x){ return x.id === id; }) : null;
+  if (editing && !canManageOp()) { alert('Command authority required to edit operations.'); return; }
+  document.getElementById('operationModalTitle').textContent = editing ? 'EDIT OPERATION' : 'LOG OPERATION';
+  document.getElementById('operationEditId').value = id || '';
+  document.getElementById('opErr').style.display = 'none';
+  document.getElementById('opType').innerHTML = OP_TYPES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  document.getElementById('opStatus').innerHTML = OP_STATUSES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  document.getElementById('opPriority').innerHTML = OP_PRIORITIES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  document.getElementById('opOutcome').innerHTML = OP_OUTCOMES.map(function(x){ return '<option>' + e(x) + '</option>'; }).join('');
+  var leadOpts = '<option value="">— select lead —</option>' + (allPersonnel||[]).slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }).map(function(p){ return '<option value="' + e(p.id) + '">' + e(p.name||p.id) + (p.rank?' ('+e(p.rank)+')':'') + '</option>'; }).join('');
+  document.getElementById('opLead').innerHTML = leadOpts;
+  var sqdOpts = '<option value="">— none —</option>' + (typeof allSquadrons!=='undefined'?allSquadrons:[]).map(function(s){ return '<option value="' + e(s.id) + '">' + e(s.name||s.id) + '</option>'; }).join('');
+  document.getElementById('opSquad').innerHTML = sqdOpts;
+
+  document.getElementById('opCodename').value = o ? (o.codename||'') : '';
+  document.getElementById('opObjective').value = o ? (o.objective||'') : '';
+  document.getElementById('opType').value = o ? (o.opType||OP_TYPES[0]) : OP_TYPES[0];
+  document.getElementById('opStatus').value = o ? (o.status||'Planned') : 'Planned';
+  document.getElementById('opPriority').value = o ? (o.priority||'Routine') : 'Routine';
+  document.getElementById('opLocation').value = o ? (o.location||'') : '';
+  document.getElementById('opStart').value = o ? (o.startDate||'') : '';
+  document.getElementById('opEnd').value = o ? (o.endDate||'') : '';
+  document.getElementById('opLead').value = o ? (o.leadId||'') : '';
+  document.getElementById('opSquad').value = o ? (o.squadId||'') : '';
+  document.getElementById('opOutcome').value = o ? (o.outcome||'N/A') : 'N/A';
+  document.getElementById('opAfterAction').value = o ? (o.afterAction||'') : '';
+  _opOperators = (o && Array.isArray(o.operators)) ? o.operators.map(function(x){ return { id:x.id, name:x.name }; }) : [];
+  renderOpOperators(); populateOpOperatorPicker();
+  document.getElementById('operationModal').classList.add('open');
+}
+function closeOperationModal() { document.getElementById('operationModal').classList.remove('open'); _opOperators = []; }
+
+function populateOpOperatorPicker() {
+  var sel = document.getElementById('opOperatorPicker'); if (!sel) return;
+  var taken = {}; _opOperators.forEach(function(x){ taken[x.id] = true; });
+  var opts = ['<option value="">+ ADD OPERATOR...</option>'];
+  (allPersonnel||[]).slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }).forEach(function(p){
+    if (p.id && !taken[p.id]) opts.push('<option value="' + e(p.id) + '">' + e(p.name||p.id) + '</option>');
+  });
+  sel.innerHTML = opts.join('');
+}
+function addOpOperator(id) {
+  if (!id) return;
+  if (_opOperators.some(function(x){ return x.id === id; })) return;
+  var p = (allPersonnel||[]).find(function(x){ return x.id === id; });
+  _opOperators.push({ id:id, name: p ? (p.name||id) : id });
+  renderOpOperators(); populateOpOperatorPicker();
+}
+function removeOpOperator(id) {
+  _opOperators = _opOperators.filter(function(x){ return x.id !== id; });
+  renderOpOperators(); populateOpOperatorPicker();
+}
+function renderOpOperators() {
+  var box = document.getElementById('opOperatorList'); if (!box) return;
+  if (!_opOperators.length) { box.innerHTML = '<span style="font-size:.58rem;color:var(--text-faint);">No operators assigned.</span>'; return; }
+  box.innerHTML = _opOperators.map(function(x){
+    return '<span class="case-link">' + e(opName(x.id) || x.name) + '<span class="x" data-action="remove-op-operator" data-pfid="' + e(x.id) + '">×</span></span>';
+  }).join('');
+}
+
+async function saveOperation() {
+  var codename = document.getElementById('opCodename').value.trim();
+  var objective = document.getElementById('opObjective').value.trim();
+  var errEl = document.getElementById('opErr');
+  function fail(m){ errEl.textContent = m; errEl.style.display = 'block'; }
+  if (!codename) { fail('An operation codename is required.'); return; }
+  if (!objective) { fail('State the operation objective.'); return; }
+  if (!canManageOp()) { fail('Command authority required.'); return; }
+  var editId = document.getElementById('operationEditId').value;
+  var existing = editId ? allOperations.find(function(x){ return x.id === editId; }) : null;
+
+  var leadId = document.getElementById('opLead').value;
+  var leadName = leadId ? (opName(leadId) || leadId) : '';
+  var squadId = document.getElementById('opSquad').value;
+  var squadName = squadId ? (((typeof allSquadrons!=='undefined'?allSquadrons:[]).find(function(s){ return s.id===squadId; })||{}).name || '') : '';
+
+  var btn = document.getElementById('opSaveBtn'); if (btn){ btn.disabled=true; btn.textContent='[ SAVING... ]'; }
+  var o;
+  if (existing) { o = existing; }
+  else { o = { id:'op_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), ref:nextOpRef(), createdBy:currentUser.id, createdAt:Date.now(), deleted:false }; }
+  o.codename = codename; o.objective = objective;
+  o.opType = document.getElementById('opType').value;
+  o.status = document.getElementById('opStatus').value;
+  o.priority = document.getElementById('opPriority').value;
+  o.location = document.getElementById('opLocation').value.trim();
+  o.startDate = document.getElementById('opStart').value || '';
+  o.endDate = document.getElementById('opEnd').value || '';
+  o.leadId = leadId; o.leadName = leadName;
+  o.squadId = squadId || null; o.squadName = squadName || null;
+  o.operators = _opOperators.slice();
+  o.outcome = document.getElementById('opOutcome').value;
+  o.afterAction = document.getElementById('opAfterAction').value.trim();
+  o.updatedAt = Date.now();
+  try { await operationSet(o.id, o); }
+  catch(err){ if(btn){btn.disabled=false;btn.textContent='[ SAVE OPERATION ]';} fail('SAVE ERROR: '+err.message); return; }
+  if (typeof auditRecord === 'function') auditRecord(existing?'EDITED OPERATION':'LOGGED OPERATION', (o.ref||'') + ' — ' + codename);
+  if (btn){ btn.disabled=false; btn.textContent='[ SAVE OPERATION ]'; }
+  closeOperationModal();
+  await loadOperations();
+}
+async function deleteOperation(id) {
+  if (!canManageOp()) { alert('Command authority required.'); return; }
+  var o = allOperations.find(function(x){ return x.id === id; });
+  if (!await pfConfirm('Move operation ' + (o?('"'+o.codename+'"'):'') + ' to the recycle bin?')) return;
+  o.deleted = true; o.deletedBy = currentUser.id; o.deletedAt = Date.now();
+  try { await operationSet(id, o); } catch(e){ alert('ERROR: '+e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('DELETED OPERATION', (o.ref||id) + ' → recycle bin');
+  allOperations = allOperations.filter(function(x){ return x.id !== id; });
+  if (!deletedOperations.some(function(x){ return x.id===id; })) deletedOperations.push(o);
+  renderOperations();
+}
+function openOpFile(pfId) { if (typeof openPersonnelFromTraining === 'function') openPersonnelFromTraining(pfId); }
+
+
+// ================================================================
+//  EC SURVEILLANCE — quiet observation flags on personnel files
+//  Visible ONLY to Ethics Committee personnel. Places a file under
+//  observation at a chosen level, and surfaces all field-intelligence
+//  filed against that subject directly inside the dossier — so the
+//  intel network "lands" on the files themselves.
+//  Firebase path: /surveillance/{sys_pfId}
+// ================================================================
+var allSurveillance = [];
+var _svTarget = null;
+var SV_LEVELS = ['Routine','Elevated','Priority'];
+
+async function surveillanceGetAll() {
+  if (firebaseReady) { var a = await fbGetAll('/surveillance'); return a ? Object.values(a) : []; }
+  return Object.values(lsAll('surveillance/'));
+}
+async function surveillanceSet(key, data) { if (firebaseReady) await fbSet('/surveillance/' + key, data); else lsSet('surveillance/' + key, data); }
+async function surveillanceDel(key) { if (firebaseReady) await fbDelete('/surveillance/' + key); else lsDel('surveillance/' + key); }
+
+async function loadSurveillance() {
+  if (!canAccessIntel()) { allSurveillance = []; return; }
+  try { allSurveillance = (await surveillanceGetAll()).filter(function(x){ return x && x.key; }); }
+  catch(e) { allSurveillance = []; }
+}
+
+function surveillanceFor(sys, pfId) {
+  var k = (sys||'pf') + '_' + pfId;
+  return (allSurveillance || []).find(function(x){ return x.key === k; }) || null;
+}
+function isUnderSurveillance(sys, pfId) {
+  var sv = surveillanceFor(sys, pfId);
+  return !!(sv && sv.active !== false);
+}
+function reportsForSubject(sys, pfId) {
+  sys = sys || 'pf';
+  return (allIntelReports || []).filter(function(r){ return r.subjectId === pfId && (r.subjectSys||'pf') === sys; });
+}
+function svLevelBadge(l) { return l === 'Priority' ? 'b-red' : l === 'Elevated' ? 'b-amber' : 'b-dim'; }
+
+// Section body injected into both card builders (EC viewers only).
+function buildSurveillanceSection(p, sys) {
+  if (!canAccessIntel()) return '';
+  sys = sys || 'pf';
+  var sv = surveillanceFor(sys, p.id);
+  var active = !!(sv && sv.active !== false);
+  var reports = reportsForSubject(sys, p.id);
+  var html = '';
+  if (active) {
+    html += '<div class="sv-banner sv-' + e((sv.level||'Routine').toLowerCase()) + '">◉ UNDER EC OBSERVATION &middot; ' + e((sv.level||'Routine').toUpperCase()) + '</div>'
+      + (sv.reason ? '<div class="case-block"><span class="lbl">Grounds</span><span class="txt">' + e(sv.reason) + '</span></div>' : '')
+      + '<div style="font-size:.5rem;color:var(--text-faint);margin:.2rem 0 .45rem;">flagged ' + e(safeDate(sv.flaggedAt)) + ' &middot; EC&middot;' + e(sv.flaggedBy||'—') + '</div>'
+      + '<div style="display:flex;gap:.35rem;margin-bottom:.55rem;">'
+      + '<button class="pf-section-btn" data-action="adjust-surveillance" data-sys="' + e(sys) + '" data-pfid="' + e(p.id) + '">ADJUST</button>'
+      + '<button class="pf-section-btn" data-action="lift-surveillance" data-sys="' + e(sys) + '" data-pfid="' + e(p.id) + '" style="color:#dd6666;">LIFT</button></div>';
+  } else {
+    html += '<div style="font-size:.62rem;color:var(--text-faint);margin-bottom:.4rem;">Not under active observation.</div>'
+      + '<button class="pf-section-btn" data-action="place-surveillance" data-sys="' + e(sys) + '" data-pfid="' + e(p.id) + '" style="margin-bottom:.55rem;">+ PLACE UNDER SURVEILLANCE</button>';
+  }
+  if (reports.length) {
+    html += '<div style="font-size:.55rem;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin:.35rem 0 .3rem;">Field intelligence (' + reports.length + ')</div>'
+      + reports.map(function(r){
+          var rel = r.reliability||'F', cred = r.credibility||'6';
+          var snip = (r.content||'').slice(0,130) + ((r.content||'').length>130 ? '…' : '');
+          return '<div class="sv-report" data-action="open-intel-ref" data-ref="' + e(r.ref||'') + '">'
+            + '<span class="rel-badge rel-' + e(rel) + '">' + e(rel) + e(cred) + '</span> '
+            + '<span class="src-codename" style="font-size:.6rem;">' + e(informantName(r.sourceId)) + '</span> '
+            + '<span style="color:var(--text-faint);font-size:.52rem;">' + e(r.ref||'') + ' &middot; ' + e(r.category||'') + ' &middot; ' + e(r.status||'New') + '</span>'
+            + '<div style="font-size:.6rem;color:var(--text);margin-top:1px;">' + e(snip) + '</div></div>';
+        }).join('');
+  } else {
+    html += '<div style="font-size:.58rem;color:var(--text-faint);">No field intelligence on file.</div>';
+  }
+  return html;
+}
+
+// Label/count for the collapsible section header.
+function surveillanceSectionMeta(p, sys) {
+  var sv = surveillanceFor(sys, p.id);
+  var active = !!(sv && sv.active !== false);
+  var reports = reportsForSubject(sys, p.id);
+  return {
+    label: active ? '◉ EC OBSERVATION' : '◉ EC INTEL',
+    count: active ? ' · ' + (sv.level||'Routine').toUpperCase() : (reports.length ? ' (' + reports.length + ')' : '')
+  };
+}
+
+function openSurveillanceModal(sys, pfId) {
+  if (!canAccessIntel()) { alert('Ethics Committee access required.'); return; }
+  _svTarget = { sys: sys, pfId: pfId };
+  var sv = surveillanceFor(sys, pfId);
+  document.getElementById('svLevel').innerHTML = SV_LEVELS.map(function(x){ return '<option>' + x + '</option>'; }).join('');
+  document.getElementById('svLevel').value = sv ? (sv.level||'Routine') : 'Routine';
+  document.getElementById('svReason').value = sv ? (sv.reason||'') : '';
+  document.getElementById('svModalTitle').textContent = (sv && sv.active !== false) ? 'ADJUST SURVEILLANCE' : 'PLACE UNDER SURVEILLANCE';
+  document.getElementById('svErr').style.display = 'none';
+  document.getElementById('surveillanceModal').classList.add('open');
+}
+function closeSurveillanceModal() { document.getElementById('surveillanceModal').classList.remove('open'); _svTarget = null; }
+
+async function saveSurveillance() {
+  if (!_svTarget) return;
+  var sys = _svTarget.sys, pfId = _svTarget.pfId, key = sys + '_' + pfId;
+  var reason = document.getElementById('svReason').value.trim();
+  if (!reason) { var er = document.getElementById('svErr'); er.textContent = 'State the grounds for observation.'; er.style.display = 'block'; return; }
+  var existing = surveillanceFor(sys, pfId);
+  var rec = existing || { key: key, sys: sys, pfId: pfId, flaggedBy: currentUser.id, flaggedAt: Date.now() };
+  rec.level = document.getElementById('svLevel').value;
+  rec.reason = reason; rec.active = true; rec.updatedAt = Date.now();
+  try { await surveillanceSet(key, rec); } catch(e){ alert('ERROR: ' + e.message); return; }
+  if (!allSurveillance.some(function(x){ return x.key === key; })) allSurveillance.push(rec);
+  if (typeof auditRecord === 'function') auditRecord(existing ? 'ADJUSTED SURVEILLANCE' : 'PLACED SURVEILLANCE', key + ' · ' + rec.level);
+  closeSurveillanceModal();
+  refreshFileViews(sys);
+}
+async function liftSurveillance(sys, pfId) {
+  if (!canAccessIntel()) return;
+  if (!await pfConfirm('Lift surveillance on this file?')) return;
+  var key = sys + '_' + pfId;
+  try { await surveillanceDel(key); } catch(e){ alert('ERROR: ' + e.message); return; }
+  allSurveillance = allSurveillance.filter(function(x){ return x.key !== key; });
+  if (typeof auditRecord === 'function') auditRecord('LIFTED SURVEILLANCE', key);
+  refreshFileViews(sys);
+}
+function refreshFileViews(sys) {
+  if (sys === 'ef') { if (typeof renderEthicsFiles === 'function') renderEthicsFiles(); }
+  else { if (typeof renderPersonnelFiles === 'function') renderPersonnelFiles(); }
+}
+function openIntelRef(ref) {
+  var nav = document.getElementById('navIntelTab');
+  if (nav) nav.click();
+  setTimeout(function(){
+    if (typeof setIntelView === 'function') setIntelView('reports');
+    var s = document.getElementById('repSearch'); if (s) s.value = ref;
+    if (typeof renderIntelReports === 'function') renderIntelReports();
+  }, 130);
+}
+
+
+
 
 // ── Re-derive clearance once personnel data is in memory ──
 // Called at the end of loadPersonnel / loadEthicsPersonnel so any
@@ -6100,11 +6952,11 @@ list.innerHTML = filtered.map(function(p) {
     var isCL5 = currentUser && parseInt(currentUser.clearance) >= 5;
     var selfRestricted = isSelf && !isCL5;
     var pStatus = p.status || 'Active';
-    var notes   = Array.isArray(p.notes)      ? p.notes.slice().sort((a,b)=>a.created-b.created) : [];
-    var awards  = Array.isArray(p.awards)     ? p.awards : [];
+    var notes   = Array.isArray(p.notes)      ? p.notes.filter(function(n){return n && typeof n==='object';}).sort((a,b)=>a.created-b.created) : [];
+    var awards  = objArr(p.awards);
     var tags    = Array.isArray(p.tags)       ? p.tags   : [];
-    var history = Array.isArray(p.rankHistory)? p.rankHistory.slice().sort((a,b)=>b.changedAt-a.changedAt) : [];
-    var pfSqdns = allSquadrons.filter(s => s.members && s.members.some(m => (m.memberId||m.pfId) === p.id));
+    var history = objArr(p.rankHistory).sort((a,b)=>(b.changedAt||0)-(a.changedAt||0));
+    var pfSqdns = allSquadrons.filter(s => s.members && s.members.some(m => m && (m.memberId||m.pfId) === p.id));
 
     // ── header badges ──
     var rankBadge   = `<span class="badge ${rankBadgeClass(p.rank)}">${e(p.rank||'—')}</span>`;
@@ -6169,7 +7021,7 @@ var linkedBadge = linkedPfIds.has(p.id)
 
     // ── tags section ──
     // ── Strikes ──
-    var strikes = Array.isArray(p.strikes) ? p.strikes : [];
+    var strikes = objArr(p.strikes);
     var strikesHtml = strikes.length ? strikes.map(function(s) {
       var ds  = strikeDisplayStatus(s);
       var exp = s.expiresAt ? new Date(s.expiresAt).toLocaleDateString('en-GB') : 'Permanent';
@@ -6215,10 +7067,10 @@ var linkedBadge = linkedPfIds.has(p.id)
 
     // ── squadrons section ──
     var sqdHtml = pfSqdns.length ? pfSqdns.map(s => {
-      var myEntry = s.members.find(m => (m.memberId||m.pfId) === p.id);
+      var myEntry = s.members.find(m => m && (m.memberId||m.pfId) === p.id);
       var myRank  = myEntry ? myEntry.rank : '—';
       var rankCls = myRank==='Director'?'sqd-director':myRank==='Co Director'?'sqd-codirector':myRank==='Supervisor'?'sqd-supervisor':'sqd-agent';
-      var membersHtml = (s.members||[]).map(m =>
+      var membersHtml = objArr(s.members).map(m =>
         `<div class="sqd-member-row"><span>${e(m.name||(m.memberId||m.pfId))}</span><span class="sqd-rank-badge ${m.rank==='Director'?'sqd-director':m.rank==='Co Director'?'sqd-codirector':m.rank==='Supervisor'?'sqd-supervisor':'sqd-agent'}">${e(m.rank)}</span></div>`
       ).join('');
       return `<div class="sqd-card"><div class="sqd-name">${e(s.name)} <span class="sqd-rank-badge ${rankCls}">${e(myRank)}</span>
@@ -6270,7 +7122,7 @@ var linkedBadge = linkedPfIds.has(p.id)
 `}
 
         ${(()=>{
-           var leaves  = Array.isArray(p.leaves) ? p.leaves : [];
+           var leaves  = objArr(p.leaves);
           var activeLv = leaves.filter(isLeaveActive);
           var sections = [
             { key:'tags',      label:'MANAGEMENT TAGS',      count:'',                    body: tagsSection },
@@ -6296,7 +7148,7 @@ var linkedBadge = linkedPfIds.has(p.id)
           (function(){
             var tc = allTrainings.filter(function(t){
               return t.conductedByPfId === p.id ||
-                (Array.isArray(t.attendees) && t.attendees.some(function(a){ return a.pfId === p.id; }));
+                (Array.isArray(t.attendees) && t.attendees.some(function(a){ return a && a.pfId === p.id; }));
             }).length;
             sections.push({ key:'trainings', label:'⌖ TRAININGS', count: ' ('+tc+')', body: buildTrainingSection(p) });
           })();
@@ -6304,6 +7156,10 @@ var linkedBadge = linkedPfIds.has(p.id)
             var svcAll = buildServiceRecord(p);
             sections.push({ key:'service', label:'◳ SERVICE RECORD', count:' ('+svcAll.length+')', body: buildServiceSection(p) });
           })();
+          if (typeof canAccessIntel === 'function' && canAccessIntel()) {
+            var svMeta = surveillanceSectionMeta(p, 'pf');
+            sections.unshift({ key:'surveillance', label:svMeta.label, count:svMeta.count, body: buildSurveillanceSection(p, 'pf') });
+          }
           if (canViewFileIntegrity()) {
             sections.push({ key:'security', label:'⚕ SECURITY STATUS', count:'', body: fileIntegrityControl(p.id, 'pf') });
           }
@@ -6727,6 +7583,29 @@ document.addEventListener('click', function(ev) {
     case 'close-reason-modal':     closeReasonModal(); break;
     case 'submit-reason-modal':    submitReasonModal(); break;
     case 'save-tribunal-cfg':      saveTribunalCfg(); break;
+    // Intel network
+    case 'intel-view':             setIntelView(el.dataset.view); break;
+    case 'close-informant-modal':  closeInformantModal(); break;
+    case 'edit-informant':         openInformantModal(el.dataset.id); break;
+    case 'delete-informant':       deleteInformant(el.dataset.id); break;
+    case 'file-from-source':       openIntelReportModal(null, el.dataset.id); break;
+    case 'close-intel-report-modal': closeIntelReportModal(); break;
+    case 'edit-intel-report':      openIntelReportModal(el.dataset.id); break;
+    case 'delete-intel-report':    deleteIntelReport(el.dataset.id); break;
+    case 'escalate-report':        escalateReportToCase(el.dataset.id); break;
+    case 'open-intel-file':        openIntelFile(el.dataset.pfid, el.dataset.sys); break;
+    // Surveillance
+    case 'place-surveillance':     openSurveillanceModal(el.dataset.sys, el.dataset.pfid); break;
+    case 'adjust-surveillance':    openSurveillanceModal(el.dataset.sys, el.dataset.pfid); break;
+    case 'lift-surveillance':      liftSurveillance(el.dataset.sys, el.dataset.pfid); break;
+    case 'close-surveillance-modal': closeSurveillanceModal(); break;
+    case 'open-intel-ref':         openIntelRef(el.dataset.ref); break;
+    // Operations
+    case 'close-operation-modal':  closeOperationModal(); break;
+    case 'edit-operation':         openOperationModal(el.dataset.id); break;
+    case 'delete-operation':       deleteOperation(el.dataset.id); break;
+    case 'remove-op-operator':     removeOpOperator(el.dataset.pfid); break;
+    case 'open-op-file':           openOpFile(el.dataset.pfid); break;
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
@@ -7095,7 +7974,7 @@ async function deletePfNote(pfId, noteCreated) {
   if (!await pfConfirm('DELETE THIS NOTE FROM THE RECORD?')) return;
   var rec = allPersonnel.find(function(p){ return p.id === pfId; });
   if (!rec) return;
-  rec.notes = (rec.notes||[]).filter(function(n){ return n.created !== noteCreated; });
+  rec.notes = (rec.notes||[]).filter(function(n){ return n && n.created !== noteCreated; });
   rec.updated = Date.now();
   try { await personnelSet(pfId, rec); renderPersonnelFiles(); } catch(e) { alert('ERROR: '+e.message); }
 }
@@ -7105,7 +7984,7 @@ async function deleteEfNote(efId, noteCreated) {
   if (!await pfConfirm('DELETE THIS NOTE FROM THE RECORD?')) return;
   var rec = allEthicsPersonnel.find(function(p){ return p.id === efId; });
   if (!rec) return;
-  rec.notes = (rec.notes||[]).filter(function(n){ return n.created !== noteCreated; });
+  rec.notes = (rec.notes||[]).filter(function(n){ return n && n.created !== noteCreated; });
   rec.updated = Date.now();
   try { await ethicsPersonnelSet(efId, rec); renderEthicsFiles(); } catch(e) { alert('ERROR: '+e.message); }
 }
@@ -7116,7 +7995,7 @@ async function deletePoiNote(id, type, noteCreated) {
   var list = type==='poi' ? allPOI : allTargets;
   var rec  = list.find(function(x){ return x.id === id; });
   if (!rec) return;
-  rec.notes = (rec.notes||[]).filter(function(n){ return n.created !== noteCreated; });
+  rec.notes = (rec.notes||[]).filter(function(n){ return n && n.created !== noteCreated; });
   try {
     if (type==='poi') await poiSet(id, rec); else await targetSet(id, rec);
     renderPoiFile(type, id);
@@ -7417,7 +8296,7 @@ function openSquadronModal(mode, memberId, sqdId, type) {
     if (sqd) {
       document.getElementById('squadronCurrentMembers').innerHTML =
         '<div style="font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;">CURRENT MEMBERS:</div>' +
-        (sqd.members||[]).map(function(m) {
+        objArr(sqd.members).map(function(m) {
           return `<div class="sqd-member-row"><span>${e(m.name||m.memberId||m.pfId)}</span><span class="sqd-rank-badge ${m.rank==='Director'?'sqd-director':m.rank==='Co Director'?'sqd-codirector':m.rank==='Supervisor'?'sqd-supervisor':'sqd-agent'}">${e(m.rank)}</span><button class="award-del" data-action="remove-sqd-member" data-sqdid="${e(sqdId)}" data-memberid="${e(m.memberId||m.pfId)}" data-sqdtype="${type}" title="Remove">×</button></div>`;
         }).join('');
     }
@@ -8775,7 +9654,7 @@ function renderPoiFile(type, id) {
   if (titleEl) titleEl.innerHTML = type==='poi' ? poiTitle(record) : targetTitle(record);
 
   var canEdit = currentUser && parseInt(currentUser.clearance) >= 4;
-  var notes   = Array.isArray(record.notes) ? record.notes : [];
+  var notes   = (Array.isArray(record.notes) ? record.notes : []).filter(function(n){return n && typeof n==='object';});
 
   var fields = [
     ['Name',       e(record.name||'—')],
@@ -9294,8 +10173,8 @@ function buildEthicsCard(p) {
   var isOpen  = efExpanded.has(p.id);
   var canEdit = canManageFile(p, 'ef') && efAccess === 'full'; // can't edit what you can't fully see, and only with management rights
   var pStatus = p.status || 'Active';
-  var notes   = Array.isArray(p.notes)      ? p.notes.slice().sort((a,b)=>a.created-b.created) : [];
-  var history = Array.isArray(p.rankHistory)? p.rankHistory.slice().sort((a,b)=>b.changedAt-a.changedAt) : [];
+  var notes   = Array.isArray(p.notes)      ? p.notes.filter(function(n){return n && typeof n==='object';}).sort((a,b)=>a.created-b.created) : [];
+  var history = objArr(p.rankHistory).sort((a,b)=>(b.changedAt||0)-(a.changedAt||0));
 
   var roleBadge   = `<span class="badge ${p.role==='Chairman'?'b-red':p.role==='Member'?'b-amber':'b-cyan'}">${e(p.role||'—')}</span>`;
   var statusBadge = pStatus !== 'Active' ? `<span class="badge ${pStatus==='Retired'?'b-retired':'b-discharged'}">${e(pStatus)}</span>` : '';
@@ -9350,12 +10229,12 @@ function buildEthicsCard(p) {
   }</div>` : '';
 
   // Squadron section
-  var efSqdns = allEthicsSquadrons.filter(s => s.members && s.members.some(m => (m.memberId||m.pfId) === p.id));
+  var efSqdns = allEthicsSquadrons.filter(s => s.members && s.members.some(m => m && (m.memberId||m.pfId) === p.id));
   var efSqdHtml = efSqdns.length ? efSqdns.map(s => {
-    var myEntry = s.members.find(m => (m.memberId||m.pfId) === p.id);
+    var myEntry = s.members.find(m => m && (m.memberId||m.pfId) === p.id);
     var myRank  = myEntry ? myEntry.rank : '—';
     var rankCls = myRank==='Director'?'sqd-director':myRank==='Co Director'?'sqd-codirector':myRank==='Supervisor'?'sqd-supervisor':'sqd-agent';
-    var membersHtml = (s.members||[]).map(m =>
+    var membersHtml = objArr(s.members).map(m =>
       `<div class="sqd-member-row"><span>${e(m.name||(m.memberId||m.pfId))}</span><span class="sqd-rank-badge ${m.rank==='Director'?'sqd-director':m.rank==='Co Director'?'sqd-codirector':m.rank==='Supervisor'?'sqd-supervisor':'sqd-agent'}">${e(m.rank)}</span></div>`
     ).join('');
     return `<div class="sqd-card"><div class="sqd-name">${e(s.name)} <span class="sqd-rank-badge ${rankCls}">${e(myRank)}</span>
@@ -9420,6 +10299,10 @@ function buildEthicsCard(p) {
         <span>▸ ◳ SERVICE RECORD (${buildServiceRecord(p,{excludeSensitive:restrictSens}).length})</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':service')?'-90':'0'}deg)">▾</span>
       </div>
       <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':service')?'none':'block'};padding:0 .1rem .4rem;">${buildServiceSection(p,{roleWord:'ROLE',excludeSensitive:restrictSens})}</div>` : ''}
+      ${(typeof canAccessIntel==='function' && canAccessIntel()) ? `<div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="surveillance">
+        <span>▸ ${surveillanceSectionMeta(p,'ef').label}${surveillanceSectionMeta(p,'ef').count}</span><span class="pf-sec-arrow" style="transform:rotate(${efCollapsed.has(p.id+':surveillance')?'-90':'0'}deg)">▾</span>
+      </div>
+      <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':surveillance')?'none':'block'};padding:0 .1rem .4rem;">${buildSurveillanceSection(p,'ef')}</div>` : ''}
       <div class="pf-sec-hdr" data-action="toggle-ef-section" data-id="${e(p.id)}" data-section="strikes">
         <span style="display:flex;align-items:center;justify-content:space-between;flex:1;gap:.5rem;">
           <span>▸ STRIKES (${restrictSens ? '—' : (Array.isArray(p.strikes)?p.strikes:[]).length})</span>
@@ -9430,7 +10313,7 @@ function buildEthicsCard(p) {
       <div class="pf-sec-body" style="display:${efCollapsed.has(p.id+':strikes')?'none':'block'};padding:0 .1rem .4rem;">
         ${(function(){
           if (restrictSens) return '<div style="font-size:.6rem;color:var(--text-faint);font-style:italic;padding:5px 2px;letter-spacing:.05em;">[ RESTRICTED — INSUFFICIENT CLEARANCE ]</div>';
-          var strikes = Array.isArray(p.strikes) ? p.strikes : [];
+          var strikes = objArr(p.strikes);
           if (!strikes.length) return '<div style="font-size:.6rem;color:var(--text-faint);padding:3px 0;">[ NO STRIKES ON RECORD ]</div>';
           return strikes.map(function(s) {
             var ds  = strikeDisplayStatus(s);
@@ -9894,6 +10777,7 @@ if (_termInput) _termInput.addEventListener('keydown', function(ev) {
 function canIssueLeave() { return currentUser && parseInt(currentUser.clearance) >= 4; }
 
 function isLeaveActive(lv) {
+  if (!lv) return false;
   if (lv.ended) return false;
   if (lv.endDate && new Date(lv.endDate + 'T23:59:59') < new Date()) return false;
   return true;
@@ -9999,7 +10883,7 @@ async function deleteLeave(pfId, leaveId, division) {
 
 function buildLeaveSection(p, division) {
   var canEdit = canIssueLeave();
-  var leaves  = Array.isArray(p.leaves) ? p.leaves.slice().sort(function(a,b){ return b.issuedAt - a.issuedAt; }) : [];
+  var leaves  = objArr(p.leaves).sort(function(a,b){ return (b.issuedAt||0) - (a.issuedAt||0); });
 
   var leavesHtml = leaves.length ? leaves.map(function(lv) {
     var active = isLeaveActive(lv);

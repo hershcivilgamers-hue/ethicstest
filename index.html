@@ -126,6 +126,9 @@
         <div class="nav-tab" onclick="switchTab(this,'trainings')">TRAININGS
           <span id="trainingBadge" style="display:none;" class="badge b-amber">0</span>
         </div>
+        <div class="nav-tab" onclick="switchTab(this,'operations')">OPERATIONS
+          <span id="operationBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
       </div>
     </div>
 
@@ -143,6 +146,9 @@
         </div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-tribunals')">TRIBUNALS
           <span id="ethicsTribBadge" style="display:none;" class="badge b-amber">0</span>
+        </div>
+        <div class="nav-tab" id="navIntelTab" onclick="switchTab(this,'ethics-intel')" style="display:none;">▣ INTEL
+          <span id="ethicsIntelBadge" style="display:none;" class="badge b-red">0</span>
         </div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-roster')">ROSTER</div>
         <div class="nav-tab" onclick="switchTab(this,'ethics-recruit')">RECRUIT
@@ -416,6 +422,49 @@
       </div>
     </div>
 
+    <!-- ETHICS INTEL NETWORK (EC only) -->
+    <div class="tab-content" id="tab-ethics-intel">
+      <div class="sec">▣ CONFIDENTIAL INTELLIGENCE — EYES ONLY <span id="intelCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
+      <div id="intelAccessNotice" style="display:none;" class="trn-empty"></div>
+      <div id="intelBody" style="display:none;">
+        <div class="intel-seg">
+          <button class="intel-seg-btn on" id="segSources" data-action="intel-view" data-view="sources">CONFIDENTIAL SOURCES</button>
+          <button class="intel-seg-btn" id="segReports" data-action="intel-view" data-view="reports">FIELD REPORTS</button>
+          <button class="intel-seg-btn" id="segWatchlist" data-action="intel-view" data-view="watchlist">WATCHLIST</button>
+        </div>
+
+        <!-- SOURCES VIEW -->
+        <div id="intelSourcesView">
+          <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+            <input class="pf-search" id="srcSearch" placeholder="SEARCH CODENAME, DEPARTMENT, HANDLER..." oninput="renderInformants()" style="flex:1;min-width:170px;"/>
+            <select class="pf-filter" id="srcFilterStatus" onchange="renderInformants()" title="Filter by status">
+              <option value="">ALL</option><option value="Active">ACTIVE</option><option value="Dormant">DORMANT</option><option value="Burned">BURNED</option><option value="Terminated">TERMINATED</option>
+            </select>
+            <button class="pf-btn" onclick="openInformantModal(null)">[ + RECRUIT SOURCE ]</button>
+          </div>
+          <div id="informantList"></div>
+        </div>
+
+        <!-- REPORTS VIEW -->
+        <div id="intelReportsView" style="display:none;">
+          <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+            <input class="pf-search" id="repSearch" placeholder="SEARCH REF, SUBJECT, SOURCE, CONTENT..." oninput="renderIntelReports()" style="flex:1;min-width:170px;"/>
+            <select class="pf-filter" id="repFilterStatus" onchange="renderIntelReports()" title="Filter by status">
+              <option value="">ALL</option><option value="New">NEW</option><option value="Reviewed">REVIEWED</option><option value="Actioned">ACTIONED</option><option value="Archived">ARCHIVED</option>
+            </select>
+            <button class="pf-btn" onclick="openIntelReportModal(null)">[ + FILE REPORT ]</button>
+          </div>
+          <div id="intelReportList"></div>
+        </div>
+
+        <!-- WATCHLIST VIEW -->
+        <div id="intelWatchlistView" style="display:none;">
+          <div style="font-size:.58rem;color:var(--text-faint);letter-spacing:.05em;margin-bottom:.6rem;">Personnel currently under Ethics Committee observation. Subjects are not notified.</div>
+          <div id="watchlistList"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ETHICS TRIBUNALS -->
     <div class="tab-content" id="tab-ethics-tribunals">
       <div class="sec">▸ ETHICS COMMITTEE TRIBUNALS <span id="tribCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
@@ -507,6 +556,21 @@
         </div>
         <div id="recArchivedList" style="display:none;"></div>
       </div>
+    </div>
+
+    <!-- OMEGA-1 OPERATIONS LOG -->
+    <div class="tab-content" id="tab-operations">
+      <div class="sec">▸ OMEGA-1 OPERATIONS &amp; DEPLOYMENT LOG <span id="opCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
+      <div id="opAccessNotice" style="display:none;" class="trn-empty"></div>
+      <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+        <input class="pf-search" id="opSearch" placeholder="SEARCH CODENAME, OBJECTIVE, LEAD, OPERATOR..." oninput="renderOperations()" style="flex:1;min-width:180px;"/>
+        <select class="pf-filter" id="opFilterStatus" onchange="renderOperations()" title="Filter by status">
+          <option value="">ALL STATUSES</option>
+          <option value="Planned">PLANNED</option><option value="Active">ACTIVE</option><option value="On Hold">ON HOLD</option><option value="Completed">COMPLETED</option><option value="Aborted">ABORTED</option>
+        </select>
+        <button class="pf-btn" id="opNewBtn" onclick="openOperationModal(null)" style="display:none;">[ + LOG OPERATION ]</button>
+      </div>
+      <div id="operationList"></div>
     </div>
 
     <!-- POI / TARGET -->
@@ -1709,6 +1773,44 @@
   </div>
 </div>
 
+<!-- OPERATION MODAL -->
+<div class="modal-overlay-2" id="operationModal" style="z-index:1150;">
+  <div class="modal-box" style="max-width:600px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title" id="operationModalTitle">LOG OPERATION</div>
+    <input type="hidden" id="operationEditId"/>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:2;min-width:180px;"><label class="modal-label">CODENAME</label><input class="modal-input" id="opCodename" placeholder="e.g. IRONCLAD"/></div>
+      <div class="modal-field" style="flex:1;min-width:120px;"><label class="modal-label">PRIORITY</label><select class="modal-input" id="opPriority"></select></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">OBJECTIVE</label><textarea class="modal-input" id="opObjective" rows="2" style="font-family:inherit;resize:vertical;min-height:46px;" placeholder="Mission objective..."></textarea></div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:140px;"><label class="modal-label">TYPE</label><select class="modal-input" id="opType"></select></div>
+      <div class="modal-field" style="flex:1;min-width:140px;"><label class="modal-label">STATUS</label><select class="modal-input" id="opStatus"></select></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">LOCATION / SITE</label><input class="modal-input" id="opLocation" placeholder="e.g. Site-19, Sector 7"/></div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:130px;"><label class="modal-label">START DATE</label><input class="modal-input" id="opStart" type="date"/></div>
+      <div class="modal-field" style="flex:1;min-width:130px;"><label class="modal-label">END DATE</label><input class="modal-input" id="opEnd" type="date"/></div>
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:150px;"><label class="modal-label">LEAD OPERATIVE</label><select class="modal-input" id="opLead"></select></div>
+      <div class="modal-field" style="flex:1;min-width:150px;"><label class="modal-label">SQUADRON <span style="color:var(--text-faint);">(optional)</span></label><select class="modal-input" id="opSquad"></select></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">ASSIGNED OPERATORS</label>
+      <select class="modal-input" id="opOperatorPicker" onchange="addOpOperator(this.value)"><option value="">+ ADD OPERATOR...</option></select>
+      <div id="opOperatorList" style="margin-top:.4rem;"></div>
+    </div>
+    <div style="border-top:1px solid var(--border2);margin:.5rem 0 .4rem;padding-top:.5rem;font-size:.55rem;letter-spacing:.1em;color:var(--text-dim);">AFTER-ACTION <span style="color:var(--text-faint);">(on completion)</span></div>
+    <div class="modal-field"><label class="modal-label">OUTCOME</label><select class="modal-input" id="opOutcome"></select></div>
+    <div class="modal-field"><label class="modal-label">AFTER-ACTION REPORT</label><textarea class="modal-input" id="opAfterAction" rows="3" style="font-family:inherit;resize:vertical;" placeholder="Summary of the deployment, results, casualties, lessons..."></textarea></div>
+    <div class="modal-err" id="opErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="modal-cancel" data-action="close-operation-modal">[ CANCEL ]</button>
+      <button class="modal-btn" id="opSaveBtn" onclick="saveOperation()">[ SAVE OPERATION ]</button>
+    </div>
+  </div>
+</div>
+
 <!-- SERVICE RECORD MODAL -->
 <div class="modal-overlay-2" id="serviceRecordModal" style="z-index:1150;">
   <div class="modal-box" style="max-width:620px;">
@@ -1718,6 +1820,79 @@
     <div style="display:flex;justify-content:space-between;margin-top:.6rem;gap:.5rem;flex-wrap:wrap;">
       <button class="modal-btn" data-action="export-jacket" title="Download a print-ready Foundation-styled personnel file">[ ⎙ EXPORT FILE ]</button>
       <button class="modal-cancel" data-action="close-service-record">[ CLOSE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- INFORMANT (CONFIDENTIAL SOURCE) MODAL -->
+<div class="modal-overlay-2" id="informantModal" style="z-index:1150;">
+  <div class="modal-box" style="max-width:560px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title" id="informantModalTitle">RECRUIT CONFIDENTIAL SOURCE</div>
+    <input type="hidden" id="informantEditId"/>
+    <div style="font-size:.55rem;color:var(--text-faint);letter-spacing:.05em;margin:-.3rem 0 .6rem;">Eyes only. Source identity is protected — refer to assets by codename.</div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:150px;"><label class="modal-label">CODENAME</label><input class="modal-input" id="srcCodename" placeholder="e.g. GREYFINCH"/></div>
+      <div class="modal-field" style="flex:1;min-width:120px;"><label class="modal-label">RELIABILITY</label><select class="modal-input" id="srcReliability"></select></div>
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:150px;"><label class="modal-label">EMBEDDED DEPARTMENT</label><input class="modal-input" id="srcDept" placeholder="e.g. Research Division"/></div>
+      <div class="modal-field" style="flex:1;min-width:120px;"><label class="modal-label">STATUS</label><select class="modal-input" id="srcStatus"></select></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">COVER ROLE <span style="color:var(--text-faint);">(optional)</span></label><input class="modal-input" id="srcCover" placeholder="e.g. Junior Researcher"/></div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:150px;"><label class="modal-label">HANDLER</label><select class="modal-input" id="srcHandler"></select></div>
+      <div class="modal-field" style="flex:1;min-width:120px;"><label class="modal-label">LAST CONTACT</label><input class="modal-input" id="srcLastContact" type="date"/></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">TRUE IDENTITY <span style="color:var(--text-faint);">(optional · links to a real file · eyes only)</span></label>
+      <select class="modal-input" id="srcRealId"><option value="">— unlinked —</option></select>
+    </div>
+    <div class="modal-field"><label class="modal-label">HANDLER NOTES</label><textarea class="modal-input" id="srcNotes" rows="2" style="font-family:inherit;resize:vertical;" placeholder="Tasking, access, vulnerabilities..."></textarea></div>
+    <div class="modal-err" id="srcErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="modal-cancel" data-action="close-informant-modal">[ CANCEL ]</button>
+      <button class="modal-btn" id="srcSaveBtn" onclick="saveInformant()">[ SAVE SOURCE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIELD INTELLIGENCE REPORT MODAL -->
+<div class="modal-overlay-2" id="intelReportModal" style="z-index:1150;">
+  <div class="modal-box" style="max-width:580px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title" id="intelReportModalTitle">FILE FIELD REPORT</div>
+    <input type="hidden" id="intelReportEditId"/>
+    <div class="modal-field"><label class="modal-label">REPORT REFERENCE</label><input class="modal-input" id="repRef" readonly style="opacity:.75;"/></div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:150px;"><label class="modal-label">REPORTING SOURCE</label><select class="modal-input" id="repSource" onchange="syncReportReliability()"></select></div>
+      <div class="modal-field" style="flex:1;min-width:140px;"><label class="modal-label">CATEGORY</label><select class="modal-input" id="repCategory"></select></div>
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <div class="modal-field" style="flex:1;min-width:130px;"><label class="modal-label">SOURCE RELIABILITY</label><select class="modal-input" id="repReliability"></select></div>
+      <div class="modal-field" style="flex:1;min-width:130px;"><label class="modal-label">INFO CREDIBILITY</label><select class="modal-input" id="repCredibility"></select></div>
+      <div class="modal-field" style="flex:1;min-width:120px;"><label class="modal-label">STATUS</label><select class="modal-input" id="repStatus"></select></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">SUBJECT OF REPORT <span style="color:var(--text-faint);">(optional · links a file)</span></label>
+      <select class="modal-input" id="repSubject"><option value="">— no linked subject —</option></select>
+    </div>
+    <div class="modal-field"><label class="modal-label">INTELLIGENCE</label><textarea class="modal-input" id="repContent" rows="4" style="font-family:inherit;resize:vertical;min-height:80px;" placeholder="What the source reported..."></textarea></div>
+    <div class="modal-err" id="repErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="modal-cancel" data-action="close-intel-report-modal">[ CANCEL ]</button>
+      <button class="modal-btn" id="repSaveBtn" onclick="saveIntelReport()">[ FILE REPORT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- SURVEILLANCE MODAL (EC only) -->
+<div class="modal-overlay-2" id="surveillanceModal" style="z-index:1160;">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title" id="svModalTitle">PLACE UNDER SURVEILLANCE</div>
+    <div style="font-size:.55rem;color:var(--text-faint);letter-spacing:.05em;margin:-.3rem 0 .6rem;">Eyes only. The subject is not notified.</div>
+    <div class="modal-field"><label class="modal-label">OBSERVATION LEVEL</label><select class="modal-input" id="svLevel"></select></div>
+    <div class="modal-field"><label class="modal-label">GROUNDS FOR OBSERVATION</label><textarea class="modal-input" id="svReason" rows="3" style="font-family:inherit;resize:vertical;" placeholder="Why is this subject being watched..."></textarea></div>
+    <div class="modal-err" id="svErr" style="display:none;color:#dd6666;font-size:.6rem;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button class="modal-cancel" data-action="close-surveillance-modal">[ CANCEL ]</button>
+      <button class="modal-btn" onclick="saveSurveillance()">[ CONFIRM ]</button>
     </div>
   </div>
 </div>
