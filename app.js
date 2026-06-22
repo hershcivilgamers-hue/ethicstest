@@ -8268,6 +8268,7 @@ document.addEventListener('click', function(ev) {
     case 'del-leave':        ev.stopPropagation(); deleteLeave(el.dataset.id, el.dataset.leaveid, el.dataset.division); break;
     case 'close-leave-modal': closeLeaveModal(); break;
     case 'save-leave':        saveLeave(); break;
+	case 'export-interview-invitation': exportInterviewInvitation(el.dataset.id); break;
   }
 });
 
@@ -9679,6 +9680,7 @@ function buildEthicsInterviewCard(r, isCL5) {
   var actionBtns = isCL5 ? `<div class="rec-btns">
     <button class="rec-btn approve" data-action="ethics-rec-pass" data-id="${e(r.id)}">✓ PASS INTERVIEW & CREATE FILE</button>
     <button class="rec-btn deny"    data-action="open-ethics-deny-modal" data-id="${e(r.id)}">✗ FAIL INTERVIEW</button>
+    <button class="rec-btn" data-action="export-interview-invitation" data-id="${e(r.id)}" style="font-size:.55rem;padding:1px 7px;">⎙ INVITATION DOC</button>
   </div>` : '';
 
   return `<div class="rec-card">
@@ -9793,7 +9795,90 @@ async function ethicsRecAdvance(id) {
   r.stage='interview'; r.tag='Taken to interview';
   r.transitions=r.transitions||[];
   r.transitions.push({from:'application',to:'interview',by:currentUser.id,at:Date.now()});
-  try { await ethicsRecruitSet(id, r); renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
+  try {
+    await ethicsRecruitSet(id, r);
+    auditRecord('ADVANCED TO INTERVIEW', r.name + ' — invitation document generated');
+    renderEthicsRecruit();
+    // Auto-download the invitation document
+    exportInterviewInvitation(id);
+  } catch(e){ alert('ERROR: '+e.message); }
+}
+
+// ── Interview invitation document (generated when advanced to interview) ──
+function buildInterviewInvitationDocument(r) {
+  var ref = 'EC-INT-' + (r.ref || r.id).slice(-6).toUpperCase();
+  var dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  var ecMemberName = ecFileName(currentUser);
+  var classLine = 'LEVEL 4-C // ETHICS COMMITTEE PERSONNEL CORRESPONDENCE // DESIGNATED RECIPIENT ONLY';
+  var clLabel = 'LEVEL 4-C · CONFIDENTIAL';
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+    + '<title>' + escHtml(ref) + ' — Interview Invitation</title>'
+    + '<style>'
+    + '@page{size:A4;margin:18mm 16mm;}*{box-sizing:border-box;}'
+    + 'body{font-family:"Times New Roman",Georgia,serif;color:#111;background:#525659;margin:0;padding:24px;line-height:1.55;}'
+    + '.page{background:#fff;max-width:780px;margin:0 auto 24px;padding:46px 54px 40px;box-shadow:0 2px 18px rgba(0,0,0,.4);position:relative;}'
+    + '.runhead{display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.04em;color:#444;border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:2px;text-transform:uppercase;}'
+    + '.classbar{background:#1a1a1a;color:#fff;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.14em;text-align:center;padding:5px 4px;margin:0 -54px 4px;font-weight:bold;}'
+    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.42em;color:#222;margin:10px 0 18px;font-weight:bold;}'
+    + '.lh{text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}'
+    + '.lh .org{font-size:21px;font-weight:bold;letter-spacing:.06em;}'
+    + '.lh .sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#333;margin-top:3px;}'
+    + '.lh .div{font-size:10px;letter-spacing:.1em;color:#555;margin-top:6px;font-style:italic;}'
+    + '.doctype{text-align:center;font-size:13px;font-weight:bold;letter-spacing:.16em;margin:14px 0 16px;text-transform:uppercase;}'
+    + 'table.meta{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px;}'
+    + 'table.meta td{border:1px solid #999;padding:4px 8px;vertical-align:top;}'
+    + 'table.meta td.k{background:#ededed;font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#333;width:34%;font-weight:bold;}'
+    + 'table.meta td.v{font-weight:bold;}'
+    + '.body p{font-size:12px;margin:0 0 12px;text-align:justify;}'
+    + '.sig{margin-top:34px;border-top:1px solid #000;padding-top:12px;font-size:11.5px;}'
+    + '.sig .by{font-style:italic;color:#333;}'
+    + '.sig .line{margin-top:18px;border-top:1px solid #000;width:260px;padding-top:3px;font-size:10.5px;letter-spacing:.04em;}'
+    + '.stampbox{position:absolute;top:120px;right:40px;border:3px double #0a5a23;color:#0a5a23;font-family:"Courier New",monospace;font-weight:bold;font-size:13px;letter-spacing:.1em;padding:6px 14px;transform:rotate(-9deg);opacity:.82;}'
+    + '.footer{margin-top:26px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
+    + '.redact{background:#000;color:#000;padding:0 .5em;}'
+    + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;padding:0;}.classbar{margin:0 0 4px;}}'
+    + '</style></head><body><div class="page">'
+    + '<div class="runhead"><span>SCP FOUNDATION · ETHICS COMMITTEE</span><span>DOC ' + escHtml(ref) + ' · LEVEL 4-C</span></div>'
+    + '<div class="classbar">' + classLine + '</div>'
+    + '<div class="scp-tag">SECURE · CONTAIN · PROTECT</div>'
+    + '<div class="lh"><div class="org">SCP FOUNDATION</div><div class="sub">Ethics Committee</div><div class="div">CAIRO.AIC Oversight Terminal · O5 Liaison Division</div></div>'
+    + '<div class="doctype">Ethics Committee Assistant — Interview Invitation</div>'
+    + '<div class="stampbox">ACCEPTED</div>'
+    + '<table class="meta">'
+    +   '<tr><td class="k">Correspondence Ref</td><td class="v">' + escHtml(ref) + '</td></tr>'
+    +   '<tr><td class="k">Classification</td><td class="v">' + clLabel + '</td></tr>'
+    +   '<tr><td class="k">Date of Issue</td><td class="v">' + escHtml(dateStr) + '</td></tr>'
+    +   '<tr><td class="k">From</td><td class="v">Ethics Committee · ' + escHtml(ecMemberName) + '</td></tr>'
+    +   '<tr><td class="k">Recipient</td><td class="v">' + escHtml(r.name || '—') + '</td></tr>'
+    +   '<tr><td class="k">Current Department</td><td class="v">' + escHtml(r.department || '—') + '</td></tr>'
+    +   '<tr><td class="k">Current Rank</td><td class="v">' + escHtml(r.rank || '—') + '</td></tr>'
+    + '</table>'
+    + '<div class="body">'
+    + '<p>Dear ' + escHtml(r.name || 'Candidate') + ',</p>'
+    + '<p>First and foremost, the Ethics Committee would like to thank you for the submission of your reassignment request. We acknowledge that requests of this nature require courage, perseverance, and outstanding commitment to the Foundation.</p>'
+    + '<p>Your application has been thoroughly reviewed by the relevant hiring staff of the Ethics Committee, and the following conclusion has been reached.</p>'
+    + '<p style="text-align:center;font-weight:bold;font-size:13px;letter-spacing:.1em;border:1px solid #0a5a23;background:#e8f3ec;padding:8px;margin:14px 0;">This request has been accepted.</p>'
+    + '<p>Congratulations on getting your foot in the door. After careful review of your application, and summation of your experience in prior roles, the Committee has determined that you show great prospects for the role of Ethics Committee Assistant.</p>'
+    + '<p>You are hereby invited to attend an interview with the Ethics Committee. Await further contact from a representative of the Ethics Committee to schedule your interview. Do not come to us — we will come to you.</p>'
+    + '<p>Prepare to discuss your prior service, your understanding of the Foundation\'s ethical framework, and the circumstances that led you to seek this reassignment. Discretion is paramount; do not discuss this invitation with any party outside the Ethics Committee.</p>'
+    + '</div>'
+    + '<div class="sig"><span class="by">By order of:</span><br>Ethics Committee · ' + escHtml(ecMemberName)
+    +   '<div class="line">Authorising Signatory — EC·' + escHtml(ecMemberName) + ', Ethics Committee Member</div>'
+    + '</div>'
+    + '<div class="footer">CONFIDENTIAL // LEVEL 4-C // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE // CAIRO.AIC</div>'
+    + '</div></body></html>';
+}
+
+function exportInterviewInvitation(id) {
+  var r = allEthicsRecruit.find(function(x){ return x.id === id; });
+  if (!r) { alert('Application not found.'); return; }
+  if (r.stage !== 'interview') { alert('This document is only available for applications in the interview stage.'); return; }
+  var html = buildInterviewInvitationDocument(r);
+  var safeName = ('EC-INT-' + (r.name || 'candidate')).replace(/[^A-Za-z0-9_-]/g, '_');
+  downloadFile(safeName + '.html', html, 'text/html');
+  if (typeof auditRecord === 'function') auditRecord('EXPORTED INTERVIEW INVITATION', r.name + ' (' + (r.ref||r.id) + ')');
 }
 
 // ── Deny modal ──
