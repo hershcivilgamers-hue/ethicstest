@@ -9809,8 +9809,8 @@ function buildInterviewInvitationDocument(r) {
   var ref = 'EC-INT-' + (r.ref || r.id).slice(-6).toUpperCase();
   var dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
   var ecMemberName = ecFileName(currentUser);
-  var classLine = 'LEVEL 4-C // ETHICS COMMITTEE PERSONNEL CORRESPONDENCE // DESIGNATED RECIPIENT ONLY';
-  var clLabel = 'LEVEL 4-C · CONFIDENTIAL';
+  var classLine = 'LEVEL 4-C // ETHICS COMMITTEE EYES ONLY // DESIGNATED RECIPIENT — NO REDISTRIBUTION';
+  var clLabel = 'LEVEL 4-C · ETHICS COMMITTEE CONFIDENTIAL';
 
   return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
     + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
@@ -9826,15 +9826,19 @@ function buildInterviewInvitationDocument(r) {
     + '.lh .org{font-size:21px;font-weight:bold;letter-spacing:.06em;}'
     + '.lh .sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#333;margin-top:3px;}'
     + '.lh .div{font-size:10px;letter-spacing:.1em;color:#555;margin-top:6px;font-style:italic;}'
+    + '.lh .seal{font-size:9px;letter-spacing:.3em;color:#7a0000;margin-top:8px;font-family:"Courier New",monospace;font-weight:bold;}'
     + '.doctype{text-align:center;font-size:13px;font-weight:bold;letter-spacing:.16em;margin:14px 0 16px;text-transform:uppercase;}'
     + 'table.meta{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px;}'
     + 'table.meta td{border:1px solid #999;padding:4px 8px;vertical-align:top;}'
     + 'table.meta td.k{background:#ededed;font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#333;width:34%;font-weight:bold;}'
     + 'table.meta td.v{font-weight:bold;}'
     + '.body p{font-size:12px;margin:0 0 12px;text-align:justify;}'
+    + '.body .callout{text-align:center;font-weight:bold;font-size:12px;letter-spacing:.08em;border:2px solid #0a5a23;background:#e8f3ec;padding:10px;margin:16px 0;}'
+    + '.body .warning{font-size:10px;color:#7a0000;border-left:3px solid #7a0000;padding:6px 10px;margin:14px 0;background:#fdf0f0;font-style:italic;}'
     + '.sig{margin-top:34px;border-top:1px solid #000;padding-top:12px;font-size:11.5px;}'
     + '.sig .by{font-style:italic;color:#333;}'
     + '.sig .line{margin-top:18px;border-top:1px solid #000;width:260px;padding-top:3px;font-size:10.5px;letter-spacing:.04em;}'
+    + '.sig .committee{margin-top:14px;font-size:10px;letter-spacing:.2em;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;text-transform:uppercase;}'
     + '.stampbox{position:absolute;top:120px;right:40px;border:3px double #0a5a23;color:#0a5a23;font-family:"Courier New",monospace;font-weight:bold;font-size:13px;letter-spacing:.1em;padding:6px 14px;transform:rotate(-9deg);opacity:.82;}'
     + '.footer{margin-top:26px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
     + '.redact{background:#000;color:#000;padding:0 .5em;}'
@@ -9843,31 +9847,40 @@ function buildInterviewInvitationDocument(r) {
     + '<div class="runhead"><span>SCP FOUNDATION · ETHICS COMMITTEE</span><span>DOC ' + escHtml(ref) + ' · LEVEL 4-C</span></div>'
     + '<div class="classbar">' + classLine + '</div>'
     + '<div class="scp-tag">SECURE · CONTAIN · PROTECT</div>'
-    + '<div class="lh"><div class="org">SCP FOUNDATION</div><div class="sub">Ethics Committee</div><div class="div">CAIRO.AIC Oversight Terminal · O5 Liaison Division</div></div>'
-    + '<div class="doctype">Ethics Committee Assistant — Interview Invitation</div>'
+    + '<div class="lh">'
+    +   '<div class="org">SCP FOUNDATION</div>'
+    +   '<div class="sub">Ethics Committee</div>'
+    +   '<div class="div">Office of Internal Oversight · CAIRO.AIC Liaison Division</div>'
+    +   '<div class="seal">◆ BY AUTHORITY OF THE COMMITTEE ◆</div>'
+    + '</div>'
+    + '<div class="doctype">Notice of Interview — Ethics Committee Assistant</div>'
     + '<div class="stampbox">ACCEPTED</div>'
     + '<table class="meta">'
     +   '<tr><td class="k">Correspondence Ref</td><td class="v">' + escHtml(ref) + '</td></tr>'
     +   '<tr><td class="k">Classification</td><td class="v">' + clLabel + '</td></tr>'
     +   '<tr><td class="k">Date of Issue</td><td class="v">' + escHtml(dateStr) + '</td></tr>'
-    +   '<tr><td class="k">From</td><td class="v">Ethics Committee · ' + escHtml(ecMemberName) + '</td></tr>'
+    +   '<tr><td class="k">Issuing Officer</td><td class="v">Ethics Committee · ' + escHtml(ecMemberName) + '</td></tr>'
     +   '<tr><td class="k">Recipient</td><td class="v">' + escHtml(r.name || '—') + '</td></tr>'
     +   '<tr><td class="k">Current Department</td><td class="v">' + escHtml(r.department || '—') + '</td></tr>'
     +   '<tr><td class="k">Current Rank</td><td class="v">' + escHtml(r.rank || '—') + '</td></tr>'
+    +   '<tr><td class="k">Clearance Required</td><td class="v"><span class="redact">LEVEL 4-A</span> · pending reassignment</td></tr>'
     + '</table>'
     + '<div class="body">'
     + '<p>Dear ' + escHtml(r.name || 'Candidate') + ',</p>'
-    + '<p>First and foremost, the Ethics Committee would like to thank you for the submission of your reassignment request. We acknowledge that requests of this nature require courage, perseverance, and outstanding commitment to the Foundation.</p>'
-    + '<p>Your application has been thoroughly reviewed by the relevant hiring staff of the Ethics Committee, and the following conclusion has been reached.</p>'
-    + '<p style="text-align:center;font-weight:bold;font-size:13px;letter-spacing:.1em;border:1px solid #0a5a23;background:#e8f3ec;padding:8px;margin:14px 0;">This request has been accepted.</p>'
-    + '<p>Congratulations on getting your foot in the door. After careful review of your application, and summation of your experience in prior roles, the Committee has determined that you show great prospects for the role of Ethics Committee Assistant.</p>'
-    + '<p>You are hereby invited to attend an interview with the Ethics Committee. Await further contact from a representative of the Ethics Committee to schedule your interview. Do not come to us — we will come to you.</p>'
-    + '<p>Prepare to discuss your prior service, your understanding of the Foundation\'s ethical framework, and the circumstances that led you to seek this reassignment. Discretion is paramount; do not discuss this invitation with any party outside the Ethics Committee.</p>'
+    + '<p>First and foremost, the Ethics Committee wishes to acknowledge your request for reassignment to this body. Such a request is not made lightly. It requires a willingness to place oneself under a different kind of scrutiny — one that does not concern containment breaches or operational failure, but the far more uncomfortable question of whether the Foundation is justified in what it does.</p>'
+    + '<p>Your application has been reviewed by the Committee sitting in closed session. We have considered your record of service, the circumstances of your request, and the character of your prior conduct. The following determination has been reached.</p>'
+    + '<div class="callout">YOUR APPLICATION HAS BEEN ACCEPTED FOR INTERVIEW.</div>'
+    + '<p>The Committee finds that you demonstrate the temperament and discretion requisite for consideration as an Ethics Committee Assistant. This is not a commendation — it is an invitation to be assessed further. The interview will determine whether that initial judgement is borne out.</p>'
+    + '<p>You will be contacted in due course by a representative of the Committee to arrange the time and manner of your interview. <strong>Do not seek us out.</strong> The Committee operates on its own schedule and its own terms. We are aware of your location and your movements; we will make contact when it is appropriate to do so.</p>'
+    + '<p>Prepare to speak to the following: your understanding of the Foundation\'s ethical framework and the Committee\'s role within it; the circumstances that led you to seek this reassignment; and any matter you believe the Committee ought to know. You are not expected to rehearse answers. You are expected to be honest.</p>'
+    + '<div class="warning">This correspondence is classified LEVEL 4-C and is intended for the named recipient alone. It may not be shared, copied, or discussed with any party — Foundation staff or otherwise — without the express authorisation of the Ethics Committee. Disclosure of the contents of this document, or of the existence of your application, constitutes a breach of Committee confidentiality and will be treated accordingly.</div>'
     + '</div>'
-    + '<div class="sig"><span class="by">By order of:</span><br>Ethics Committee · ' + escHtml(ecMemberName)
+    + '<div class="sig"><span class="by">By order of the Ethics Committee:</span><br>'
+    +   'Ethics Committee · ' + escHtml(ecMemberName)
     +   '<div class="line">Authorising Signatory — EC·' + escHtml(ecMemberName) + ', Ethics Committee Member</div>'
+    +   '<div class="committee">◆ THE ETHICS COMMITTEE DOES NOT ANSWER TO THE DEPARTMENTS IT OVERSEES ◆</div>'
     + '</div>'
-    + '<div class="footer">CONFIDENTIAL // LEVEL 4-C // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE // CAIRO.AIC</div>'
+    + '<div class="footer">CONFIDENTIAL // LEVEL 4-C // ETHICS COMMITTEE EYES ONLY // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE // CAIRO.AIC</div>'
     + '</div></body></html>';
 }
 
