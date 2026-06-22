@@ -678,6 +678,7 @@ async function onLogin() { // Make function async
   loadEthicsCases();
   loadTribunals();
   refreshIntelNav();
+  refreshReadinessNav();
   loadIntel('ec');
   loadCompartments();
   loadPromoReqs();
@@ -2704,6 +2705,12 @@ function renderOrders() {
     return;
   }
 
+  filtered = applySort(filtered, g('orderSort'), {
+    date:function(o){return o.created||0;},
+    title:function(o){return (o.title||'').toLowerCase();},
+    status:function(o){return o.status||'';},
+    priority:function(o){var m={CRITICAL:0,FLASH:0,PRIORITY:1,HIGH:1,ELEVATED:2,ROUTINE:3,LOW:4};return m[(o.priority||'').toUpperCase()]==null?5:m[(o.priority||'').toUpperCase()];}
+  });
   list.innerHTML = filtered.map(function(o) {
     var isOwner  = currentUser && currentUser.id === o.author;
     var canAct   = !!currentUser;  // any logged-in user can comment
@@ -2811,6 +2818,7 @@ function renderOrders() {
       '<div class="dir-banner bottom ' + directiveBannerClass(o.priority) + '">' + directiveClassification(o) + '</div>' +
     '</div>';
   }).join('');
+  applyPagination(document.getElementById('ordersList'), 'orders', activeFilter + '|' + g('orderSort'));
 }
 
 // Toggle comment section open/closed; load from Firebase on first open
@@ -2999,6 +3007,56 @@ document.addEventListener('change', function(e){
   if (t && t.classList && t.classList.contains('pf-filter') && t.id) _filtSet('sel:' + t.id, t.value);
 });
 
+// ── Batch B: search debounce, load-more pagination, list sorting ──
+function g(id){ var el = document.getElementById(id); return el ? el.value : ''; }
+// Debounced search: defers the render and shows a subtle 'searching' cue on the input.
+var _dbTimers = {};
+function dbq(fn, el, ms) {
+  var key = (fn && fn.name) || '_';
+  if (el && el.classList) el.classList.add('searching');
+  clearTimeout(_dbTimers[key]);
+  _dbTimers[key] = setTimeout(function(){ if (el && el.classList) el.classList.remove('searching'); try { fn(); } catch(e){} }, ms || 200);
+}
+// 'Load more' pagination: shows the first N rendered cards, reveals more on demand.
+var PAGE_SIZE = 25, _pageState = {}, _pageSig = {};
+function applyPagination(listEl, key, sig) {
+  if (!listEl) return;
+  if (_pageSig[key] !== sig) { _pageSig[key] = sig; _pageState[key] = PAGE_SIZE; }
+  var n = _pageState[key] || PAGE_SIZE;
+  var old = listEl.querySelector('.page-more-wrap'); if (old) old.parentNode.removeChild(old);
+  var items = Array.prototype.filter.call(listEl.children, function(c){ return !c.classList.contains('page-more-wrap'); });
+  items.forEach(function(c, i){ c.style.display = i < n ? '' : 'none'; });
+  if (items.length > n) {
+    var wrap = document.createElement('div');
+    wrap.className = 'page-more-wrap';
+    wrap.innerHTML = '<button class="pf-btn" data-action="page-more" data-key="' + key + '">[ ▼ LOAD MORE · ' + (items.length - n) + ' MORE ]</button>';
+    listEl.appendChild(wrap);
+  }
+}
+var PAGE_RENDERERS = {
+  pf:     typeof renderPersonnelFiles === 'function' ? renderPersonnelFiles : null,
+  ef:     typeof renderEthicsFiles    === 'function' ? renderEthicsFiles    : null,
+  orders: typeof renderOrders         === 'function' ? renderOrders         : null,
+  poi:    typeof renderPoiList        === 'function' ? renderPoiList        : null,
+  cases:  typeof renderEthicsCases    === 'function' ? renderEthicsCases    : null
+};
+function pageMore(key) {
+  _pageState[key] = (_pageState[key] || PAGE_SIZE) + PAGE_SIZE;
+  var r = PAGE_RENDERERS[key]; if (typeof r === 'function') r();
+}
+// Generic comparator-driven sort. sortVal like 'name-asc' / 'date-desc'; fields maps key→accessor.
+function applySort(rows, sortVal, fields) {
+  if (!sortVal || !fields) return rows;
+  var dir = /-desc$/.test(sortVal) ? -1 : 1;
+  var key = sortVal.replace(/-(asc|desc)$/, '');
+  var f = fields[key]; if (!f) return rows;
+  return rows.slice().sort(function(a, b){
+    var va = f(a), vb = f(b);
+    if (typeof va === 'string' || typeof vb === 'string') return dir * String(va == null ? '' : va).localeCompare(String(vb == null ? '' : vb));
+    return dir * ((va || 0) - (vb || 0));
+  });
+}
+
 function updateOrderBadge() {
   var pend  = allOrders.filter(function(o){ return o.status==='PENDING'; }).length;
   var badge = document.getElementById('orderBadge');
@@ -3099,6 +3157,7 @@ function switchTab(el, id) {
   if (id === 'poi')             loadPOIData();
   if (id === 'trainings')       loadTrainings();
   if (id === 'operations')      loadOperations();
+  if (id === 'readiness')       loadReadiness();
   if (id === 'ethics-cases')    loadEthicsCases();
   if (id === 'ethics-tribunals') loadTribunals();
   if (id === 'ethics-intel')     loadIntel('ec');
@@ -5117,6 +5176,12 @@ function renderEthicsCases() {
     return hay.indexOf(q) !== -1;
   });
 
+  rows = applySort(rows, g('caseSort'), {
+    date:function(c){return c.openedAt||0;},
+    ref:function(c){return (c.ref||'').toLowerCase();},
+    status:function(c){return c.status||'';},
+    category:function(c){return c.category||'';}
+  });
   var cnt = document.getElementById('caseCount');
   if (cnt) cnt.textContent = rows.length ? '(' + rows.length + ')' : '';
 
@@ -5125,6 +5190,7 @@ function renderEthicsCases() {
     return;
   }
   list.innerHTML = rows.map(buildCaseCard).join('');
+  applyPagination(list, 'cases', g('caseSearch')+'|'+g('caseFilterStatus')+'|'+g('caseSort'));
 }
 
 function buildCaseCard(c) {
@@ -6564,6 +6630,135 @@ async function deleteOperation(id) {
 }
 function openOpFile(pfId) { if (typeof openPersonnelFromTraining === 'function') openPersonnelFromTraining(pfId); }
 
+// ================================================================
+//  OMEGA-1 — PERSONNEL READINESS BOARD
+//  Read-only aggregation: derives each operative's deployability from
+//  existing data (status, active leave, active strikes, current
+//  operation assignment, training currency). No new data model.
+// ================================================================
+var STRIKE_DEPLOY_LIMIT = 3;       // active strikes at/above this -> non-deployable
+var TRAINING_CURRENCY_DAYS = 90;   // last training within this many days -> current
+
+function canViewReadiness() { return currentUser && parseInt(currentUser.clearance) >= 4; }
+
+function pfActiveStrikes(p) {
+  return (typeof objArr === 'function' ? objArr(p.strikes) : (p.strikes || [])).filter(isStrikeActive).length;
+}
+// Operations the person is committed to that are still ongoing (not Completed/Aborted).
+function pfCurrentOps(p) {
+  return (typeof allOperations !== 'undefined' ? allOperations : []).filter(function(o){
+    if (!o || o.status === 'Completed' || o.status === 'Aborted') return false;
+    return o.leadId === p.id || (Array.isArray(o.operators) && o.operators.some(function(x){ return x && x.id === p.id; }));
+  });
+}
+function pfLastTrainingDate(p) {
+  var ds = (typeof allTrainings !== 'undefined' ? allTrainings : [])
+    .filter(function(t){ return t && Array.isArray(t.attendees) && t.attendees.some(function(a){ return a && a.pfId === p.id; }); })
+    .map(function(t){ return t.date; }).filter(Boolean).sort();
+  return ds.length ? ds[ds.length - 1] : null;
+}
+function pfTrainingCurrency(p) {
+  var last = pfLastTrainingDate(p);
+  if (!last) return { state: 'none', last: null };
+  var age = (Date.now() - new Date(last + 'T00:00:00').getTime()) / 86400000;
+  return { state: age <= TRAINING_CURRENCY_DAYS ? 'current' : 'lapsed', last: last, ageDays: Math.floor(age) };
+}
+// Composite readiness verdict.
+function pfReadiness(p) {
+  var status  = p.status || 'Active';
+  var leave   = (typeof getActiveLeave === 'function') ? getActiveLeave(p) : null;
+  var strikes = pfActiveStrikes(p);
+  var ops     = pfCurrentOps(p);
+  var deployed = ops.some(function(o){ return o.status === 'Active'; });
+  var training = pfTrainingCurrency(p);
+  var reasons = [];
+  if (status !== 'Active')          reasons.push(status.toUpperCase());
+  if (leave)                        reasons.push((leave.type || 'LEAVE').toUpperCase());
+  if (strikes >= STRIKE_DEPLOY_LIMIT) reasons.push(strikes + ' STRIKES');
+  var verdict = reasons.length ? 'NON-DEPLOYABLE' : (deployed ? 'DEPLOYED' : 'DEPLOYABLE');
+  return { verdict: verdict, reasons: reasons, strikes: strikes, ops: ops, deployed: deployed, leave: leave, status: status, training: training };
+}
+function pfBoardStatus(p, r) {
+  if (p.status && p.status !== 'Active') return p.status.toUpperCase();
+  if (r.leave) return (r.leave.type || 'LEAVE').toUpperCase();
+  if (r.deployed) return 'DEPLOYED';
+  if (typeof activityStatus === 'function') { var a = activityStatus(p, 'pf'); return (a && a.label) || 'ACTIVE'; }
+  return 'ACTIVE';
+}
+function rdyClass(v) { return v === 'DEPLOYABLE' ? 'rdy-ok' : v === 'DEPLOYED' ? 'rdy-dep' : 'rdy-no'; }
+
+async function loadReadiness() {
+  var notice = document.getElementById('rdyAccessNotice');
+  var body = document.getElementById('rdyBody');
+  if (!canViewReadiness()) {
+    if (notice) { notice.style.display = 'block'; notice.textContent = 'Readiness board is restricted to Omega-1 command (Level 4+).'; }
+    if (body) body.style.display = 'none';
+    return;
+  }
+  if (notice) notice.style.display = 'none';
+  if (body) body.style.display = 'block';
+  // Ensure the aggregated data sources are loaded.
+  try {
+    if (typeof loadPersonnel === 'function' && (!allPersonnel || !allPersonnel.length)) await loadPersonnel();
+    if (typeof loadOperations === 'function') await loadOperations();
+    if (typeof loadTrainings === 'function') await loadTrainings();
+  } catch (e) {}
+  renderReadiness();
+}
+
+function renderReadiness() {
+  var list = document.getElementById('readinessList');
+  if (!list) return;
+  var q = (g('rdySearch') || '').trim().toLowerCase();
+  var f = g('rdyFilter') || '';
+  var rows = (allPersonnel || []).map(function(p){ return { p: p, r: pfReadiness(p) }; });
+  // Summary tallies (whole roster, independent of filter)
+  function tally(v){ return rows.filter(function(x){ return x.r.verdict === v; }).length; }
+  var sd = document.getElementById('rdyDeployable'); if (sd) sd.textContent = tally('DEPLOYABLE');
+  var sp = document.getElementById('rdyDeployed');   if (sp) sp.textContent = tally('DEPLOYED');
+  var sn = document.getElementById('rdyNon');        if (sn) sn.textContent = tally('NON-DEPLOYABLE');
+
+  var filtered = rows.filter(function(x){
+    if (f && x.r.verdict !== f) return false;
+    if (!q) return true;
+    return (x.p.name || '').toLowerCase().indexOf(q) !== -1 || (x.p.rank || '').toLowerCase().indexOf(q) !== -1;
+  });
+  var ord = { DEPLOYABLE: 0, DEPLOYED: 1, 'NON-DEPLOYABLE': 2 };
+  filtered.sort(function(a, b){ return (ord[a.r.verdict] - ord[b.r.verdict]) || (a.p.name || '').localeCompare(b.p.name || ''); });
+
+  var cnt = document.getElementById('rdyCount');
+  if (cnt) cnt.textContent = filtered.length ? '(' + filtered.length + ')' : '';
+  if (!filtered.length) { list.innerHTML = '<div class="trn-empty">NO PERSONNEL' + (q || f ? ' MATCH THE FILTER.' : ' ON THE ROSTER YET.') + '</div>'; return; }
+  list.innerHTML = filtered.map(function(x){ return buildReadinessRow(x.p, x.r); }).join('');
+  applyPagination(list, 'readiness', q + '|' + f);
+}
+
+function buildReadinessRow(p, r) {
+  var vc = rdyClass(r.verdict);
+  var opTxt = r.ops.length
+    ? r.ops.map(function(o){ return e(o.codename || o.ref || 'OP') + (o.status !== 'Active' ? ' (' + e(o.status) + ')' : ''); }).join(', ')
+    : '<span class="muted">—</span>';
+  var trn = r.training.state === 'current' ? '<span class="rdy-pill rdy-pill-ok">CURRENT</span>'
+          : r.training.state === 'lapsed'  ? '<span class="rdy-pill rdy-pill-warn">LAPSED</span>'
+          : '<span class="rdy-pill rdy-pill-dim">NONE</span>';
+  var strikeCell = r.strikes > 0 ? '<span class="rdy-strikecount">' + r.strikes + '</span>' : '<span class="muted">0</span>';
+  return '<div class="rdy-row ' + vc + '" data-action="open-pf-from-training" data-pfid="' + e(p.id) + '" title="Open file">'
+    + '<span class="rdy-c rdy-name">' + e(p.name || p.id) + (p.rank ? ' <span class="rdy-rank">' + e(p.rank) + '</span>' : '') + '</span>'
+    + '<span class="rdy-c" data-label="STATUS">' + e(pfBoardStatus(p, r)) + '</span>'
+    + '<span class="rdy-c" data-label="STRIKES">' + strikeCell + '</span>'
+    + '<span class="rdy-c" data-label="OP">' + opTxt + '</span>'
+    + '<span class="rdy-c" data-label="TRAINING">' + trn + '</span>'
+    + '<span class="rdy-c" data-label="READINESS"><span class="rdy-verdict ' + vc + '">' + r.verdict + '</span>'
+      + (r.reasons.length ? '<span class="rdy-reason"> · ' + e(r.reasons.join(', ')) + '</span>' : '') + '</span>'
+    + '</div>';
+}
+
+function refreshReadinessNav() {
+  var tab = document.getElementById('navReadinessTab');
+  if (tab) tab.style.display = canViewReadiness() ? '' : 'none';
+}
+
+
 
 // ================================================================
 //  EC SURVEILLANCE — quiet observation flags on personnel files
@@ -7042,6 +7237,12 @@ function renderPersonnelFiles() {
       });
   }
 
+if (g('pfSort')) filtered = applySort(filtered, g('pfSort'), {
+    name:function(p){return (p.name||p.nickname||'').toLowerCase();},
+    status:function(p){return p.status||'';},
+    rank:function(p){var i=(typeof RANKS!=='undefined')?RANKS.indexOf(p.rank):-1;return i<0?999:i;},
+    date:function(p){return p.created||p.enrolled||0;}
+  });
 list.innerHTML = filtered.map(function(p) {
     // Redacted entry: file is above the viewer's clearance — show codename only
     if (pfRedactedIds.has(p.id)) {
@@ -7290,6 +7491,7 @@ var linkedBadge = linkedPfIds.has(p.id)
       </div>
     </div>`;
   }).join('');
+  applyPagination(document.getElementById('pfList'), 'pf', g('pfSearch')+'|'+g('pfFilterStatus')+'|'+g('pfFilterRank')+'|'+g('pfSort'));
 }
 
 function rankBadgeClass(rank) {
@@ -7714,6 +7916,7 @@ document.addEventListener('click', function(ev) {
     case 'delete-operation':       deleteOperation(el.dataset.id); break;
     case 'remove-op-operator':     removeOpOperator(el.dataset.pfid); break;
     case 'open-op-file':           openOpFile(el.dataset.pfid); break;
+    case 'page-more':              pageMore(el.dataset.key); break;
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
@@ -9641,6 +9844,15 @@ function renderPoiList() {
   if (poiCountEl) poiCountEl.textContent = poiAnyFilter ? '(' + active.length + ' of ' + totalPoi + ')' : '(' + totalPoi + ')';
   if (tgtCountEl) tgtCountEl.textContent = poiAnyFilter ? '(' + activeTgt.length + ' of ' + totalTgt + ')' : '(' + totalTgt + ')';
 
+  var _poiSortFields = {
+    number:function(r){return r.number||0;},
+    name:function(r){return (r.name||'').toLowerCase();},
+    status:function(r){return r.status||'';},
+    priority:function(r){return r.priority||0;},
+    standing:function(r){return r.standing||'';}
+  };
+  active = applySort(active, g('poiSort'), _poiSortFields);
+  activeTgt = applySort(activeTgt, g('poiSort'), _poiSortFields);
   var poiEl = document.getElementById('poiList');
   if (poiEl) poiEl.innerHTML = active.length ? active.map(function(p) {
     return `<div class="poi-list-item" data-action="open-poi-file" data-type="poi" data-id="${e(p.id)}">
@@ -9654,6 +9866,7 @@ function renderPoiList() {
       </span>
     </div>`;
   }).join('') : '<div class="poi-empty">[ NO PERSONS OF INTEREST ON RECORD ]</div>';
+  applyPagination(poiEl, 'poi', g('poiSearch')+'|'+g('poiFilterStatus')+'|'+g('poiFilterStanding')+'|'+g('poiSort'));
 
   var tgtEl = document.getElementById('targetList');
   if (tgtEl) tgtEl.innerHTML = activeTgt.length ? activeTgt.map(function(t) {

@@ -131,6 +131,7 @@
         <div class="nav-tab" onclick="switchTab(this,'operations')">OPERATIONS
           <span id="operationBadge" style="display:none;" class="badge b-amber">0</span>
         </div>
+        <div class="nav-tab" id="navReadinessTab" onclick="switchTab(this,'readiness')" style="display:none;">▣ READINESS</div>
         <div class="nav-tab" id="navO1IntelTab" onclick="switchTab(this,'omega1-intel')" style="display:none;">▣ INTEL</div>
       </div>
     </div>
@@ -321,6 +322,13 @@
         <button class="filter-btn" onclick="setFilter('IN PROGRESS',this)">IN PROGRESS</button>
         <button class="filter-btn" onclick="setFilter('COMPLETED',this)">COMPLETED</button>
         <button class="filter-btn" onclick="setFilter('FLAGGED',this)">FLAGGED</button>
+        <select class="pf-filter" id="orderSort" onchange="renderOrders()" title="Sort order" style="margin-left:auto;">
+          <option value="date-desc">SORT: NEWEST</option>
+          <option value="date-asc">OLDEST FIRST</option>
+          <option value="title-asc">TITLE A–Z</option>
+          <option value="priority-asc">PRIORITY</option>
+          <option value="status-asc">STATUS</option>
+        </select>
       </div>
       <div id="ordersList"></div>
     </div>
@@ -334,7 +342,7 @@
       </div>
       <div class="pf-toolbar">
         <input class="pf-search" id="pfSearch" placeholder="SEARCH BY NAME, NICKNAME OR RANK..."
-               oninput="renderPersonnelFiles()"/>
+               oninput="dbq(renderPersonnelFiles,this)"/>
         <select class="pf-filter" id="pfFilterStatus" onchange="renderPersonnelFiles()" title="Filter by status">
           <option value="">ALL STATUS</option>
           <option value="Active">ACTIVE</option>
@@ -379,7 +387,7 @@
       <div id="trnAccessNotice" style="display:none;" class="trn-empty"></div>
       <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
         <input class="pf-search" id="trnSearch" placeholder="SEARCH BY CONDUCTOR, ATTENDEE OR NOTES..."
-               oninput="renderTrainings()" style="flex:1;min-width:180px;"/>
+               oninput="dbq(renderTrainings,this)" style="flex:1;min-width:180px;"/>
         <select class="pf-filter" id="trnFilterScope" onchange="renderTrainings()" title="Filter scope">
           <option value="all">ALL TRAININGS</option>
           <option value="mine">CONDUCTED BY ME</option>
@@ -412,7 +420,7 @@
 
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;">
         <input class="pf-search" id="efSearch" placeholder="SEARCH BY NAME OR NICKNAME..."
-               oninput="renderEthicsFiles()"/>
+               oninput="dbq(renderEthicsFiles,this)"/>
         <select class="pf-filter" id="efFilterStatus" onchange="renderEthicsFiles()" title="Filter by status">
           <option value="">ALL STATUS</option>
           <option value="Active">ACTIVE</option>
@@ -439,7 +447,7 @@
         <!-- SOURCES VIEW -->
         <div id="intelSourcesView">
           <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-            <input class="pf-search" id="srcSearch" placeholder="SEARCH CODENAME, DEPARTMENT, HANDLER..." oninput="renderInformants()" style="flex:1;min-width:170px;"/>
+            <input class="pf-search" id="srcSearch" placeholder="SEARCH CODENAME, DEPARTMENT, HANDLER..." oninput="dbq(renderInformants,this)" style="flex:1;min-width:170px;"/>
             <select class="pf-filter" id="srcFilterStatus" onchange="renderInformants()" title="Filter by status">
               <option value="">ALL</option><option value="Active">ACTIVE</option><option value="Dormant">DORMANT</option><option value="Burned">BURNED</option><option value="Terminated">TERMINATED</option>
             </select>
@@ -451,7 +459,7 @@
         <!-- REPORTS VIEW -->
         <div id="intelReportsView" style="display:none;">
           <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-            <input class="pf-search" id="repSearch" placeholder="SEARCH REF, SUBJECT, SOURCE, CONTENT..." oninput="renderIntelReports()" style="flex:1;min-width:170px;"/>
+            <input class="pf-search" id="repSearch" placeholder="SEARCH REF, SUBJECT, SOURCE, CONTENT..." oninput="dbq(renderIntelReports,this)" style="flex:1;min-width:170px;"/>
             <select class="pf-filter" id="repFilterStatus" onchange="renderIntelReports()" title="Filter by status">
               <option value="">ALL</option><option value="New">NEW</option><option value="Reviewed">REVIEWED</option><option value="Actioned">ACTIONED</option><option value="Archived">ARCHIVED</option>
             </select>
@@ -481,7 +489,7 @@
         <!-- SOURCES VIEW -->
         <div id="o1IntelSourcesView">
           <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-            <input class="pf-search" id="o1SrcSearch" placeholder="SEARCH CODENAME, DEPARTMENT, HANDLER..." oninput="renderInformants()" style="flex:1;min-width:170px;"/>
+            <input class="pf-search" id="o1SrcSearch" placeholder="SEARCH CODENAME, DEPARTMENT, HANDLER..." oninput="dbq(renderInformants,this)" style="flex:1;min-width:170px;"/>
             <select class="pf-filter" id="o1SrcFilterStatus" onchange="renderInformants()" title="Filter by status">
               <option value="">ALL</option><option value="Active">ACTIVE</option><option value="Dormant">DORMANT</option><option value="Burned">BURNED</option><option value="Terminated">TERMINATED</option>
             </select>
@@ -493,7 +501,7 @@
         <!-- REPORTS VIEW -->
         <div id="o1IntelReportsView" style="display:none;">
           <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-            <input class="pf-search" id="o1RepSearch" placeholder="SEARCH REF, SUBJECT, SOURCE, CONTENT..." oninput="renderIntelReports()" style="flex:1;min-width:170px;"/>
+            <input class="pf-search" id="o1RepSearch" placeholder="SEARCH REF, SUBJECT, SOURCE, CONTENT..." oninput="dbq(renderIntelReports,this)" style="flex:1;min-width:170px;"/>
             <select class="pf-filter" id="o1RepFilterStatus" onchange="renderIntelReports()" title="Filter by status">
               <option value="">ALL</option><option value="New">NEW</option><option value="Reviewed">REVIEWED</option><option value="Actioned">ACTIONED</option><option value="Archived">ARCHIVED</option>
             </select>
@@ -509,7 +517,7 @@
       <div class="sec">▸ ETHICS COMMITTEE TRIBUNALS <span id="tribCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
       <div id="tribAccessNotice" style="display:none;" class="trn-empty"></div>
       <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-        <input class="pf-search" id="tribSearch" placeholder="SEARCH BY REF, DEFENDANT, CHARGE OR JUDGE..." oninput="renderTribunals()" style="flex:1;min-width:180px;"/>
+        <input class="pf-search" id="tribSearch" placeholder="SEARCH BY REF, DEFENDANT, CHARGE OR JUDGE..." oninput="dbq(renderTribunals,this)" style="flex:1;min-width:180px;"/>
         <select class="pf-filter" id="tribFilterStatus" onchange="renderTribunals()" title="Filter by status">
           <option value="">ALL STATUSES</option>
           <option value="Submitted">SUBMITTED</option>
@@ -529,7 +537,7 @@
       <div class="sec">▸ ETHICS COMMITTEE CASE DOCKET <span id="caseCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
       <div id="caseAccessNotice" style="display:none;" class="trn-empty"></div>
       <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-        <input class="pf-search" id="caseSearch" placeholder="SEARCH BY REF, SUBJECT, RULING OR PERSONNEL..." oninput="renderEthicsCases()" style="flex:1;min-width:180px;"/>
+        <input class="pf-search" id="caseSearch" placeholder="SEARCH BY REF, SUBJECT, RULING OR PERSONNEL..." oninput="dbq(renderEthicsCases,this)" style="flex:1;min-width:180px;"/>
         <select class="pf-filter" id="caseFilterStatus" onchange="renderEthicsCases()" title="Filter by status">
           <option value="">ALL STATUSES</option>
           <option value="Open">OPEN</option>
@@ -537,6 +545,13 @@
           <option value="Ruled">RULED</option>
           <option value="Closed">CLOSED</option>
           <option value="Tabled">TABLED</option>
+        </select>
+        <select class="pf-filter" id="caseSort" onchange="renderEthicsCases()" title="Sort order">
+          <option value="date-desc">SORT: NEWEST</option>
+          <option value="date-asc">OLDEST FIRST</option>
+          <option value="ref-asc">REF A–Z</option>
+          <option value="status-asc">STATUS</option>
+          <option value="category-asc">CATEGORY</option>
         </select>
         <button class="pf-btn" id="caseNewBtn" onclick="openCaseModal(null)" style="display:none;">[ + OPEN CASE ]</button>
       </div>
@@ -597,12 +612,38 @@
       </div>
     </div>
 
+    <!-- OMEGA-1 PERSONNEL READINESS BOARD -->
+    <div class="tab-content" id="tab-readiness">
+      <div class="sec">▸ OMEGA-1 PERSONNEL READINESS <span id="rdyCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
+      <div id="rdyAccessNotice" style="display:none;" class="trn-empty"></div>
+      <div id="rdyBody" style="display:none;">
+        <div class="rdy-summary">
+          <div class="rdy-stat rdy-ok"><span class="rdy-statnum" id="rdyDeployable">0</span><span class="rdy-statlbl">DEPLOYABLE</span></div>
+          <div class="rdy-stat rdy-dep"><span class="rdy-statnum" id="rdyDeployed">0</span><span class="rdy-statlbl">DEPLOYED</span></div>
+          <div class="rdy-stat rdy-no"><span class="rdy-statnum" id="rdyNon">0</span><span class="rdy-statlbl">NON-DEPLOYABLE</span></div>
+        </div>
+        <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
+          <input class="pf-search" id="rdySearch" placeholder="SEARCH BY NAME OR RANK..." oninput="dbq(renderReadiness,this)" style="flex:1;min-width:180px;"/>
+          <select class="pf-filter" id="rdyFilter" onchange="renderReadiness()" title="Filter by readiness">
+            <option value="">ALL PERSONNEL</option>
+            <option value="DEPLOYABLE">DEPLOYABLE</option>
+            <option value="DEPLOYED">DEPLOYED</option>
+            <option value="NON-DEPLOYABLE">NON-DEPLOYABLE</option>
+          </select>
+        </div>
+        <div class="rdy-head">
+          <span>OPERATIVE</span><span>STATUS</span><span>STRIKES</span><span>CURRENT OP</span><span>TRAINING</span><span>READINESS</span>
+        </div>
+        <div id="readinessList"></div>
+      </div>
+    </div>
+
     <!-- OMEGA-1 OPERATIONS LOG -->
     <div class="tab-content" id="tab-operations">
       <div class="sec">▸ OMEGA-1 OPERATIONS &amp; DEPLOYMENT LOG <span id="opCount" style="color:var(--text-faint);font-size:.6rem;letter-spacing:.05em;"></span></div>
       <div id="opAccessNotice" style="display:none;" class="trn-empty"></div>
       <div class="pf-toolbar" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem;">
-        <input class="pf-search" id="opSearch" placeholder="SEARCH CODENAME, OBJECTIVE, LEAD, OPERATOR..." oninput="renderOperations()" style="flex:1;min-width:180px;"/>
+        <input class="pf-search" id="opSearch" placeholder="SEARCH CODENAME, OBJECTIVE, LEAD, OPERATOR..." oninput="dbq(renderOperations,this)" style="flex:1;min-width:180px;"/>
         <select class="pf-filter" id="opFilterStatus" onchange="renderOperations()" title="Filter by status">
           <option value="">ALL STATUSES</option>
           <option value="Planned">PLANNED</option><option value="Active">ACTIVE</option><option value="On Hold">ON HOLD</option><option value="Completed">COMPLETED</option><option value="Aborted">ABORTED</option>
@@ -618,7 +659,7 @@
       <div id="poiListView">
         <div class="pf-toolbar" style="margin-bottom:.6rem;">
           <input class="pf-search" id="poiSearch" placeholder="SEARCH POI / TARGETS BY NAME OR NUMBER..."
-                 oninput="renderPoiList()"/>
+                 oninput="dbq(renderPoiList,this)"/>
           <select class="pf-filter" id="poiFilterStatus" onchange="renderPoiList()" title="Filter by status">
             <option value="">ALL STATUS</option>
             <option value="In Progress">IN PROGRESS</option>
@@ -631,6 +672,13 @@
             <option value="Friend">FRIEND</option>
             <option value="Neutral">NEUTRAL</option>
             <option value="Foe">FOE</option>
+          </select>
+          <select class="pf-filter" id="poiSort" onchange="renderPoiList()" title="Sort order">
+            <option value="number-asc">SORT: NUMBER</option>
+            <option value="name-asc">NAME A–Z</option>
+            <option value="status-asc">STATUS</option>
+            <option value="priority-asc">PRIORITY</option>
+            <option value="standing-asc">STANDING</option>
           </select>
         </div>
         <!-- POI section -->
