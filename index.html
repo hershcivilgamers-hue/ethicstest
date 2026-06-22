@@ -75,7 +75,10 @@
       <button id="adminBtn" onclick="openAdminPanel()" style="display:none;font-family:'Share Tech Mono',monospace;font-size:.58rem;background:rgba(255,100,100,.06);border:1px solid #4a1414;color:#dd6666;padding:3px 9px;cursor:pointer;margin-right:.5rem;position:relative;" title="Manage pending registrations">
         ADMIN <span id="adminBadge" style="display:none;background:#4a1414;color:#ff8888;border-radius:2px;padding:0 4px;margin-left:4px;font-size:.55rem;">0</span>
       </button>
-      <button id="themeToggle" onclick="toggleTheme()" title="Change theme" style="font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.12em;background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:3px 10px;cursor:pointer;margin-right:.5rem;transition:all .2s;border-radius:var(--radius);">TERMINAL</button>
+      <div class="theme-dd" style="position:relative;display:inline-block;margin-right:.5rem;">
+        <button id="themeToggle" onclick="toggleThemeMenu(event)" title="Change theme" style="font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.12em;background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:3px 10px;cursor:pointer;transition:all .2s;border-radius:var(--radius);">TERMINAL  ▾</button>
+        <div id="themeMenu" class="theme-menu" style="display:none;"></div>
+      </div>
       <button id="flickerToggle" onclick="toggleFlicker()" title="Toggle screen flicker" style="font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.12em;background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:3px 10px;cursor:pointer;margin-right:.5rem;transition:all .2s;border-radius:var(--radius);">⌁ FLICKER</button>
       <span id="syncIndicator" style="font-size:.52rem;letter-spacing:.06em;margin-right:.6rem;transition:color .3s;"></span>
       <div id="userPill" class="user-pill" onclick="openMyAccount()" title="View my account" style="display:none;"></div>
@@ -87,6 +90,7 @@
     </div>
   </div>
   <div id="toastHost" class="toast-host"></div>
+  <button id="backToTop" class="back-to-top" onclick="scrollTop()" title="Back to top" style="display:none;">▲</button>
 
   <div class="nav" style="align-items:stretch;">
 

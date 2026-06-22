@@ -2944,7 +2944,7 @@ function applyTheme(t) {
   else document.documentElement.setAttribute('data-theme', t);
   var meta = CAIRO_THEMES.find(function(x){ return x.id === t; });
   var btn = document.getElementById('themeToggle');
-  if (btn && meta) { btn.textContent = meta.label; btn.title = 'Theme: ' + meta.label + ' — click to change'; }
+  if (btn && meta) { btn.textContent = meta.label + '  \u25be'; btn.title = 'Theme: ' + meta.label; }
   localStorage.setItem('cairoTheme', t);
 }
 function toggleTheme() {
@@ -2982,6 +2982,85 @@ function toggleFlicker() {
   toast(off ? 'SCREEN FLICKER DISABLED' : 'SCREEN FLICKER ENABLED');
 }
 (function initFlicker(){ if (document.body) applyFlickerPref(); else document.addEventListener('DOMContentLoaded', applyFlickerPref); })();
+
+// ── Batch C: theme menu, badge urgency, back-to-top, undo ──
+// Theme dropdown with active checkmark
+function renderThemeMenu() {
+  var menu = document.getElementById('themeMenu'); if (!menu) return;
+  var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  menu.innerHTML = CAIRO_THEMES.map(function(t){
+    return '<div class="theme-opt' + (t.id === cur ? ' on' : '') + '" data-action="select-theme" data-theme="' + t.id + '">'
+      + (t.id === cur ? '✓ ' : '\u2003') + e(t.label) + '</div>';
+  }).join('');
+}
+function toggleThemeMenu(ev) {
+  if (ev) ev.stopPropagation();
+  var m = document.getElementById('themeMenu'); if (!m) return;
+  if (m.style.display !== 'none' && m.style.display !== '') { m.style.display = 'none'; }
+  else { renderThemeMenu(); m.style.display = 'block'; }
+}
+function selectTheme(id) { applyTheme(id); var m = document.getElementById('themeMenu'); if (m) m.style.display = 'none'; }
+document.addEventListener('click', function(e){
+  var m = document.getElementById('themeMenu');
+  if (m && m.style.display === 'block' && (!e.target.closest || !e.target.closest('.theme-dd'))) m.style.display = 'none';
+});
+
+// Nav badge urgency: amber = new/normal, red = overdue/urgent
+function setNavBadge(id, count, urgent) {
+  var b = document.getElementById(id); if (!b) return;
+  if (!count) { b.style.display = 'none'; return; }
+  b.textContent = count; b.style.display = 'inline-block';
+  b.classList.remove('b-amber', 'b-red');
+  b.classList.add(urgent ? 'b-red' : 'b-amber');
+}
+function updateOperationBadge() {
+  var ops = (typeof allOperations !== 'undefined' ? allOperations : []);
+  var live = ops.filter(function(o){ return o && (o.status === 'Active' || o.status === 'Planned'); });
+  var today = new Date().toISOString().slice(0, 10);
+  var overdue = live.some(function(o){ return o.status === 'Active' && o.endDate && o.endDate < today; });
+  setNavBadge('operationBadge', live.length, overdue);
+}
+
+// Back-to-top
+function scrollTop() {
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) { window.scrollTo(0, 0); }
+}
+window.addEventListener('scroll', function(){
+  var b = document.getElementById('backToTop'); if (!b) return;
+  b.style.display = ((window.scrollY || document.documentElement.scrollTop || 0) > 400) ? 'flex' : 'none';
+});
+
+// Undo for soft-deletes (un-gated: the actor who deleted may immediately reverse)
+function toastUndo(msg, undoFn, ms) {
+  var host = document.getElementById('toastHost'); if (!host) { return; }
+  var el = document.createElement('div'); el.className = 'toast toast-undo';
+  var span = document.createElement('span'); span.textContent = msg;
+  var btn = document.createElement('button'); btn.className = 'toast-undo-btn'; btn.textContent = 'UNDO';
+  var done = false;
+  function close(){ el.classList.add('leaving'); setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 280); }
+  btn.onclick = function(){ if (done) return; done = true; try { undoFn && undoFn(); } catch(e){} close(); };
+  el.appendChild(span); el.appendChild(btn); host.appendChild(el);
+  setTimeout(function(){ if (done) return; close(); }, ms || 6000);
+}
+function undoSoftDelete(kind, id) {
+  var map = {
+    training: { live:function(){return allTrainings;},    sink:function(){return deletedTrainings;},    save:trainingSet,    render:function(){ if(typeof renderTrainings==='function') renderTrainings(); } },
+    ecase:    { live:function(){return allEthicsCases;},   sink:function(){return deletedEthicsCases;},  save:ethicsCaseSet,  render:function(){ if(typeof renderEthicsCases==='function') renderEthicsCases(); } },
+    tribunal: { live:function(){return allTribunals;},     sink:function(){return deletedTribunals;},    save:tribunalSet,    render:function(){ if(typeof renderTribunals==='function') renderTribunals(); } },
+    informant:{ live:function(){return allInformants;},    sink:function(){return deletedInformants;},   save:informantSet,   render:function(){ if(typeof renderInformants==='function') renderInformants(); } },
+    intelrep: { live:function(){return allIntelReports;},  sink:function(){return deletedIntelReports;}, save:intelReportSet, render:function(){ if(typeof renderIntelReports==='function') renderIntelReports(); } },
+    operation:{ live:function(){return allOperations;},    sink:function(){return deletedOperations;},   save:operationSet,   render:function(){ if(typeof renderOperations==='function') renderOperations(); updateOperationBadge(); } }
+  };
+  var m = map[kind]; if (!m) return;
+  var sink = m.sink(), idx = sink.findIndex(function(r){ return r.id === id; });
+  if (idx === -1) return;
+  var rec = sink[idx]; rec.deleted = false; delete rec.deletedAt; delete rec.deletedBy;
+  sink.splice(idx, 1); m.live().push(rec);
+  try { m.save(id, rec); } catch(e){}
+  if (typeof auditRecord === 'function') auditRecord('RESTORED (UNDO)', kind + ' ' + id);
+  m.render();
+  if (typeof toast === 'function') toast('✓ RESTORED');
+}
 
 // ── Per-tab filter persistence (filters survive tab switches) ──
 function _filtSet(k, v) { try { localStorage.setItem('cairo:filt:' + k, v); } catch(e) {} }
@@ -4769,6 +4848,7 @@ async function deleteTraining(id) {
     if (typeof auditRecord === 'function') auditRecord('DELETED TRAINING', (rec.title||'Session') + ' → recycle bin');
     allTrainings = allTrainings.filter(function(t){ return t.id !== id; });
     if (!deletedTrainings.some(function(t){ return t.id===id; })) deletedTrainings.push(rec);
+  if (typeof toastUndo==='function') toastUndo('✓ TRAINING DELETED', function(){ undoSoftDelete('training', id); });
   }
   renderTrainings();
 }
@@ -5371,6 +5451,7 @@ async function deleteCase(id) {
     if (typeof auditRecord === 'function') auditRecord('DELETED CASE', c.ref + ' → recycle bin');
     allEthicsCases = allEthicsCases.filter(function(x){ return x.id !== id; });
     if (!deletedEthicsCases.some(function(x){ return x.id === id; })) deletedEthicsCases.push(c);
+  if (typeof toastUndo==='function') toastUndo('✓ CASE DELETED', function(){ undoSoftDelete('ecase', id); });
   }
   renderEthicsCases();
 }
@@ -5819,6 +5900,7 @@ async function deleteTribunal(id) {
   if (typeof auditRecord === 'function') auditRecord('DELETED TRIBUNAL', (t.ref || id) + ' → recycle bin');
   allTribunals = allTribunals.filter(function(x){ return x.id !== id; });
   if (!deletedTribunals.some(function(x){ return x.id === id; })) deletedTribunals.push(t);
+  if (typeof toastUndo==='function') toastUndo('✓ TRIBUNAL DELETED', function(){ undoSoftDelete('tribunal', id); });
   renderTribunals();
 }
 
@@ -6223,6 +6305,7 @@ async function deleteInformant(id) {
   if (typeof auditRecord === 'function') auditRecord('DELETED SOURCE', (s.codename||id) + ' → recycle bin');
   allInformants = allInformants.filter(function(x){ return x.id !== id; });
   if (!deletedInformants.some(function(x){ return x.id===id; })) deletedInformants.push(s);
+  if (typeof toastUndo==='function') toastUndo('✓ SOURCE DELETED', function(){ undoSoftDelete('informant', id); });
   renderInformants();
 }
 
@@ -6371,6 +6454,7 @@ async function deleteIntelReport(id) {
   if (typeof auditRecord === 'function') auditRecord('DELETED INTEL REPORT', (r.ref||id) + ' → recycle bin');
   allIntelReports = allIntelReports.filter(function(x){ return x.id !== id; });
   if (!deletedIntelReports.some(function(x){ return x.id===id; })) deletedIntelReports.push(r);
+  if (typeof toastUndo==='function') toastUndo('✓ REPORT DELETED', function(){ undoSoftDelete('intelrep', id); });
   renderIntelReports();
 }
 
@@ -6454,6 +6538,7 @@ async function loadOperations() {
   allOperations.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
   var btn = document.getElementById('opNewBtn');
   if (btn) btn.style.display = canManageOp() ? 'inline-block' : 'none';
+  if (typeof updateOperationBadge === 'function') updateOperationBadge();
   var notice = document.getElementById('opAccessNotice');
   if (notice) {
     if (!canManageOp()) { notice.style.display = 'block'; notice.textContent = currentUser ? 'Operations are logged by command (Level 4+). You may review the deployment log below.' : 'Observer mode — deployment log is read-only.'; }
@@ -6626,6 +6711,7 @@ async function deleteOperation(id) {
   if (typeof auditRecord === 'function') auditRecord('DELETED OPERATION', (o.ref||id) + ' → recycle bin');
   allOperations = allOperations.filter(function(x){ return x.id !== id; });
   if (!deletedOperations.some(function(x){ return x.id===id; })) deletedOperations.push(o);
+  if (typeof toastUndo==='function') toastUndo('✓ OPERATION DELETED', function(){ undoSoftDelete('operation', id); });
   renderOperations();
 }
 function openOpFile(pfId) { if (typeof openPersonnelFromTraining === 'function') openPersonnelFromTraining(pfId); }
@@ -7917,6 +8003,7 @@ document.addEventListener('click', function(ev) {
     case 'remove-op-operator':     removeOpOperator(el.dataset.pfid); break;
     case 'open-op-file':           openOpFile(el.dataset.pfid); break;
     case 'page-more':              pageMore(el.dataset.key); break;
+    case 'select-theme':           selectTheme(el.dataset.theme); break;
     // Omega-1 card
     case 'toggle-pf':        ev.stopPropagation(); togglePfCard(id); break;
     case 'toggle-section':   ev.stopPropagation(); togglePfSection(id, el.dataset.section); break;
