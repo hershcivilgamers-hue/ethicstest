@@ -10007,7 +10007,14 @@ function buildInterviewInvitationDocument(r) {
 }
 function exportInterviewInvitation(id) {
   var r = allEthicsRecruit.find(function(x){ return x.id === id; });
-  
+  if (!r) { alert('Applicant record not found.'); return; }
+  var html = buildInterviewInvitationDocument(r);
+  var ref = 'EC-INT-' + (r.ref || r.id).slice(-6).toUpperCase();
+  var safeName = ref.replace(/[^A-Za-z0-9_-]/g, '_');
+  downloadFile(safeName + '_invitation.html', html, 'text/html');
+  if (typeof auditRecord === 'function') auditRecord('EXPORTED INVITATION', (r.name || '') + ' \u2014 interview invitation');
+}
+
 // ── Deny modal ──
 function openEthicsDenyModal(id) {
   if (!currentUser||parseInt(currentUser.clearance)<5) return;
