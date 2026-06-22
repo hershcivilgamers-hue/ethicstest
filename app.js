@@ -10005,7 +10005,9 @@ function buildInterviewInvitationDocument(r) {
     + '<div class="footer">CONFIDENTIAL // LEVEL 4-C // ETHICS COMMITTEE EYES ONLY // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE // CAIRO.AIC</div>'
     + '</div></body></html>';
 }
-
+function exportInterviewInvitation(id) {
+  var r = allEthicsRecruit.find(function(x){ return x.id === id; });
+  
 // ── Deny modal ──
 function openEthicsDenyModal(id) {
   if (!currentUser||parseInt(currentUser.clearance)<5) return;
