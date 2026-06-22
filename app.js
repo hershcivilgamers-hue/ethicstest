@@ -3062,6 +3062,87 @@ function undoSoftDelete(kind, id) {
   if (typeof toast === 'function') toast('✓ RESTORED');
 }
 
+// ── Batch D: Enter-to-save, inline validation, dropdown keyboard nav ──
+// Enter in a modal text input triggers that modal's primary (last .modal-btn) action.
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+  var t = e.target;
+  if (!t || t.tagName !== 'INPUT') return;
+  var type = (t.getAttribute('type') || 'text').toLowerCase();
+  if (['checkbox','radio','file','range','button','submit','reset'].indexOf(type) !== -1) return;
+  if (t.hasAttribute('onkeydown')) return; // respect inputs that manage Enter themselves
+  var overlay = t.closest ? t.closest('.modal-overlay-2, .modal-overlay') : null;
+  if (!overlay || !overlay.classList.contains('open')) return;
+  var btns = overlay.querySelectorAll('.modal-btn');
+  if (!btns.length) return;
+  var primary = btns[btns.length - 1];
+  if (primary && !primary.disabled) { e.preventDefault(); primary.click(); }
+});
+
+// Live format validation hints.
+function _vSteam(v){ v = (v || '').trim();
+  if (!v) return { state:'', msg:'' };
+  if (/^7656119\d{10}$/.test(v)) return { state:'ok', msg:'✓ Valid SteamID64' };
+  if (/^STEAM_[0-5]:[01]:\d+$/i.test(v)) return { state:'ok', msg:'✓ Valid SteamID' };
+  if (/^\d+$/.test(v)) return { state:'warn', msg:'SteamID64 is 17 digits starting 7656119…' };
+  return { state:'warn', msg:'Format: 7656119… or STEAM_0:1:…' };
+}
+function _vIsd(v){ v = (v || '').trim();
+  if (!v) return { state:'', msg:'' };
+  if (/^ISD-\d+$/i.test(v)) return { state:'ok', msg:'✓ Valid ISD badge' };
+  return { state:'warn', msg:'Format: ISD-0042' };
+}
+var FIELD_VALIDATORS = { pfSteamId:_vSteam, ethicsAppSteamId:_vSteam, scoutSteamId:_vSteam, blEntrySteam:_vSteam, pfIsdBadge:_vIsd };
+function attachFieldValidators(){
+  Object.keys(FIELD_VALIDATORS).forEach(function(id){
+    var input = document.getElementById(id);
+    if (!input || input._vAttached) return;
+    input._vAttached = true;
+    var hint = document.createElement('div'); hint.className = 'field-hint'; hint.id = id + '_hint';
+    if (input.parentNode) input.parentNode.insertBefore(hint, input.nextSibling);
+    var fn = FIELD_VALIDATORS[id];
+    function run(){ var r = fn(input.value); hint.textContent = r.msg; hint.className = 'field-hint' + (r.state ? ' ' + r.state : ''); }
+    input.addEventListener('input', run); run();
+  });
+}
+
+// Keyboard navigation for the CAIRO / OMEGA-1 / ETHICS nav dropdowns.
+function _navItems(group){
+  var menu = document.getElementById('ngt-' + group); if (!menu) return [];
+  return Array.prototype.filter.call(menu.querySelectorAll('.nav-tab'), function(i){ return i.style.display !== 'none'; });
+}
+function _ddOpen(group){ var dd = document.querySelector('.nav-dd[data-group="' + group + '"]'); return !!(dd && dd.classList.contains('open')); }
+function _ddClose(group){ var dd = document.querySelector('.nav-dd[data-group="' + group + '"]'); if (dd) dd.classList.remove('open'); }
+function _ddTrigger(group){ return document.querySelector('.nav-dd-trigger[data-group="' + group + '"]'); }
+function initNavKeyboard(){
+  document.querySelectorAll('.nav-dd-trigger').forEach(function(tr){
+    if (tr._kbd) return; tr._kbd = true;
+    tr.setAttribute('tabindex','0'); tr.setAttribute('role','button'); tr.setAttribute('aria-haspopup','true');
+    tr.addEventListener('keydown', function(e){
+      var group = tr.dataset.group;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleNavDd(group); }
+      else if (e.key === 'Escape') { _ddClose(group); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); if (!_ddOpen(group)) toggleNavDd(group); var it = _navItems(group); if (it[0]) it[0].focus(); }
+    });
+  });
+  document.querySelectorAll('.nav-dd-menu').forEach(function(menu){
+    if (menu._kbd) return; menu._kbd = true;
+    var group = menu.id.replace('ngt-','');
+    menu.querySelectorAll('.nav-tab').forEach(function(i){ if (!i.hasAttribute('tabindex')) i.setAttribute('tabindex','-1'); });
+    menu.addEventListener('keydown', function(e){
+      var items = _navItems(group); var idx = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); (items[Math.min(idx + 1, items.length - 1)] || items[0]).focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx <= 0) { var tr = _ddTrigger(group); if (tr) tr.focus(); } else items[idx - 1].focus(); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (document.activeElement && document.activeElement.click) document.activeElement.click(); }
+      else if (e.key === 'Escape') { _ddClose(group); var tr2 = _ddTrigger(group); if (tr2) tr2.focus(); }
+    });
+  });
+}
+(function initBatchD(){
+  function go(){ try { attachFieldValidators(); initNavKeyboard(); } catch(e){} }
+  if (document.readyState !== 'loading') go(); else document.addEventListener('DOMContentLoaded', go);
+})();
+
 // ── Per-tab filter persistence (filters survive tab switches) ──
 function _filtSet(k, v) { try { localStorage.setItem('cairo:filt:' + k, v); } catch(e) {} }
 function _filtGet(k, def) { try { var v = localStorage.getItem('cairo:filt:' + k); return v === null ? def : v; } catch(e) { return def; } }

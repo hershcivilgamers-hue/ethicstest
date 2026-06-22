@@ -918,3 +918,10 @@ body.no-flicker .shell{animation:none;}
 .toast-undo{display:flex;align-items:center;gap:12px;}
 .toast-undo-btn{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.1em;background:transparent;border:1px solid var(--green);color:var(--green);padding:2px 9px;border-radius:3px;cursor:pointer;transition:background .15s;}
 .toast-undo-btn:hover{background:var(--green);color:var(--bg1);}
+
+/* ── Batch D: inline validation hints + dropdown focus ── */
+.field-hint{font-size:.5rem;letter-spacing:.04em;margin-top:2px;min-height:.62rem;color:var(--text-faint);transition:color .15s;}
+.field-hint.ok{color:var(--green);}
+.field-hint.warn{color:var(--amber);}
+.nav-dd-trigger:focus-visible{outline:1px solid var(--green);outline-offset:1px;}
+.nav-dd-menu .nav-tab:focus-visible{outline:1px solid var(--green);outline-offset:-1px;}
