@@ -1492,6 +1492,135 @@ function ovCard(title, value, sub, accent, tab, urgent) {
     + (sub ? '<div class="ov-sub">' + e(sub) + '</div>' : '')
     + '</div>';
 }
+
+// ================================================================
+//  ACTION QUEUE — "REQUIRES YOU"
+//  A personal, role-aware to-do feed surfaced at the top of the
+//  overview. Unlike the command metric cards (which are counts),
+//  these are items addressed to the individual viewer, each with a
+//  click-through to where it is resolved. Every provider is guarded
+//  so a malformed record in one system can never blank the queue.
+// ================================================================
+function buildActionQueue() {
+  var items = [];
+  if (!currentUser) return items;
+  var cl = parseInt(currentUser.clearance || '3');
+  var me = currentUser.id;
+  function push(high, icon, text, tab) { items.push({ high: !!high, icon: icon, text: text, tab: tab || null }); }
+
+  // ── Tribunals (EC personnel / assigned judge) ──
+  try {
+    if (Array.isArray(typeof allTribunals !== 'undefined' ? allTribunals : null)) {
+      var ec = (typeof isEthicsPersonnel === 'function') && isEthicsPersonnel();
+      var myRank = (typeof ecRoleRank === 'function' && typeof ecRoleOf === 'function') ? ecRoleRank(ecRoleOf(currentUser)) : 0;
+      allTribunals.forEach(function(t){
+        if (!t) return;
+        var ref = t.ref || 'a tribunal';
+        var mine = (typeof isTribunalJudge === 'function') && isTribunalJudge(t);
+        if (t.status === 'Submitted' && ec)
+          push(1, '\u2696', 'Tribunal ' + ref + ' is awaiting Committee acceptance', 'ethics-tribunals');
+        else if (t.status === 'Accepted' && mine)
+          push(1, '\u2696', 'You are presiding over ' + ref + ' \u2014 set a hearing date', 'ethics-tribunals');
+        else if (t.status === 'Scheduled' && mine)
+          push(1, '\u2696', 'Deliver the verdict for ' + ref, 'ethics-tribunals');
+        else if (t.status === 'Appealed' && ec && t.appeal && myRank >= ecRoleRank(t.appeal.escalatedToRole))
+          push(1, '\u2696', 'Appeal on ' + ref + ' needs a ' + (t.appeal.escalatedToRole || 'senior member') + ' to preside', 'ethics-tribunals');
+      });
+    }
+  } catch(e){}
+
+  // ── Ethics cases awaiting my vote ──
+  try {
+    if (Array.isArray(typeof allEthicsCases !== 'undefined' ? allEthicsCases : null) && typeof canVoteCase === 'function' && canVoteCase()) {
+      allEthicsCases.forEach(function(c){
+        if (!c) return;
+        var votable = c.status === 'Open' || c.status === 'Under Review';
+        if (votable && !(c.votes && c.votes[me]))
+          push(0, '\uD83D\uDDF3', 'Case ' + (c.ref || c.id) + ' is awaiting your vote', 'ethics-cases');
+      });
+    }
+  } catch(e){}
+
+  // ── Operations needing attention (command, CL4+) ──
+  try {
+    if (cl >= 4 && Array.isArray(typeof allOperations !== 'undefined' ? allOperations : null)) {
+      var t0 = new Date(); t0.setHours(0,0,0,0); var todayMs = t0.getTime();
+      allOperations.forEach(function(o){
+        if (!o) return;
+        var name = o.codename || o.ref || 'an operation';
+        if (o.status === 'Active' && o.endDate && new Date(o.endDate).getTime() < todayMs)
+          push(0, '\u271C', 'Operation ' + name + ' is past its end date \u2014 log the after-action', 'operations');
+        else if (o.status === 'Planned' && o.startDate && new Date(o.startDate).getTime() < todayMs)
+          push(0, '\u271C', 'Operation ' + name + ' was due to begin \u2014 update its status', 'operations');
+      });
+    }
+  } catch(e){}
+
+  // ── Recruitment votes awaiting me (CL4+) ──
+  try {
+    if (cl >= 4) {
+      var vo = (typeof allRecruitment !== 'undefined' ? allRecruitment : []).filter(function(r){ return r && r.stage === 'scouting' && !(r.votes && r.votes[me]); }).length;
+      if (vo) push(0, '\uD83D\uDDF3', vo + ' Omega-1 recruit' + (vo>1?'s':'') + ' awaiting your vote', 'recruit');
+      var ve = (typeof allEthicsRecruit !== 'undefined' ? allEthicsRecruit : []).filter(function(r){ return r && r.stage === 'application' && !(r.votes && r.votes[me]); }).length;
+      if (ve) push(0, '\uD83D\uDDF3', ve + ' Ethics application' + (ve>1?'s':'') + ' awaiting your vote', 'ethics-recruit');
+    }
+  } catch(e){}
+
+  // ── Promotion-ready Omega-1 operatives (CL4+) ──
+  try {
+    if (cl >= 4 && typeof promoReqsFor === 'function') {
+      (allPersonnel||[]).forEach(function(p){
+        if (!p || p.status !== 'Active') return;
+        var info = promoReqsFor(p.rank);
+        if (!info || !info.items || !info.items.length) return;
+        var prog = (p.promoProgress && typeof p.promoProgress === 'object') ? p.promoProgress : {};
+        if (info.items.every(function(it){ return prog[it.id] && prog[it.id].met; }))
+          push(0, '\u25B2', (p.name || 'An operative') + ' has met all promotion requirements', 'personnel-files');
+      });
+    }
+  } catch(e){}
+
+  // ── Strike appeals to review (CL5) ──
+  try {
+    if (cl >= 5) {
+      var appeals = 0;
+      (allPersonnel||[]).concat(typeof allEthicsPersonnel!=='undefined'?allEthicsPersonnel:[]).forEach(function(p){
+        if (p && Array.isArray(p.strikes)) appeals += p.strikes.filter(function(s){ return s && s.status === 'Appealed' && s.appeal && !s.appeal.resolution; }).length;
+      });
+      if (appeals) push(1, '\u2696', appeals + ' strike appeal' + (appeals>1?'s':'') + ' awaiting review', 'blacklist');
+    }
+  } catch(e){}
+
+  // ── Pending registrations (CL5) ──
+  try {
+    if (cl >= 5 && typeof allUsers !== 'undefined') {
+      var pend = Object.values(allUsers||{}).filter(function(u){ return u && u.status === 'pending'; }).length;
+      if (pend) push(1, '\uD83D\uDC64', pend + ' registration' + (pend>1?'s':'') + ' awaiting your approval', 'log');
+    }
+  } catch(e){}
+
+  items.sort(function(a,b){ return (b.high?1:0) - (a.high?1:0); });
+  return items;
+}
+
+function actionQueueHTML() {
+  var items;
+  try { items = buildActionQueue(); } catch(e){ return ''; }
+  if (!items.length) {
+    return '<div class="aq-head">\u25B8 REQUIRES YOU</div>'
+      + '<div class="aq-clear">\u2713 Nothing requires your attention right now.</div>';
+  }
+  var rows = items.map(function(it){
+    var click = it.tab ? ' onclick="goToTab(\'' + it.tab + '\')" style="cursor:pointer;"' : '';
+    return '<div class="aq-item' + (it.high ? ' aq-high' : '') + '"' + click + '>'
+      + '<span class="aq-icon">' + it.icon + '</span>'
+      + '<span class="aq-text">' + e(it.text) + '</span>'
+      + (it.tab ? '<span class="aq-go">\u203A</span>' : '') + '</div>';
+  }).join('');
+  return '<div class="aq-head">\u25B8 REQUIRES YOU <span class="aq-count">' + items.length + '</span></div>'
+    + '<div class="aq-list">' + rows + '</div>';
+}
+
 function renderOverview() {
   var el = document.getElementById('overviewBody');
   if (!el) return;
@@ -1565,7 +1694,7 @@ function renderOverview() {
   // ── Personnel on active leave (CL4+) ──
   if (cl >= 4) {
     var onLeave = (allPersonnel || []).filter(function(p){
-      return Array.isArray(p.leave) && p.leave.some(function(l){ return isLeaveActive ? isLeaveActive(l) : (l && l.status === 'active'); });
+      return Array.isArray(p.leaves) && p.leaves.some(function(l){ return isLeaveActive(l); });
     }).length;
     if (onLeave) cards.push(ovCard('On Leave', onLeave, 'LOA / ROA active', 'var(--text-dim)', 'roster'));
   }
@@ -1586,7 +1715,7 @@ function renderOverview() {
     : '';
   var cardBlock = '<div class="ov-grid" style="margin-top:.7rem;">' + cards.join('') + '</div>';
 
-  el.innerHTML = greeting + alertBlock + cardBlock;
+  el.innerHTML = greeting + alertBlock + actionQueueHTML() + cardBlock;
 }
 
 function showLoginNotifications() {
@@ -8268,7 +8397,6 @@ document.addEventListener('click', function(ev) {
     case 'del-leave':        ev.stopPropagation(); deleteLeave(el.dataset.id, el.dataset.leaveid, el.dataset.division); break;
     case 'close-leave-modal': closeLeaveModal(); break;
     case 'save-leave':        saveLeave(); break;
-	case 'export-interview-invitation': exportInterviewInvitation(el.dataset.id); break;
   }
 });
 
@@ -9680,7 +9808,6 @@ function buildEthicsInterviewCard(r, isCL5) {
   var actionBtns = isCL5 ? `<div class="rec-btns">
     <button class="rec-btn approve" data-action="ethics-rec-pass" data-id="${e(r.id)}">✓ PASS INTERVIEW & CREATE FILE</button>
     <button class="rec-btn deny"    data-action="open-ethics-deny-modal" data-id="${e(r.id)}">✗ FAIL INTERVIEW</button>
-    <button class="rec-btn" data-action="export-interview-invitation" data-id="${e(r.id)}" style="font-size:.55rem;padding:1px 7px;">⎙ INVITATION DOC</button>
   </div>` : '';
 
   return `<div class="rec-card">
@@ -9795,103 +9922,7 @@ async function ethicsRecAdvance(id) {
   r.stage='interview'; r.tag='Taken to interview';
   r.transitions=r.transitions||[];
   r.transitions.push({from:'application',to:'interview',by:currentUser.id,at:Date.now()});
-  try {
-    await ethicsRecruitSet(id, r);
-    auditRecord('ADVANCED TO INTERVIEW', r.name + ' — invitation document generated');
-    renderEthicsRecruit();
-    // Auto-download the invitation document
-    exportInterviewInvitation(id);
-  } catch(e){ alert('ERROR: '+e.message); }
-}
-
-// ── Interview invitation document (generated when advanced to interview) ──
-function buildInterviewInvitationDocument(r) {
-  var ref = 'EC-INT-' + (r.ref || r.id).slice(-6).toUpperCase();
-  var dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
-  var ecMemberName = ecFileName(currentUser);
-  var classLine = 'LEVEL 4-C // ETHICS COMMITTEE EYES ONLY // DESIGNATED RECIPIENT — NO REDISTRIBUTION';
-  var clLabel = 'LEVEL 4-C · ETHICS COMMITTEE CONFIDENTIAL';
-
-  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
-    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
-    + '<title>' + escHtml(ref) + ' — Interview Invitation</title>'
-    + '<style>'
-    + '@page{size:A4;margin:18mm 16mm;}*{box-sizing:border-box;}'
-    + 'body{font-family:"Times New Roman",Georgia,serif;color:#111;background:#525659;margin:0;padding:24px;line-height:1.55;}'
-    + '.page{background:#fff;max-width:780px;margin:0 auto 24px;padding:46px 54px 40px;box-shadow:0 2px 18px rgba(0,0,0,.4);position:relative;}'
-    + '.runhead{display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.04em;color:#444;border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:2px;text-transform:uppercase;}'
-    + '.classbar{background:#1a1a1a;color:#fff;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.14em;text-align:center;padding:5px 4px;margin:0 -54px 4px;font-weight:bold;}'
-    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.42em;color:#222;margin:10px 0 18px;font-weight:bold;}'
-    + '.lh{text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}'
-    + '.lh .org{font-size:21px;font-weight:bold;letter-spacing:.06em;}'
-    + '.lh .sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#333;margin-top:3px;}'
-    + '.lh .div{font-size:10px;letter-spacing:.1em;color:#555;margin-top:6px;font-style:italic;}'
-    + '.lh .seal{font-size:9px;letter-spacing:.3em;color:#7a0000;margin-top:8px;font-family:"Courier New",monospace;font-weight:bold;}'
-    + '.doctype{text-align:center;font-size:13px;font-weight:bold;letter-spacing:.16em;margin:14px 0 16px;text-transform:uppercase;}'
-    + 'table.meta{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px;}'
-    + 'table.meta td{border:1px solid #999;padding:4px 8px;vertical-align:top;}'
-    + 'table.meta td.k{background:#ededed;font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#333;width:34%;font-weight:bold;}'
-    + 'table.meta td.v{font-weight:bold;}'
-    + '.body p{font-size:12px;margin:0 0 12px;text-align:justify;}'
-    + '.body .callout{text-align:center;font-weight:bold;font-size:12px;letter-spacing:.08em;border:2px solid #0a5a23;background:#e8f3ec;padding:10px;margin:16px 0;}'
-    + '.body .warning{font-size:10px;color:#7a0000;border-left:3px solid #7a0000;padding:6px 10px;margin:14px 0;background:#fdf0f0;font-style:italic;}'
-    + '.sig{margin-top:34px;border-top:1px solid #000;padding-top:12px;font-size:11.5px;}'
-    + '.sig .by{font-style:italic;color:#333;}'
-    + '.sig .line{margin-top:18px;border-top:1px solid #000;width:260px;padding-top:3px;font-size:10.5px;letter-spacing:.04em;}'
-    + '.sig .committee{margin-top:14px;font-size:10px;letter-spacing:.2em;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;text-transform:uppercase;}'
-    + '.stampbox{position:absolute;top:120px;right:40px;border:3px double #0a5a23;color:#0a5a23;font-family:"Courier New",monospace;font-weight:bold;font-size:13px;letter-spacing:.1em;padding:6px 14px;transform:rotate(-9deg);opacity:.82;}'
-    + '.footer{margin-top:26px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
-    + '.redact{background:#000;color:#000;padding:0 .5em;}'
-    + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;padding:0;}.classbar{margin:0 0 4px;}}'
-    + '</style></head><body><div class="page">'
-    + '<div class="runhead"><span>SCP FOUNDATION · ETHICS COMMITTEE</span><span>DOC ' + escHtml(ref) + ' · LEVEL 4-C</span></div>'
-    + '<div class="classbar">' + classLine + '</div>'
-    + '<div class="scp-tag">SECURE · CONTAIN · PROTECT</div>'
-    + '<div class="lh">'
-    +   '<div class="org">SCP FOUNDATION</div>'
-    +   '<div class="sub">Ethics Committee</div>'
-    +   '<div class="div">Office of Internal Oversight · CAIRO.AIC Liaison Division</div>'
-    +   '<div class="seal">◆ BY AUTHORITY OF THE COMMITTEE ◆</div>'
-    + '</div>'
-    + '<div class="doctype">Notice of Interview — Ethics Committee Assistant</div>'
-    + '<div class="stampbox">ACCEPTED</div>'
-    + '<table class="meta">'
-    +   '<tr><td class="k">Correspondence Ref</td><td class="v">' + escHtml(ref) + '</td></tr>'
-    +   '<tr><td class="k">Classification</td><td class="v">' + clLabel + '</td></tr>'
-    +   '<tr><td class="k">Date of Issue</td><td class="v">' + escHtml(dateStr) + '</td></tr>'
-    +   '<tr><td class="k">Issuing Officer</td><td class="v">Ethics Committee · ' + escHtml(ecMemberName) + '</td></tr>'
-    +   '<tr><td class="k">Recipient</td><td class="v">' + escHtml(r.name || '—') + '</td></tr>'
-    +   '<tr><td class="k">Current Department</td><td class="v">' + escHtml(r.department || '—') + '</td></tr>'
-    +   '<tr><td class="k">Current Rank</td><td class="v">' + escHtml(r.rank || '—') + '</td></tr>'
-    +   '<tr><td class="k">Clearance Required</td><td class="v"><span class="redact">LEVEL 4-A</span> · pending reassignment</td></tr>'
-    + '</table>'
-    + '<div class="body">'
-    + '<p>Dear ' + escHtml(r.name || 'Candidate') + ',</p>'
-    + '<p>First and foremost, the Ethics Committee wishes to acknowledge your request for reassignment to this body. Such a request is not made lightly. It requires a willingness to place oneself under a different kind of scrutiny — one that does not concern containment breaches or operational failure, but the far more uncomfortable question of whether the Foundation is justified in what it does.</p>'
-    + '<p>Your application has been reviewed by the Committee sitting in closed session. We have considered your record of service, the circumstances of your request, and the character of your prior conduct. The following determination has been reached.</p>'
-    + '<div class="callout">YOUR APPLICATION HAS BEEN ACCEPTED FOR INTERVIEW.</div>'
-    + '<p>The Committee finds that you demonstrate the temperament and discretion requisite for consideration as an Ethics Committee Assistant. This is not a commendation — it is an invitation to be assessed further. The interview will determine whether that initial judgement is borne out.</p>'
-    + '<p>You will be contacted in due course by a representative of the Committee to arrange the time and manner of your interview. <strong>Do not seek us out.</strong> The Committee operates on its own schedule and its own terms. We are aware of your location and your movements; we will make contact when it is appropriate to do so.</p>'
-    + '<p>Prepare to speak to the following: your understanding of the Foundation\'s ethical framework and the Committee\'s role within it; the circumstances that led you to seek this reassignment; and any matter you believe the Committee ought to know. You are not expected to rehearse answers. You are expected to be honest.</p>'
-    + '<div class="warning">This correspondence is classified LEVEL 4-C and is intended for the named recipient alone. It may not be shared, copied, or discussed with any party — Foundation staff or otherwise — without the express authorisation of the Ethics Committee. Disclosure of the contents of this document, or of the existence of your application, constitutes a breach of Committee confidentiality and will be treated accordingly.</div>'
-    + '</div>'
-    + '<div class="sig"><span class="by">By order of the Ethics Committee:</span><br>'
-    +   'Ethics Committee · ' + escHtml(ecMemberName)
-    +   '<div class="line">Authorising Signatory — EC·' + escHtml(ecMemberName) + ', Ethics Committee Member</div>'
-    +   '<div class="committee">◆ THE ETHICS COMMITTEE DOES NOT ANSWER TO THE DEPARTMENTS IT OVERSEES ◆</div>'
-    + '</div>'
-    + '<div class="footer">CONFIDENTIAL // LEVEL 4-C // ETHICS COMMITTEE EYES ONLY // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE // CAIRO.AIC</div>'
-    + '</div></body></html>';
-}
-
-function exportInterviewInvitation(id) {
-  var r = allEthicsRecruit.find(function(x){ return x.id === id; });
-  if (!r) { alert('Application not found.'); return; }
-  if (r.stage !== 'interview') { alert('This document is only available for applications in the interview stage.'); return; }
-  var html = buildInterviewInvitationDocument(r);
-  var safeName = ('EC-INT-' + (r.name || 'candidate')).replace(/[^A-Za-z0-9_-]/g, '_');
-  downloadFile(safeName + '.html', html, 'text/html');
-  if (typeof auditRecord === 'function') auditRecord('EXPORTED INTERVIEW INVITATION', r.name + ' (' + (r.ref||r.id) + ')');
+  try { await ethicsRecruitSet(id, r); renderEthicsRecruit(); } catch(e){ alert('ERROR: '+e.message); }
 }
 
 // ── Deny modal ──
