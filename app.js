@@ -5487,12 +5487,13 @@ function buildCaseCard(c) {
   var status = c.status || 'Open';
   var catBadge = c.category ? '<span class="badge b-dim">' + e(c.category) + '</span>' : '';
   var statusB = '<span class="badge ' + caseStatusBadge(status) + '">' + e(status.toUpperCase()) + '</span>';
-  var manage = canManageCase(c)
-    ? '<div style="display:flex;gap:.35rem;">'
-      + '<button class="pf-section-btn" data-action="edit-case" data-id="' + e(c.id) + '" style="font-size:.52rem;padding:1px 7px;">EDIT</button>'
-      + '<button class="pf-section-btn" data-action="delete-case" data-id="' + e(c.id) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">DELETE</button>'
-      + '</div>'
-    : '';
+  var manage = '<div style="display:flex;gap:.35rem;">'
+      + '<button class="pf-section-btn" data-action="export-case" data-id="' + e(c.id) + '" style="font-size:.52rem;padding:1px 7px;">⎙ EXPORT</button>'
+      + (canManageCase(c)
+          ? '<button class="pf-section-btn" data-action="edit-case" data-id="' + e(c.id) + '" style="font-size:.52rem;padding:1px 7px;">EDIT</button>'
+            + '<button class="pf-section-btn" data-action="delete-case" data-id="' + e(c.id) + '" style="font-size:.52rem;padding:1px 7px;color:#dd6666;">DELETE</button>'
+          : '')
+      + '</div>';
 
   // Vote tally + controls
   var votes = c.votes || {};
@@ -6315,6 +6316,162 @@ function tribunalSeal() {
     + '<text x="100" y="96" text-anchor="middle" font-size="40" fill="#5a1414">\u2696</text>'
     + '<text x="100" y="122" text-anchor="middle" font-family="Courier New, monospace" font-size="7.5" letter-spacing="1.5" fill="#5a1414">JUDICIAL DIVISION</text>'
     + '</svg>';
+}
+
+function buildEthicsCaseDocument(c) {
+  var ref = c.ref || 'EC-CASE';
+  var status = c.status || 'Open';
+  var statusU = status.toUpperCase();
+  var ruled = status === 'Ruled' || status === 'Closed';
+  var title = c.title || 'Untitled Matter';
+
+  // Vote tally
+  var votes = c.votes || {};
+  var vk = Object.keys(votes);
+  var nFor = vk.filter(function(k){ return votes[k] === 'for'; }).length;
+  var nAgainst = vk.filter(function(k){ return votes[k] === 'against'; }).length;
+  var nAbstain = vk.filter(function(k){ return votes[k] === 'abstain'; }).length;
+  var nTotal = nFor + nAgainst + nAbstain;
+
+  // Subjects
+  var subjects = (c.linked || []).length
+    ? '<ul class="subj">' + (c.linked || []).map(function(l){
+        return '<li>' + escHtml(l.name || l.id) + ' <span class="org">[' + (l.sys === 'ef' ? 'Ethics Committee' : 'Omega-1') + ']</span></li>';
+      }).join('') + '</ul>'
+    : '<p class="muted">No personnel are named upon the record of this matter.</p>';
+
+  // Determination
+  var determination = ruled
+    ? (c.ruling ? '<p class="ruling">' + escHtml(c.ruling) + '</p>'
+                : '<p class="muted">The matter is closed; no written determination was entered.</p>')
+    : '<p class="muted">No determination has yet been entered. This matter remains <strong>' + escHtml(status.toLowerCase()) + '</strong> before the Committee.</p>';
+
+  var basis = c.rationale
+    ? '<div class="secttl">Basis of Determination</div><div class="body"><p>' + escHtml(c.rationale) + '</p></div>'
+    : '';
+
+  // Vote record
+  var voteBlock = nTotal
+    ? '<table class="votetbl"><tr><th>In Favour</th><th>Opposed</th><th>Abstaining</th><th>Votes Cast</th></tr>'
+      + '<tr><td>' + nFor + '</td><td>' + nAgainst + '</td><td>' + nAbstain + '</td><td>' + nTotal + '</td></tr></table>'
+    : '<p class="muted">No votes were recorded upon this matter.</p>';
+
+  // Disposition sentence
+  var disposition = ruled
+    ? 'This matter stands <strong>' + escHtml(statusU) + '</strong> upon the record of the Ethics Committee.'
+    : 'This matter is presently <strong>' + escHtml(statusU) + '</strong> and remains before the Committee for determination.';
+
+  // Meta rows
+  var openedWhen = c.openedAt ? safeDateTime(c.openedAt) : '—';
+  var ruledWhen = c.ruledAt ? safeDateTime(c.ruledAt) : (ruled ? '—' : 'Pending');
+  var convening = c.openedBy ? ('EC&middot;' + escHtml(c.openedBy)) : '—';
+  var ruledByTxt = c.ruledBy ? ('EC&middot;' + escHtml(c.ruledBy)) : '—';
+
+  var issued = safeDateTime(Date.now()) + ' UTC';
+  var docTitle = ruled ? 'Record of Determination' : 'Record of a Matter Before the Committee';
+  var stampClass = ruled ? 'ok' : (status === 'Tabled' ? 'hold' : '');
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+    + '<title>' + escHtml(ref) + ' — Ethics Committee Determination</title>'
+    + '<style>'
+    + '@page{size:A4;margin:16mm 15mm;}*{box-sizing:border-box;}'
+    + 'body{font-family:"Times New Roman",Georgia,serif;color:#100f0d;background:#52555a;margin:0;padding:26px;line-height:1.6;}'
+    + '.page{background:#fcfbf7;max-width:800px;margin:0 auto 24px;padding:48px 58px 40px;box-shadow:0 3px 22px rgba(0,0,0,.45);position:relative;border:1px solid #d8d2c2;}'
+    + '.page:before{content:"";position:absolute;inset:10px;border:1px solid #cfc8b6;pointer-events:none;}'
+    + '.runhead{display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.05em;color:#444;border-bottom:1px solid #000;padding-bottom:4px;text-transform:uppercase;}'
+    + '.classbar{background:#15130f;color:#f3ead2;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.16em;text-align:center;padding:6px 4px;margin:4px -58px;font-weight:bold;}'
+    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.46em;color:#222;margin:12px 0 14px;font-weight:bold;}'
+    + '.lh{text-align:center;border-bottom:3px double #000;padding-bottom:14px;margin-bottom:6px;}'
+    + '.lh .org{font-size:23px;font-weight:bold;letter-spacing:.08em;font-variant:small-caps;}'
+    + '.lh .court{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#1c1a16;margin-top:5px;font-weight:bold;}'
+    + '.lh .div{font-size:10px;letter-spacing:.12em;color:#555;margin-top:6px;font-style:italic;}'
+    + '.doctype{text-align:center;font-size:19px;font-weight:bold;letter-spacing:.1em;margin:18px 0 3px;text-transform:uppercase;font-variant:small-caps;}'
+    + '.docsub{text-align:center;font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.12em;color:#444;margin-bottom:16px;text-transform:uppercase;}'
+    + '.inre{text-align:center;font-size:14px;margin:0 0 16px;}.inre .lbl{font-family:"Courier New",monospace;font-size:9px;letter-spacing:.14em;color:#555;display:block;text-transform:uppercase;margin-bottom:2px;}.inre .ttl{font-weight:bold;font-style:italic;}'
+    + 'table.meta{width:100%;border-collapse:collapse;margin:0 0 18px;font-size:11px;}'
+    + 'table.meta td{border:1px solid #b9b2a0;padding:4px 9px;}table.meta td.k{background:#efe9d9;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#3a342a;width:26%;}'
+    + '.secttl{font-size:11px;font-weight:bold;letter-spacing:.16em;text-transform:uppercase;border-bottom:1.5px solid #000;padding-bottom:3px;margin:20px 0 9px;}'
+    + '.body p{font-size:12.5px;margin:0 0 11px;text-align:justify;}'
+    + '.ruling{font-weight:bold;font-size:13px;border-left:3px solid #5a1414;padding-left:12px;text-align:left;}'
+    + 'ul.subj{margin:0 0 10px 1.2rem;padding:0;font-size:12.5px;}ul.subj li{margin-bottom:3px;}ul.subj .org{font-family:"Courier New",monospace;font-size:9px;color:#666;letter-spacing:.04em;}'
+    + '.muted{color:#777;font-style:italic;font-size:12px;}'
+    + 'table.votetbl{border-collapse:collapse;margin:2px 0 6px;font-size:12px;}'
+    + 'table.votetbl th{background:#efe9d9;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid #b9b2a0;padding:4px 16px;}'
+    + 'table.votetbl td{border:1px solid #b9b2a0;padding:6px 16px;text-align:center;font-size:15px;font-weight:bold;}'
+    + '.attest{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:28px;border-top:1px solid #000;padding-top:16px;}'
+    + '.attest-l{flex:1;}'
+    + '.byorder{font-weight:bold;letter-spacing:.08em;font-size:12px;margin:0 0 6px;text-transform:uppercase;}'
+    + '.witness{font-size:11px;font-style:italic;color:#333;margin:0 0 26px;max-width:380px;}'
+    + '.sigline{border-bottom:1.4px solid #000;width:290px;margin-bottom:4px;}'
+    + '.signame{font-weight:bold;font-size:12.5px;}.sigrole{font-size:10px;color:#444;letter-spacing:.04em;}'
+    + '.issued{font-family:"Courier New",monospace;font-size:9px;color:#555;margin-top:10px;letter-spacing:.05em;}'
+    + '.stampbox{position:absolute;top:130px;right:46px;border:3px double #7a0000;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;font-size:12px;letter-spacing:.1em;padding:6px 14px;transform:rotate(-8deg);opacity:.85;}'
+    + '.stampbox.ok{border-color:#0a5a23;color:#0a5a23;}.stampbox.hold{border-color:#8a5a00;color:#8a5a00;}'
+    + '.footer{margin-top:24px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.07em;color:#444;text-align:center;text-transform:uppercase;}'
+    + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;border:none;}.page:before{display:none;}.classbar{margin:4px 0;}}'
+    + '</style></head><body><div class="page">'
+    + '<div class="runhead"><span>SCP Foundation &middot; Ethics Committee</span><span>Case ' + escHtml(ref) + ' &middot; Level 4</span></div>'
+    + '<div class="classbar">LEVEL 4 // ETHICS COMMITTEE // CASE RECORD // DESIGNATED RECIPIENTS ONLY</div>'
+    + '<div class="scp-tag">SECURE &middot; CONTAIN &middot; PROTECT</div>'
+    + '<div class="lh"><div class="org">SCP Foundation</div>'
+    +   '<div class="court">Ethics Committee</div>'
+    +   '<div class="div">Office of Internal Oversight &middot; Case Docket</div></div>'
+    + '<div class="doctype">' + docTitle + '</div>'
+    + '<div class="docsub">Case No. ' + escHtml(ref) + '</div>'
+    + '<div class="stampbox ' + stampClass + '">' + escHtml(statusU) + '</div>'
+    + '<div class="inre"><span class="lbl">In the Matter of</span><span class="ttl">' + escHtml(title) + '</span></div>'
+    + '<table class="meta">'
+    +   '<tr><td class="k">Case Number</td><td>' + escHtml(ref) + '</td><td class="k">Category</td><td>' + escHtml(c.category || '—') + '</td></tr>'
+    +   '<tr><td class="k">Status</td><td>' + escHtml(statusU) + '</td><td class="k">Opened</td><td>' + escHtml(openedWhen) + '</td></tr>'
+    +   '<tr><td class="k">Convening Member</td><td>' + convening + '</td><td class="k">Determination</td><td>' + escHtml(ruledWhen) + (ruled && c.ruledBy ? ' (' + ruledByTxt + ')' : '') + '</td></tr>'
+    + '</table>'
+    + '<div class="secttl">Personnel Named in the Matter</div><div class="body">' + subjects + '</div>'
+    + '<div class="secttl">Statement of the Matter</div><div class="body"><p>' + (c.summary ? escHtml(c.summary) : '<span class="muted">No statement recorded.</span>') + '</p></div>'
+    + '<div class="secttl">Determination of the Committee</div><div class="body">' + determination + '</div>'
+    + basis
+    + '<div class="secttl">Record of the Vote</div><div class="body">' + voteBlock + '</div>'
+    + '<div class="secttl">Disposition</div><div class="body"><p>' + disposition + '</p></div>'
+    + '<div class="secttl">Confidentiality</div><div class="body"><p>This record is classified <strong>LEVEL 4</strong> and is released to designated Ethics Committee personnel and authorised command only. Its contents, the identities named herein, and the deliberations of the Committee shall not be disclosed beyond authorised recipients. Unauthorised disclosure is itself a matter for the Committee.</p></div>'
+    + '<div class="attest">'
+    +   '<div class="attest-l">'
+    +     '<p class="byorder">Entered upon the record of the Ethics Committee.</p>'
+    +     '<p class="witness">Certified a true record of the matter and of the Committee\u2019s determination thereupon, by direction of the Office of Internal Oversight.</p>'
+    +     '<div class="sigline"></div>'
+    +     '<div class="signame">' + (c.ruledBy ? 'EC&middot;' + escHtml(c.ruledBy) : 'For the Ethics Committee') + '</div>'
+    +     '<div class="sigrole">Member, Ethics Committee</div>'
+    +     '<div class="issued">Issued: ' + escHtml(issued) + ' &middot; Case ' + escHtml(ref) + '</div>'
+    +   '</div>'
+    +   '<div class="attest-r">' + caseSeal() + '</div>'
+    + '</div>'
+    + '<div class="footer">CONFIDENTIAL // LEVEL 4 // ' + escHtml(ref) + ' // ISSUED ' + escHtml(issued) + ' // ETHICS COMMITTEE CASE RECORD // CAIRO.AIC</div>'
+    + '</div></body></html>';
+}
+
+function caseSeal() {
+  return '<svg viewBox="0 0 200 200" width="128" height="128" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="transform:rotate(-7deg);opacity:.9;">'
+    + '<defs>'
+    +   '<path id="ec-case-top" d="M 24,100 A 76,76 0 0 1 176,100"/>'
+    +   '<path id="ec-case-bot" d="M 36,100 A 64,64 0 0 0 164,100"/>'
+    + '</defs>'
+    + '<circle cx="100" cy="100" r="94" fill="none" stroke="#5a1414" stroke-width="2.5"/>'
+    + '<circle cx="100" cy="100" r="82" fill="none" stroke="#5a1414" stroke-width="1"/>'
+    + '<circle cx="100" cy="100" r="50" fill="none" stroke="#5a1414" stroke-width="1.2"/>'
+    + '<text font-family="Times New Roman, serif" font-size="13.5" letter-spacing="2" fill="#5a1414" font-weight="bold">'
+    +   '<textPath href="#ec-case-top" xlink:href="#ec-case-top" startOffset="50%" text-anchor="middle">\u2605 ETHICS COMMITTEE \u2605 SCP FOUNDATION</textPath></text>'
+    + '<text font-family="Times New Roman, serif" font-size="10.5" letter-spacing="2.2" fill="#5a1414" font-weight="bold">'
+    +   '<textPath href="#ec-case-bot" xlink:href="#ec-case-bot" startOffset="50%" text-anchor="middle">OFFICE OF INTERNAL OVERSIGHT</textPath></text>'
+    + '<text x="100" y="113" text-anchor="middle" font-family="Times New Roman, serif" font-size="40" font-weight="bold" letter-spacing="2" fill="#5a1414">EC</text>'
+    + '</svg>';
+}
+
+function exportEthicsCase(id) {
+  var c = allEthicsCases.find(function(x){ return x.id === id; });
+  if (!c) { alert('Case record not found.'); return; }
+  var html = buildEthicsCaseDocument(c);
+  var safeName = String(c.ref || c.id).replace(/[^A-Za-z0-9_-]/g, '_');
+  downloadFile(safeName + '_determination.html', html, 'text/html');
+  if (typeof auditRecord === 'function') auditRecord('EXPORTED CASE', (c.ref || '') + ' — ' + (c.title || ''));
 }
 // ── Admin config (appeal window) ──
 function renderTribunalCfgAdmin() {
@@ -8286,6 +8443,7 @@ document.addEventListener('click', function(ev) {
     case 'edit-case':              openCaseModal(el.dataset.id); break;
     case 'delete-case':            deleteCase(el.dataset.id); break;
     case 'cast-case-vote':         castCaseVote(el.dataset.id, el.dataset.vote); break;
+    case 'export-case':            exportEthicsCase(el.dataset.id); break;
     case 'remove-case-link':       removeCaseLink(el.dataset.sys, el.dataset.pfid); break;
     case 'open-case-file':         openFileFromCase(el.dataset.pfid, el.dataset.sys); break;
     // Tribunals
