@@ -8673,6 +8673,7 @@ document.addEventListener('click', function(ev) {
     case 'close-leave-modal': closeLeaveModal(); break;
     case 'save-leave':        saveLeave(); break;
 	case 'export-interview-invitation': exportInterviewInvitation(el.dataset.id); break;
+	case 'export-application-denial':  exportApplicationDenial(el.dataset.id); break;
   }
 });
 
@@ -10110,6 +10111,7 @@ function renderEthicsRecArchive() {
       <div class="rec-meta">SteamID: ${e(r.steamId||'—')} · ${e(r.department||'—')}</div>
       <span class="badge ${cls}">${lbl}</span>
       ${r.archiveReason ? `<div style="font-size:.6rem;color:var(--text-dim);margin-top:3px;"><em>${e(r.archiveReason)}</em></div>` : ''}
+      ${(r.archiveStatus==='denied' && currentUser && parseInt(currentUser.clearance)>=5) ? `<div style="margin-top:6px;"><button class="rec-btn" data-action="export-application-denial" data-id="${e(r.id)}" style="font-size:.55rem;padding:1px 7px;">⎙ DENIAL DOC</button></div>` : ''}
     </div>`;
   }).join('') : '<div class="poi-empty">[ NO ARCHIVED APPLICATIONS ]</div>';
 }
@@ -10288,6 +10290,95 @@ function exportInterviewInvitation(id) {
   var safeName = ref.replace(/[^A-Za-z0-9_-]/g, '_');
   downloadFile(safeName + '_invitation.html', html, 'text/html');
   if (typeof auditRecord === 'function') auditRecord('EXPORTED INVITATION', (r.name || '') + ' \u2014 interview invitation');
+}
+
+function buildApplicationDenialDocument(r) {
+  var ref = 'EC-APP-' + (r.ref || r.id).slice(-6).toUpperCase();
+  var dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  var ecMemberName = (typeof ecFileName === 'function') ? ecFileName(currentUser) : 'The Ethics Committee';
+  var recipientName = r.name || 'Candidate';
+  var recipientEmail = (r.name || 'candidate').toLowerCase().replace(/[^a-z0-9.]/g, '.') + '@foundation.scp';
+  var recordedReason = (r.archiveReason || '').trim();
+
+  var reasonBlock = recordedReason
+    ? '<p>Where the Committee has seen fit to record an observation upon your candidacy, it is set out below. It is offered without obligation and is not subject to appeal:</p>'
+      + '<div class="grounds">' + escHtml(recordedReason) + '</div>'
+    : '';
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+    + '<title>' + escHtml(ref) + ' — Application Outcome</title>'
+    + '<style>'
+    + '@page{size:A4;margin:18mm 16mm;}*{box-sizing:border-box;}'
+    + 'body{font-family:"Times New Roman",Georgia,serif;color:#111;background:#525659;margin:0;padding:24px;line-height:1.6;}'
+    + '.email{background:#fff;max-width:720px;margin:0 auto;box-shadow:0 2px 18px rgba(0,0,0,.4);}'
+    + '.classbar{background:#1a1a1a;color:#fff;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.14em;text-align:center;padding:6px 4px;font-weight:bold;}'
+    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.42em;color:#222;margin:12px 0;padding:0 40px;font-weight:bold;}'
+    + '.lh{text-align:center;border-bottom:2px solid #000;padding:0 40px 12px;margin:0 40px 16px;}'
+    + '.lh .org{font-size:20px;font-weight:bold;letter-spacing:.06em;}'
+    + '.lh .sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#333;margin-top:3px;}'
+    + '.lh .seal{font-size:9px;letter-spacing:.3em;color:#7a0000;margin-top:8px;font-family:"Courier New",monospace;font-weight:bold;}'
+    + '.headers{padding:0 40px 16px;border-bottom:1px solid #ccc;margin:0 40px 16px;}'
+    + '.headers table{width:100%;font-size:11px;border-collapse:collapse;}'
+    + '.headers td{padding:3px 0;vertical-align:top;}'
+    + '.headers td.k{font-family:"Courier New",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#666;width:80px;font-weight:bold;}'
+    + '.headers td.v{color:#111;font-weight:bold;}'
+    + '.body{padding:0 40px 24px;font-size:12px;}'
+    + '.body p{margin:0 0 12px;text-align:justify;}'
+    + '.body .callout-deny{text-align:center;font-weight:bold;font-size:12px;letter-spacing:.08em;border:2px solid #7a0000;background:#fbeaea;color:#5a0000;padding:10px;margin:16px 0;}'
+    + '.body .grounds{font-size:11.5px;border-left:3px solid #555;padding:8px 12px;margin:6px 0 14px;background:#f4f2ee;font-style:italic;}'
+    + '.body .warning{font-size:10px;color:#7a0000;border-left:3px solid #7a0000;padding:6px 10px;margin:14px 0;background:#fdf0f0;font-style:italic;}'
+    + '.sig{padding:16px 40px 24px;border-top:1px solid #ccc;font-size:11.5px;}'
+    + '.sig .name{font-weight:bold;font-size:12px;color:#7a0000;}'
+    + '.sig .role{font-size:10px;letter-spacing:.1em;color:#333;text-transform:uppercase;}'
+    + '.sig .committee{margin-top:10px;font-size:9px;letter-spacing:.2em;color:#7a0000;font-family:"Courier New",monospace;font-weight:bold;text-transform:uppercase;border-top:1px solid #ccc;padding-top:8px;}'
+    + '.footer{background:#1a1a1a;color:#999;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;text-align:center;padding:8px 40px;text-transform:uppercase;}'
+    + '@media print{body{background:#fff;padding:0;}.email{box-shadow:none;max-width:none;}}'
+    + '</style></head><body><div class="email">'
+    + '<div class="classbar">LEVEL 4-C // ETHICS COMMITTEE EYES ONLY // DESIGNATED RECIPIENT — NO REDISTRIBUTION</div>'
+    + '<div class="scp-tag">SECURE · CONTAIN · PROTECT</div>'
+    + '<div class="lh">'
+    +   '<div class="org">SCP FOUNDATION</div>'
+    +   '<div class="sub">Ethics Committee</div>'
+    +   '<div class="seal">◆ BY AUTHORITY OF THE COMMITTEE ◆</div>'
+    + '</div>'
+    + '<div class="headers"><table>'
+    +   '<tr><td class="k">From</td><td class="v">Ethics Committee &lt;ethics.committee@foundation.scp&gt;</td></tr>'
+    +   '<tr><td class="k">To</td><td class="v">' + escHtml(recipientName) + ' &lt;' + escHtml(recipientEmail) + '&gt;</td></tr>'
+    +   '<tr><td class="k">Date</td><td class="v">' + escHtml(dateStr) + '</td></tr>'
+    +   '<tr><td class="k">Subject</td><td class="v">[' + escHtml(ref) + '] Ethics Committee Assistant — Application Outcome</td></tr>'
+    +   '<tr><td class="k">Class</td><td class="v">LEVEL 4-C · ETHICS COMMITTEE CONFIDENTIAL</td></tr>'
+    + '</table></div>'
+    + '<div class="body">'
+    + '<p>Dear ' + escHtml(recipientName) + ',</p>'
+    + '<p>The Ethics Committee acknowledges your request for reassignment to this body, and the seriousness with which it was made. Every such request is weighed in closed session against the record of the applicant and the particular demands of this office.</p>'
+    + '<p>Your application has been considered in full. After deliberation, the following determination has been reached.</p>'
+    + '<div class="callout-deny">YOUR APPLICATION HAS NOT BEEN SUCCESSFUL ON THIS OCCASION.</div>'
+    + '<p>This determination is not a judgement upon your service to the Foundation, nor upon your character more broadly. It reflects only the Committee\'s assessment that, at this time, your candidacy is not one it will carry forward. The Committee is under no obligation to elaborate upon its reasoning, and in the ordinary course it does not.</p>'
+    + reasonBlock
+    + '<p>You are asked not to seek the Committee out regarding this decision. It is final as to the present application. Should circumstances and your continued service warrant it, nothing in this determination prevents you from being considered again in future, at the Committee\'s discretion.</p>'
+    + '<div class="warning">This correspondence is classified LEVEL 4-C and is intended for the named recipient alone. It may not be shared, copied, forwarded, or discussed with any party — Foundation staff or otherwise — without the express authorisation of the Ethics Committee. Disclosure of the contents of this email, or of the existence of your application, constitutes a breach of Committee confidentiality and will be treated accordingly.</div>'
+    + '<p>The Committee thanks you for the candour with which you came forward, and considers this matter closed.</p>'
+    + '</div>'
+    + '<div class="sig">'
+    +   '<div class="name">Ethics Committee · ' + escHtml(ecMemberName) + '</div>'
+    +   '<div class="role">Ethics Committee Member</div>'
+    +   '<div style="font-size:10px;color:#666;margin-top:4px;">SCP Foundation · Ethics Committee · Office of Internal Oversight</div>'
+    +   '<div style="font-size:10px;color:#666;">ethics.committee@foundation.scp · CAIRO.AIC Liaison Division</div>'
+    +   '<div class="committee">◆ THE ETHICS COMMITTEE DOES NOT ANSWER TO THE DEPARTMENTS IT OVERSEES ◆</div>'
+    + '</div>'
+    + '<div class="footer">CONFIDENTIAL // LEVEL 4-C // ETHICS COMMITTEE EYES ONLY // ' + escHtml(ref) + ' // RECEIPT CONSTITUTES FORMAL NOTICE // CAIRO.AIC</div>'
+    + '</div></body></html>';
+}
+
+function exportApplicationDenial(id) {
+  var r = allEthicsRecruit.find(function(x){ return x.id === id; });
+  if (!r) { alert('Applicant record not found.'); return; }
+  var html = buildApplicationDenialDocument(r);
+  var ref = 'EC-APP-' + (r.ref || r.id).slice(-6).toUpperCase();
+  var safeName = ref.replace(/[^A-Za-z0-9_-]/g, '_');
+  downloadFile(safeName + '_application_outcome.html', html, 'text/html');
+  if (typeof auditRecord === 'function') auditRecord('EXPORTED DENIAL', (r.name || '') + ' \u2014 application outcome');
 }
 
 // ── Deny modal ──
