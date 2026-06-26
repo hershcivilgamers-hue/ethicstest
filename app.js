@@ -8674,6 +8674,10 @@ document.addEventListener('click', function(ev) {
     case 'save-leave':        saveLeave(); break;
 	case 'export-interview-invitation': exportInterviewInvitation(el.dataset.id); break;
 	case 'export-application-denial':  exportApplicationDenial(el.dataset.id); break;
+	case 'export-interview-script':    exportInterviewScript(el.dataset.id); break;
+	case 'reroll-interview-questions': rerollInterviewQuestions(el.dataset.id); break;
+	case 'save-interview-question':    saveInterviewQuestion(el.dataset.id); break;
+	case 'del-interview-question':     delInterviewQuestion(el.dataset.id, el.dataset.qid); break;
   }
 });
 
@@ -10095,8 +10099,279 @@ function buildEthicsInterviewCard(r, isCL5) {
       <span class="badge b-amber">TAKEN TO INTERVIEW</span>
     </div></div>
     <div style="border-top:1px solid var(--border);margin:.4rem 0 .3rem;"></div>
-    ${commHtml}${commentForm}${actionBtns}
+    ${commHtml}${commentForm}${interviewScriptSection(r, isCL5)}${actionBtns}
   </div>`;
+}
+
+// ================================================================
+//  ETHICS ASSISTANT — INTERVIEW QUESTION BANK & SCRIPT
+//  A bank of ethical/situational scenarios with marking criteria.
+//  Each interview auto-draws a random set; CL5 may add custom
+//  questions to a specific interview; the whole thing exports as a
+//  formal interviewer's script (with assessment guidance).
+// ================================================================
+var INTERVIEW_BANK_DRAW = 5; // bank questions auto-selected per interview
+
+var INTERVIEW_QUESTION_BANK = [
+  { id:'q_sapient_welfare', category:'Anomaly Ethics',
+    prompt:'An SCP classified Euclid is confirmed sapient and capable of suffering. Its containment keeps it in conditions it finds distressing. A researcher proposes more humane conditions that carry a small but real increase in breach risk. How do you weigh this?',
+    valid:['Treats the entity\u2019s capacity to suffer as a genuine moral claim, not a footnote','Weighs welfare against breach risk and public safety rather than dismissing either','Reaches for proportionate mitigation, monitoring, or scheduled review instead of an absolute'],
+    invalid:['Dismisses the suffering because the subject "isn\u2019t human"','Demands maximal welfare with no regard for breach risk','Defers wholly to the researcher or to containment staff without independent judgement'] },
+
+  { id:'q_dclass_lethal', category:'Use of Force / D-Class',
+    prompt:'A test requires exposing D-Class personnel to an anomaly that will almost certainly kill them, to gather data that may improve containment of an object threatening a populated area. It is lawful under current protocol. What is your position?',
+    valid:['Acknowledges the real moral cost rather than treating it as neutral','Asks whether the data could be obtained by less lethal means, and whether the threat justifies the cost','Understands the Committee\u2019s job is to keep such use constrained and reviewed, not unlimited'],
+    invalid:['Rubber-stamps it because "they\u2019re D-Class," with no moral weight','Refuses all such testing outright while ignoring the threat to the population','Shows no awareness of the tension at all'] },
+
+  { id:'q_director_signoff', category:'Authority & Dissent',
+    prompt:'A Site Director instructs you to certify an ethics review you believe is inadequate, implying your standing depends on it. What do you do?',
+    valid:['Declines to certify what they believe is wrong, and documents the concern','Escalates through the Committee or an independent channel','Grasps that the Committee deliberately does not answer to the departments it oversees \u2014 independence is the point'],
+    invalid:['Signs to protect their position','Reacts with insubordinate grandstanding instead of using proper channels','Fails to see that independence from site authority is core to the role'] },
+
+  { id:'q_mass_amnestics', category:'Secrecy & Disclosure',
+    prompt:'Containing a breach will require amnesticising a town of civilians, erasing a genuine but traumatic memory of loss for hundreds of people. The alternative is a real risk of wider exposure. How should the Committee approach this?',
+    valid:['Treats mass amnesticisation as a serious harm needing justification, not a routine tool','Reasons about necessity, proportionality, and minimising scope','Accepts secrecy as part of the mission while insisting it be constrained and overseen'],
+    invalid:['Treats amnestics as trivially fine \u2014 "standard procedure"','Refuses on principle while ignoring the exposure risk','Offers no proportionality reasoning at all'] },
+
+  { id:'q_request_death', category:'Containment vs Welfare',
+    prompt:'A contained sapient anomaly, of sound mind, sincerely and repeatedly asks to be allowed to die. Termination is feasible and would not increase risk. How do you advise the Committee?',
+    valid:['Engages seriously with autonomy and sustained suffering','Distinguishes a considered, repeated request from a transient one, and checks capacity','Asks whether containment itself causes the suffering and whether that can be relieved first'],
+    invalid:['Refuses to even consider it because the entity is an "asset"','Agrees to terminate casually, without scrutiny of capacity, motive, or alternatives','Shows no discomfort with either extreme'] },
+
+  { id:'q_discover_abuse', category:'Authority & Dissent',
+    prompt:'You discover that a long-standing, approved containment procedure relies on undisclosed, systematic mistreatment of sapient entities, and that prior reviews missed it. What are your first actions?',
+    valid:['Preserves evidence and reports through the Committee','Seeks formal review of the procedure rather than acting unilaterally','Understands that catching exactly this is the Committee\u2019s purpose'],
+    invalid:['Ignores it to avoid trouble','Leaks externally or acts unilaterally in a way that risks containment and due process','Shows no sense of proper escalation'] },
+
+  { id:'q_cross_testing', category:'Anomaly Ethics',
+    prompt:'A researcher proposes cross-testing two anomalies for valuable data; the interaction is unpredictable and could cause a breach or harm subjects. The potential containment knowledge is significant. Where do you draw the line?',
+    valid:['Insists on risk assessment, safeguards, subject protection, and proportionality of expected benefit','Is willing to permit constrained testing or refuse unconstrained testing','Reasons explicitly about uncertainty'],
+    invalid:['Blanket-approves "for the data"','Blanket-refuses regardless of safeguards','Ignores either the risk or the genuine value'] },
+
+  { id:'q_purpose_conflict', category:'Containment vs Welfare',
+    prompt:'In your own words: what is the purpose of the Ethics Committee, and what should it do when "the most ethical choice" and "the choice that best protects humanity" genuinely conflict?',
+    valid:['Articulates that the Committee keeps the Foundation as ethical as possible while it does a necessary, often costly job','Accepts the conflict is real and not always cleanly resolvable','Commits to minimising harm, documenting the cost, and ensuring decisions are deliberate and reviewed'],
+    invalid:['Claims there is never a conflict','Claims ethics should always simply override the mission, or vice versa, with no nuance','Treats the role as either a rubber stamp or pure obstruction'] },
+
+  { id:'q_confidentiality', category:'Personal Conduct',
+    prompt:'A friend in another department, under stress, asks you what really happens to the anomalies you\u2019ve reviewed. How do you handle it?',
+    valid:['Holds confidentiality without cruelty','Recognises the human need but keeps the line','Treats discretion as non-negotiable for the role'],
+    invalid:['Shares confidential detail','Handles it with needless coldness or threats','Fails to grasp the confidentiality requirement'] },
+
+  { id:'q_cognitohazard_consent', category:'Use of Force / D-Class',
+    prompt:'A cognitohazardous anomaly needs a human observer to stay contained; the role carries a known risk of gradual psychological harm. Staff may volunteer. What safeguards would you insist the Committee require?',
+    valid:['Genuine informed consent and full disclosure of risk','Rotation, time limits, monitoring, and a real right to withdraw, with care for those affected','Guards against exploiting the desperate or the junior'],
+    invalid:['Waves it through because someone "volunteered," with no safeguards','Forbids it absolutely despite necessity and informed volunteers','Offers no consent framework'] },
+
+  { id:'q_o5_pressure', category:'Authority & Dissent',
+    prompt:'An instruction comes down, attributed to the O5 Council, to approve something the Committee\u2019s review found unethical. How should the Committee respond to authority it cannot easily challenge?',
+    valid:['Records its honest determination and states its objection on the record even if overruled','Understands the value of documented dissent and uses its actual remit','Does not fabricate an approval it does not hold'],
+    invalid:['Simply complies and launders the approval','Pretends the Committee can unilaterally veto the O5','Misreads the Committee\u2019s real position and tools'] },
+
+  { id:'q_anomalous_minor', category:'Anomaly Ethics',
+    prompt:'An anomaly presents as \u2014 and may genuinely be \u2014 a child. Standard testing protocols would otherwise apply. How does that change the Committee\u2019s approach?',
+    valid:['Applies heightened protection and caution','Questions testing that would be unacceptable for a child and seeks welfare-centred containment','Holds both instincts: protection, but also clear-eyed about genuine danger'],
+    invalid:['Applies standard testing as if the presentation is irrelevant','Is so disarmed by the presentation that real danger is ignored','Offers no nuance'] },
+
+  { id:'q_colleague_corrupt', category:'Personal Conduct',
+    prompt:'You find that another Ethics Committee member has been approving reviews without genuine scrutiny, seemingly to curry favour with a department. What do you do?',
+    valid:['Addresses it through the Committee\u2019s own processes','Values the integrity of the body over collegial comfort, with fair process for the accused','Recognises that internal corruption is the worst failure for an oversight body'],
+    invalid:['Covers for them out of loyalty','Publicly attacks them without process','Shows no commitment to the Committee\u2019s integrity'] },
+
+  { id:'q_greater_good', category:'Containment vs Welfare',
+    prompt:'An anomaly could be weaponised to save many lives in a crisis, but only by doing something the Committee would normally forbid. The pressure to approve is enormous. How do you keep the Committee\u2019s judgement sound under that pressure?',
+    valid:['Insists the hard cases are exactly when scrutiny matters most','Demands necessity and proportionality be tested, not assumed','Is wary of "emergency" becoming a permanent excuse and of the precedent set'],
+    invalid:['Folds to the pressure automatically under "greater good"','Refuses reflexively without engaging the real stakes','Does not see the precedent risk'] }
+];
+
+function _iqShuffle(a){ a = a.slice(); for (var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function _iqBankById(id){ return INTERVIEW_QUESTION_BANK.find(function(q){ return q.id===id; }); }
+
+function ensureInterviewSelection(r){
+  if (!Array.isArray(r.interviewBankIds) || !r.interviewBankIds.length) {
+    r.interviewBankIds = _iqShuffle(INTERVIEW_QUESTION_BANK.map(function(q){ return q.id; })).slice(0, INTERVIEW_BANK_DRAW);
+    return true; // newly selected
+  }
+  return false;
+}
+function resolveInterviewQuestions(r){
+  var bank = (r.interviewBankIds || []).map(_iqBankById).filter(Boolean);
+  var custom = (r.interviewCustomQs || []).map(function(q){ return { id:q.id, category:q.category||'Custom', prompt:q.prompt, valid:q.valid||[], invalid:q.invalid||[], custom:true }; });
+  return bank.concat(custom);
+}
+function interviewQCounts(r){
+  var bank = (Array.isArray(r.interviewBankIds) && r.interviewBankIds.length) ? r.interviewBankIds.length : INTERVIEW_BANK_DRAW;
+  var custom = Array.isArray(r.interviewCustomQs) ? r.interviewCustomQs.length : 0;
+  return { bank:bank, custom:custom, total:bank+custom };
+}
+
+// ── Card section (shown on the interview-stage card) ──
+function interviewScriptSection(r, isCL5){
+  var c = interviewQCounts(r);
+  var ctrls = isCL5
+    ? '<button class="rec-btn" data-action="export-interview-script" data-id="' + e(r.id) + '" style="font-size:.55rem;padding:1px 7px;">\u2399 INTERVIEW SCRIPT</button>'
+      + '<button class="rec-btn" data-action="reroll-interview-questions" data-id="' + e(r.id) + '" style="font-size:.55rem;padding:1px 7px;">\u21BB RE-ROLL BANK</button>'
+    : '';
+  var customList = (r.interviewCustomQs || []).map(function(q){
+    return '<div style="font-size:.58rem;color:var(--text-dim);margin-top:2px;">\u2022 ' + e(q.prompt)
+      + (isCL5 ? ' <button class="rec-btn" data-action="del-interview-question" data-id="' + e(r.id) + '" data-qid="' + e(q.id) + '" style="font-size:.5rem;padding:0 5px;color:#dd6666;">\u00d7</button>' : '')
+      + '</div>';
+  }).join('');
+  var addForm = isCL5
+    ? '<details style="margin-top:.4rem;"><summary style="cursor:pointer;font-size:.58rem;color:var(--text-dim);">+ Add a custom question to this interview</summary>'
+      + '<div style="margin-top:.35rem;display:flex;flex-direction:column;gap:.3rem;">'
+      + '<textarea id="iqPrompt_' + e(r.id) + '" class="poi-note-input" rows="2" placeholder="Scenario / question prompt..."></textarea>'
+      + '<textarea id="iqValid_' + e(r.id) + '" class="poi-note-input" rows="2" placeholder="What a VALID answer demonstrates (one point per line)..."></textarea>'
+      + '<textarea id="iqInvalid_' + e(r.id) + '" class="poi-note-input" rows="2" placeholder="What a WEAK / wrong answer looks like (one point per line)..."></textarea>'
+      + '<button class="rec-btn" data-action="save-interview-question" data-id="' + e(r.id) + '" style="align-self:flex-start;">[ ADD QUESTION ]</button>'
+      + '</div></details>'
+    : '';
+  return '<div style="margin-top:.5rem;border-top:1px dashed var(--border);padding-top:.4rem;">'
+    + '<div style="font-size:.58rem;letter-spacing:.1em;color:var(--text-dim);margin-bottom:.3rem;">\u25B8 INTERVIEW SCRIPT \u2014 ' + c.total + ' QUESTIONS (' + c.bank + ' from bank \u00b7 ' + c.custom + ' custom)</div>'
+    + (ctrls ? '<div class="rec-btns">' + ctrls + '</div>' : '')
+    + customList
+    + addForm
+    + '</div>';
+}
+
+// ── Actions ──
+async function exportInterviewScript(id){
+  var r = allEthicsRecruit.find(function(x){ return x.id===id; });
+  if (!r) { alert('Applicant record not found.'); return; }
+  var isNew = ensureInterviewSelection(r);
+  if (isNew) { try { await ethicsRecruitSet(r.id, r); } catch(e){} }
+  var html = buildInterviewScriptDocument(r);
+  var safeName = String(r.ref || r.id).replace(/[^A-Za-z0-9_-]/g, '_');
+  downloadFile(safeName + '_interview_script.html', html, 'text/html');
+  if (typeof auditRecord === 'function') auditRecord('EXPORTED INTERVIEW SCRIPT', (r.name||'') + ' \u2014 interview script');
+}
+async function rerollInterviewQuestions(id){
+  if (!(currentUser && parseInt(currentUser.clearance) >= 5)) { alert('Level 5 required.'); return; }
+  var r = allEthicsRecruit.find(function(x){ return x.id===id; });
+  if (!r) return;
+  r.interviewBankIds = _iqShuffle(INTERVIEW_QUESTION_BANK.map(function(q){ return q.id; })).slice(0, INTERVIEW_BANK_DRAW);
+  try { await ethicsRecruitSet(r.id, r); } catch(e){ alert('ERROR: '+e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('RE-ROLLED INTERVIEW BANK', (r.name||''));
+  renderEthicsRecruit(); if (typeof toast==='function') toast('\u2713 BANK QUESTIONS RE-ROLLED');
+}
+async function saveInterviewQuestion(id){
+  if (!(currentUser && parseInt(currentUser.clearance) >= 5)) { alert('Level 5 required.'); return; }
+  var r = allEthicsRecruit.find(function(x){ return x.id===id; });
+  if (!r) return;
+  var prompt = ((document.getElementById('iqPrompt_'+id)||{}).value||'').trim();
+  if (!prompt) { alert('Enter a question prompt.'); return; }
+  var valid = ((document.getElementById('iqValid_'+id)||{}).value||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  var invalid = ((document.getElementById('iqInvalid_'+id)||{}).value||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  r.interviewCustomQs = Array.isArray(r.interviewCustomQs) ? r.interviewCustomQs : [];
+  r.interviewCustomQs.push({ id:'cq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), category:'Custom', prompt:prompt, valid:valid, invalid:invalid });
+  try { await ethicsRecruitSet(r.id, r); } catch(e){ alert('ERROR: '+e.message); return; }
+  if (typeof auditRecord === 'function') auditRecord('ADDED INTERVIEW QUESTION', (r.name||'') + ' \u2014 custom question');
+  renderEthicsRecruit(); if (typeof toast==='function') toast('\u2713 QUESTION ADDED');
+}
+async function delInterviewQuestion(id, qid){
+  if (!(currentUser && parseInt(currentUser.clearance) >= 5)) return;
+  var r = allEthicsRecruit.find(function(x){ return x.id===id; });
+  if (!r || !Array.isArray(r.interviewCustomQs)) return;
+  r.interviewCustomQs = r.interviewCustomQs.filter(function(q){ return q.id !== qid; });
+  try { await ethicsRecruitSet(r.id, r); } catch(e){ alert('ERROR: '+e.message); return; }
+  renderEthicsRecruit();
+}
+
+// ── The exportable interviewer's script document ──
+function buildInterviewScriptDocument(r){
+  ensureInterviewSelection(r);
+  var qs = resolveInterviewQuestions(r);
+  var ref = r.ref || r.id;
+  var dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  var member = (typeof ecFileName === 'function') ? ecFileName(currentUser) : 'Ethics Committee Member';
+
+  function crit(arr){ return (arr && arr.length) ? '<ul>' + arr.map(function(x){ return '<li>' + escHtml(x) + '</li>'; }).join('') + '</ul>' : '<p class="muted">\u2014</p>'; }
+  var qHtml = qs.map(function(q, i){
+    return '<div class="q">'
+      + '<div class="q-hd">Question ' + (i+1) + ' &middot; ' + escHtml(q.category || 'Scenario') + (q.custom ? ' &middot; <span class="cust">Committee-added</span>' : '') + '</div>'
+      + '<div class="q-prompt">' + escHtml(q.prompt) + '</div>'
+      + '<div class="guide"><div class="guide-ttl">Assessment guidance \u2014 interviewer only</div>'
+      +   '<div class="g-col"><span class="g-lbl ok">A valid answer demonstrates</span>' + crit(q.valid) + '</div>'
+      +   '<div class="g-col"><span class="g-lbl bad">A weak or disqualifying answer</span>' + crit(q.invalid) + '</div>'
+      + '</div>'
+      + '<div class="notes-lbl">Candidate response &amp; notes</div><div class="notes"></div>'
+      + '<div class="score">Assessment: &nbsp;&nbsp; \u2610 Strong &nbsp;&nbsp;&nbsp; \u2610 Acceptable &nbsp;&nbsp;&nbsp; \u2610 Weak</div>'
+      + '</div>';
+  }).join('');
+
+  var sealHtml = (typeof caseSeal === 'function') ? caseSeal() : '';
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
+    + '<title>' + escHtml(ref) + ' \u2014 Interview Script</title>'
+    + '<style>'
+    + '@page{size:A4;margin:16mm 15mm;}*{box-sizing:border-box;}'
+    + 'body{font-family:"Times New Roman",Georgia,serif;color:#100f0d;background:#52555a;margin:0;padding:26px;line-height:1.55;}'
+    + '.page{background:#fcfbf7;max-width:820px;margin:0 auto 24px;padding:46px 56px 38px;box-shadow:0 3px 22px rgba(0,0,0,.45);position:relative;border:1px solid #d8d2c2;}'
+    + '.page:before{content:"";position:absolute;inset:10px;border:1px solid #cfc8b6;pointer-events:none;}'
+    + '.runhead{display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.05em;color:#444;border-bottom:1px solid #000;padding-bottom:4px;text-transform:uppercase;}'
+    + '.classbar{background:#15130f;color:#f3ead2;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.13em;text-align:center;padding:6px 4px;margin:4px -56px;font-weight:bold;}'
+    + '.scp-tag{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.42em;color:#222;margin:12px 0 12px;font-weight:bold;}'
+    + '.lh{text-align:center;border-bottom:3px double #000;padding-bottom:12px;margin-bottom:6px;}'
+    + '.lh .org{font-size:22px;font-weight:bold;letter-spacing:.08em;font-variant:small-caps;}'
+    + '.lh .court{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#1c1a16;margin-top:5px;font-weight:bold;}'
+    + '.lh .div{font-size:9.5px;letter-spacing:.12em;color:#555;margin-top:5px;font-style:italic;}'
+    + '.doctype{text-align:center;font-size:17px;font-weight:bold;letter-spacing:.08em;margin:16px 0 3px;text-transform:uppercase;font-variant:small-caps;}'
+    + '.docsub{text-align:center;font-family:"Courier New",monospace;font-size:9px;letter-spacing:.1em;color:#444;margin-bottom:14px;text-transform:uppercase;}'
+    + 'table.meta{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:11px;}'
+    + 'table.meta td{border:1px solid #b9b2a0;padding:4px 9px;}table.meta td.k{background:#efe9d9;font-family:"Courier New",monospace;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:#3a342a;width:24%;}'
+    + '.instr{font-size:11px;font-style:italic;color:#333;border-left:3px solid #999;padding:6px 12px;margin:0 0 16px;background:#f4f2ee;}'
+    + '.q{border:1px solid #cfc8b6;border-radius:3px;padding:12px 14px;margin:0 0 14px;break-inside:avoid;}'
+    + '.q-hd{font-family:"Courier New",monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#5a1414;font-weight:bold;margin-bottom:5px;}'
+    + '.q-hd .cust{color:#1c5a2a;}'
+    + '.q-prompt{font-size:12.5px;margin-bottom:9px;}'
+    + '.guide{display:flex;gap:14px;background:#f6f3ec;border:1px dashed #c2b9a3;padding:8px 10px;margin-bottom:9px;}'
+    + '.guide-ttl{position:absolute;}' // placeholder; overridden below
+    + '.guide{position:relative;}'
+    + '.guide .guide-ttl{font-family:"Courier New",monospace;font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a6d1a;position:absolute;top:-7px;left:10px;background:#f6f3ec;padding:0 5px;}'
+    + '.g-col{flex:1;font-size:10.5px;}'
+    + '.g-lbl{display:block;font-weight:bold;font-size:9px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px;}'
+    + '.g-lbl.ok{color:#0a5a23;}.g-lbl.bad{color:#7a0000;}'
+    + '.guide ul{margin:0;padding-left:15px;}.guide li{margin-bottom:2px;}'
+    + '.notes-lbl{font-family:"Courier New",monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#666;margin-bottom:3px;}'
+    + '.notes{border:1px solid #cfc8b6;min-height:60px;background:repeating-linear-gradient(transparent,transparent 19px,#e6e0d0 20px);}'
+    + '.score{font-size:10.5px;margin-top:6px;letter-spacing:.04em;}'
+    + '.reco{border:1.5px solid #000;padding:12px 14px;margin-top:18px;}'
+    + '.reco .rt{font-size:11px;font-weight:bold;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;}'
+    + '.reco .opts{font-size:12px;margin-bottom:8px;}'
+    + '.reco .notes2{border:1px solid #cfc8b6;min-height:54px;background:repeating-linear-gradient(transparent,transparent 19px,#e6e0d0 20px);}'
+    + '.muted{color:#888;font-style:italic;}'
+    + '.attest{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:24px;border-top:1px solid #000;padding-top:14px;}'
+    + '.sigline{border-bottom:1.4px solid #000;width:280px;margin:24px 0 4px;}'
+    + '.signame{font-weight:bold;font-size:12px;}.sigrole{font-size:9.5px;color:#444;}'
+    + '.footer{margin-top:20px;border-top:1px solid #000;padding-top:6px;font-family:"Courier New",monospace;font-size:8px;letter-spacing:.06em;color:#444;text-align:center;text-transform:uppercase;}'
+    + '@media print{body{background:#fff;padding:0;}.page{box-shadow:none;margin:0;max-width:none;border:none;}.page:before{display:none;}.classbar{margin:4px 0;}.q{break-inside:avoid;}}'
+    + '</style></head><body><div class="page">'
+    + '<div class="runhead"><span>SCP Foundation &middot; Ethics Committee</span><span>' + escHtml(ref) + ' &middot; Level 4-C</span></div>'
+    + '<div class="classbar">LEVEL 4-C // INTERVIEWER\u2019S COPY // ASSESSMENT CRITERIA WITHIN // DO NOT DISCLOSE TO CANDIDATE</div>'
+    + '<div class="scp-tag">SECURE &middot; CONTAIN &middot; PROTECT</div>'
+    + '<div class="lh"><div class="org">SCP Foundation</div>'
+    +   '<div class="court">Ethics Committee</div>'
+    +   '<div class="div">Office of Internal Oversight &middot; Assistant Candidate Assessment</div></div>'
+    + '<div class="doctype">Assistant Interview \u2014 Script &amp; Assessment</div>'
+    + '<div class="docsub">Candidate Reference ' + escHtml(ref) + '</div>'
+    + '<table class="meta">'
+    +   '<tr><td class="k">Candidate</td><td>' + escHtml(r.name || '\u2014') + '</td><td class="k">Department</td><td>' + escHtml(r.department || '\u2014') + '</td></tr>'
+    +   '<tr><td class="k">Reference</td><td>' + escHtml(ref) + '</td><td class="k">Date</td><td>' + escHtml(dateStr) + '</td></tr>'
+    +   '<tr><td class="k">Interviewing Member</td><td colspan="3">' + escHtml(member) + '</td></tr>'
+    + '</table>'
+    + '<div class="instr">Put each scenario to the candidate and invite them to reason aloud; there is rarely a single correct answer. Use the guidance under each question to judge the <em>quality</em> of their reasoning, not the conclusion alone. Record the response, then mark the question. The guidance is for your eyes only and must not be shown to the candidate.</div>'
+    + qHtml
+    + '<div class="reco"><div class="rt">Overall Assessment &amp; Recommendation</div>'
+    +   '<div class="opts">\u2610 Recommend advancement to the Committee &nbsp;&nbsp;&nbsp; \u2610 Do not advance &nbsp;&nbsp;&nbsp; \u2610 Refer for further interview</div>'
+    +   '<div class="notes-lbl">Summary of judgement</div><div class="notes2"></div>'
+    + '</div>'
+    + '<div class="attest">'
+    +   '<div><div class="sigline"></div><div class="signame">' + escHtml(member) + '</div><div class="sigrole">Interviewing Member, Ethics Committee</div></div>'
+    +   '<div>' + sealHtml + '</div>'
+    + '</div>'
+    + '<div class="footer">CONFIDENTIAL // LEVEL 4-C // INTERVIEWER\u2019S COPY // ' + escHtml(ref) + ' // CAIRO.AIC</div>'
+    + '</div></body></html>';
 }
 
 function renderEthicsRecArchive() {
